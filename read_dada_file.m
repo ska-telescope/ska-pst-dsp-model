@@ -14,6 +14,8 @@ function data_header = read_dada_file (file_id)
     dtype = 'double';
   end
 
+  fprintf('read_dada_file: dtype=%s\n', dtype);
+
   % ensure that we're reading only the data we want
   hdr_size = str2num(hdr_map('HDR_SIZE'));
   frewind(file_id);
@@ -26,7 +28,7 @@ function data_header = read_dada_file (file_id)
     data = reshape(data, n_pol*n_dim, n_chan, []);
     data_size = size(data);
     n_dat = data_size(end);
-    dat_temp = complex(zeros(n_pol, n_chan, n_dat));
+    dat_temp = complex(zeros(n_pol, n_chan, n_dat, dtype));
 
     dat_temp(1, :, :) = squeeze(complex(data(1, :, :), data(2, :, :)));
     dat_temp(2, :, :) = squeeze(complex(data(3, :, :), data(4, :, :)));

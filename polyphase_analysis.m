@@ -25,25 +25,32 @@ function out=polyphase_analysis(in, filt, block, os_factor)
   n_chan = in_size(2); % This should always be 1.
   n_dat = in_size(3);
   dtype = class(in);
+  is_real = isreal(in);
+
+  filt = cast(filt, dtype);
 
   % step will be the same as block in the critically sampled case.
   step = floor((block * os_factor.de) / os_factor.nu);
   % Making sure the filter has an integer multiple of block size.
-  phases=ceil(length(filt)/block);
-  f=(1:phases*block)*0;
-  f(1:length(filt))=filt;
+  f = pad_filter(filt, block);
+  phases = length(f) / block;
 
   nblocks=floor( (n_dat-length(f))/step);
   fl=length(f);
 
-  fprintf('polyphase_analysis: nblocks: %d\n', nblocks);
+  fprintf('polyphase_analysis: dtype=%s\n', dtype);
+  fprintf('polyphase_analysis: nblocks=%d\n', nblocks);
 
   %block=block*2;     % Interleaved filterbank
   %phases=phases/2;   %produces critically sampled outputs as well as
                       %intermediate frequency outputs
-  out = zeros(n_pol, block, nblocks, dtype);
+  out = complex(zeros(n_pol, block, nblocks, dtype));
   for i_pol = 1:n_pol
+    fprintf('polyphase_analysis: %d/%d pol\n', i_pol, n_pol);
     for k=0:nblocks-1
+      if mod(k, 10000) == 0;
+        fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
+      end
       temp=f.*in(1+step*k:fl+step*k);
 
       %index for cyclic shift of data to FFT to eliminate spectrum rotation

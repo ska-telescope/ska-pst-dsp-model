@@ -19,12 +19,8 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
   n_dat = in_size(3);
   fprintf('polyphase_synthesis: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
 
-  function normalized = normalize (n, os_factor)
-    normalized = (os_factor.de * n) / os_factor.nu;
-  end
-
-  output_fft_length = n_chan * normalize(input_fft_length, os_factor);
-  input_os_keep = normalize(input_fft_length, os_factor);
+  input_os_keep = normalize(os_factor, input_fft_length);
+  output_fft_length = n_chan * input_os_keep;
   input_os_keep_2 = input_os_keep / 2;
   input_os_discard = input_fft_length - input_os_keep;
   input_os_discard_2 = input_os_discard / 2;
@@ -36,7 +32,7 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
   out = complex(zeros(n_pol, 1, n_blocks*output_fft_length));
 
   stitched = complex(zeros(1, 1, output_fft_length));
-
+  os_factor_float = os_factor.nu / os_factor.de;
   for i_block = 1:n_blocks
     for i_pol = 1:n_pol
       for i_chan = 1:n_chan
@@ -52,7 +48,7 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
           stitched(1, 1, idx+1: idx+input_os_keep_2) = freq_domain_i_chan(1:input_os_keep_2);
         end
       end
-      out(i_pol, 1, (i_block-1)*output_fft_length+1:i_block*output_fft_length) = stitched;
+      out(i_pol, 1, (i_block-1)*output_fft_length+1:i_block*output_fft_length) = ifft(stitched)/os_factor_float;
     end
   end
 end

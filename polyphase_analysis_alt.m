@@ -1,24 +1,24 @@
 function out=polyphase_analysis_alt (in, filt, block, os_factor)
 
-% Polyphase analysis filterbank with cyclic shift of data into FFT
-% to remove spectrum rotation in output data
-% @method polyphase_analysis_alt
-% @author Ian Morrison <ian.morrison@curtin.edu.au> 2015
-% @author Dean Shaff <dshaff@swin.edu.au> 2019
+  % Polyphase analysis filterbank with cyclic shift of data into FFT
+  % to remove spectrum rotation in output data
+  % @method polyphase_analysis_alt
+  % @author Ian Morrison <ian.morrison@curtin.edu.au> 2015
+  % @author Dean Shaff <dshaff@swin.edu.au> 2019
 
-% @param {single/double []} in - input data. The dimensionality should be
-%   (n_pol, n_chan, n_dat), where n_chan is equal to 1.
-% @param {single/double []} filt - prototype lowpass filter
-%   (length should be multiple of step)
-% @param {single/double []} block - length of fft
-%   (prefilter length = length(filt)/block
-%   if not the 'filt' is padded with zeros to a multiple of block
-%   Importantly, This is also the number of channels that will
-%   be created by the PFB.
-% @param {struct} os_factor - struct with 'nu' and 'de' fields
-% @return {single/double []} - output data: two dimensional array.
-%   The first dimension is time, the second frequency. The number of frequency
-%   frequency channels is equal to `block`
+  % @param {single/double []} in - input data. The dimensionality should be
+  %   (n_pol, n_chan, n_dat), where n_chan is equal to 1.
+  % @param {single/double []} filt - prototype lowpass filter
+  %   (length should be multiple of step)
+  % @param {single/double []} block - length of fft
+  %   (prefilter length = length(filt)/block
+  %   if not the 'filt' is padded with zeros to a multiple of block
+  %   Importantly, This is also the number of channels that will
+  %   be created by the PFB.
+  % @param {struct} os_factor - struct with 'nu' and 'de' fields
+  % @return {single/double []} - output data: two dimensional array.
+  %   The first dimension is time, the second frequency. The number of frequency
+  %   frequency channels is equal to `block`
 
   in_size = size(in);
   n_pol = in_size(1);
@@ -31,19 +31,32 @@ function out=polyphase_analysis_alt (in, filt, block, os_factor)
     output_ndim = 1;
   end
 
-  step = normalize(block, os_factor);
-  nblocks = floor(ndat-length(filt) / step);
+  filt = cast(filt, dtype);
 
-  out = zeros(n_pol, block, nblocks, dtype);
+  step = normalize(os_factor, block);
+  filt_padded = pad_filter(filt, block);
+  nblocks = floor((n_dat-length(filt_padded)) / step);
+
+  fprintf('polyphase_analysis_alt: dtype=%s\n', dtype);
+  fprintf('polyphase_analysis_alt: nblocks=%d\n', nblocks);
+
+  out = complex(zeros(n_pol, block, nblocks, dtype));
 
   for i_pol = 1:n_pol
-    PFB_fn = PFB_factory(block, filt, os_factor, output_ndim, dtype);
+    fprintf('polyphase_analysis_alt: %d/%d pol\n', i_pol, n_pol);
+    PFB_fn = PFB_factory(block, filt, os_factor, output_ndim, dtype, 1);
     for n = 1:nblocks
-      out(i_pol, :, n) = PFB_fn(in(i_pol, 1, (n-1)*step:n*step));
+      if mod(n, 10000) == 0;
+        fprintf('polyphase_analysis_alt: %d/%d blocks\n', n, nblocks);
+      end
+      % fprintf('n_dat=%d, n*step=%d\n', n_dat, n*step);
+      i_block = PFB_fn(squeeze(in(i_pol, 1, (n-1)*step+1:n*step)));
+      % i_block
+      % pause
+      % out(i_pol, :, n) = transpose(i_block);
+      out(i_pol, :, n) = i_block;
     end
   end
-
-
 end
 
 
@@ -71,7 +84,7 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
   end
 
   verbose = 0;
-  if exist('verbose', 'var')
+  if exist('verbose_', 'var')
     verbose = verbose_;
   end
 
@@ -81,10 +94,8 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
   end
 
 
-  % FiltCoefStruct = load(pfb_filter_coef_fname);
-  % h = single(FiltCoefStruct.h);
   %Initiate the Input Mask that is multiplied with the Filter mask
-  xM = zeros(1,length(filt_coeff), dtype);
+  xM = zeros(length(filt_coeff), 1, dtype);
   %Initiate the Output mask
   yP = zeros(L, 1, dtype);
   %Control Index - Initiation
@@ -102,6 +113,34 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
     PFB = @OS_PFB;
   end
 
+  function f = compute_fft(time_domain_arr, fft_size, output_ndim)
+    % Transform `time_domain_arr` into the frequency domain.
+
+    % Note that in the case where the input signal is real-valued only half
+    % of the output channels are independent. The Packing Method is used here. However,
+    % any Optimized Real IFFT Evaluation Algorithm Can be used in its place
+    % Evaluating the Cross-Stream (i.e. column wise) IDFT using Packing Method
+    % In the case of complex input, simply take the inverse fourier transform.
+    if output_ndim == 1
+      %The Complex IDFT of LC=L/2 Points
+      y2C = time_domain_arr(1:2:end) + 1j*time_domain_arr(2:2:end);
+      IFY2C = fft_size*fft_size/2*ifft(y2C);
+      IFY2C;
+      y(1:fft_size/2) = (0.5*((IFY2C+conj(circshift(flipud(IFY2C),[+1,0])))...
+                  - 1j*exp(2j*pi*(0:1:fft_size/2-1).'/fft_size).*...
+                    (IFY2C-conj(circshift(flipud(IFY2C),[+1,0])))));
+      % [0,+1]
+      y(fft_size/2+1) = 0.5*((IFY2C(1)+conj(IFY2C(1)) + 1j*(IFY2C(1)-conj(IFY2C(1)))));
+
+      y(fft_size/2+2:fft_size) = conj(fliplr(y(2:fft_size/2)));
+    elseif output_ndim == 2
+      y = fft_size*fft_size*ifft(time_domain_arr);
+      % y = L*fft(y1S); % have to use inverse fft
+    end
+    f = y;
+  end
+
+
   function y = CS_PFB(x)
     %Multiplying the Indexed Input Mask and Filter Mask elements and
     %accumulating
@@ -110,47 +149,15 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
     end; % For k
     %The Linear Shift of Input through the FIFO
     %Shift the Current Samples by M to the Right
-    xM(1,L+1:end) = xM(1,1:end-L);
+    xM(L+1:end, 1) = xM(1:end-L, 1);
     %Assign the New Input Samples for the first M samples
-    xM(1,1:L) = fliplr(x);%Note the Flip (Left-Right) place the Newest sample
-                          % to the front
-    %transpose(yP((1:L),1))
-    %Performing the Circular Shift to Compensate the Shift in Band Center
-    %Frequencies
+    % xM(1:L, 1) = fliplr(x); %Note the Flip (Left-Right) place the Newest sample
+    xM(1:L, 1) = flipud(x); %Note the Flip (Left-Right) place the Newest sample
+                           % to the front
     y1S = yP;
-    % if n == 0
-    %     y1S = yP;
-    % else
-    %     y1S = [yP((n_chan-n)+1:end); yP(1:(n_chan-n))];
-    % end;
 
-    % %Evaluating the Cross-Stream (i.e. column wise) IDFT
-    % yfft = L*L*(ifft(yP));%
-    %
-    % %Note the Input Signal is Real-Valued. Hence, only half of the output
-    % %Channels are Independent. The Packing Method is used here. However,
-    % %any Optimized Real IFFT Evaluation Algorithm Can be used in its place
-    % %Evaluating the Cross-Stream (i.e. column wise) IDFT using Packing
-    % %Method
-    % %The Complex-Valued Sequence of Half Size
-    y2C = y1S(1:2:end) + 1j*y1S(2:2:end);
+    y = compute_fft(y1S);
 
-    if output_ndim == 1
-      %The Complex IDFT of LC=L/2 Points
-      IFY2C = L*L/2*ifft(y2C);
-      IFY2C;
-      y(1:L/2) = (0.5*((IFY2C+conj(circshift(flipud(IFY2C),[+1,0])))...
-                  - 1j*exp(2j*pi*(0:1:L/2-1).'/L).*...
-                    (IFY2C-conj(circshift(flipud(IFY2C),[+1,0])))));
-      % [0,+1]
-      y(L/2+1) = 0.5*((IFY2C(1)+conj(IFY2C(1)) + 1j*(IFY2C(1)-conj(IFY2C(1)))));
-
-      y(L/2+2:L) = conj(fliplr(y(2:L/2)));
-    elseif output_ndim == 2
-      % y1S = y1S.*hann_window;
-      y = L*L*ifft(y1S);
-      % y = L*fft(y1S); % have to use inverse fft
-    end
     %Changing the Control Index
     n = n+1;
     n = mod(n, n_chan);
@@ -163,18 +170,16 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
     %accumulating
     for k = 1 : L
         yP(k,1) = sum(xM(k:L:end).*filt_coeff(k:L:end));
-    end; % For k
+    end % For k
 
-    %The Linear Shift of Input through the FIFO
-    %Shift the Current Samples by M to the Right
-    xM(1,M+1:end) = xM(1,1:end-M);
-    %Assign the New Input Samples for the first M samples
-    xM(1,1:M) = fliplr(x);%Note the Flip (Left-Right) place the Newest sample
-                          % to the front
-
-    %Performing the Circular Shift to Compensate the Shift in Band Center
-    %Frequencies
-    % y1S = yP;
+    % The Linear Shift of Input through the FIFO
+    % Shift the Current Samples by M to the Right
+    xM(M+1:end, 1) = xM(1:end-M, 1);
+    % Assign the New Input Samples for the first M samples
+    % xM(1:M, 1) = fliplr(x); % `fliplr` places the newest samples at the front
+    xM(1:M, 1) = flipud(x); % `fliplr` places the newest samples at the front
+    % Performing circular shift to compensate the shift in band center
+    % Frequencies
     if n == 0
         idx = [1:L];
         y1S = yP;
@@ -183,37 +188,13 @@ function PFB = PFB_factory(n_chan, filt_coeff, os_factor, output_ndim_, dtype_, 
         y1S = [yP((os_factor.nu-n)*L_M+1:end); yP(1:(os_factor.nu-n)*L_M)];
     end;
 
-    % %Evaluating the Cross-Stream (i.e. column wise) IDFT
-    % yfft = L*L*(ifft(yP));%
-    %
-    % %Modulating the Channels (i.e. FFT Outputs) to compensate the shift in the
-    % %center frequency
-    % %y = yfft.*exp(2j*pi*(1-M/L)*n*(0:1:L-1).');
-    % y = yfft.*exp(-2j*pi*M/L*n*(0:1:L-1).');
+     % Modulating the Channels (i.e. FFT Outputs) to compensate the shift in the
+     % center frequency
+     % y = yfft.*exp(2j*pi*(1-M/L)*n*(0:1:L-1).');
+     % y = yfft.*exp(-2j*pi*M/L*n*(0:1:L-1).');
 
-    % %Note the Input Signal is Real-Valued. Hence, only half of the output
-    % %Channels are Independent. The Packing Method is used here. However,
-    % %any Optimized Real IFFT Evaluation Algorithm Can be used in its place
-    % %Evaluating the Cross-Stream (i.e. column wise) IDFT using Packing
-    % %Method
-    % %The Complex-Valued Sequence of Half Size
-    if output_ndim == 1
-      y2C = y1S(1:2:end) + 1j*y1S(2:2:end);
-      %The Complex IDFT of LC=L/2 Points
-      IFY2C = L*L/2*ifft(y2C);
-      %
-      y(1:L/2) = (0.5*((IFY2C+conj(circshift(flipud(IFY2C),[+1,0])))...
-                  - 1j*exp(2j*pi*(0:1:L/2-1).'/L).*...
-                   (IFY2C-conj(circshift(flipud(IFY2C),[+1,0])))));
-      % [0,+1]
-      y(L/2+1) = 0.5*((IFY2C(1)+conj(IFY2C(1)) + 1j*(IFY2C(1)-conj(IFY2C(1)))));
 
-      y(L/2+2:L) = conj(fliplr(y(2:L/2)));
-    elseif output_ndim == 2
-      % y1S = y1S.*hann_window;
-      y = L*L*ifft(y1S);
-      % y = L*fft(y1S);
-    end
+    y = compute_fft(y1S, L, output_ndim);
     %Changing the Control Index
     n = n+1;
     n = mod(n, os_factor.nu);
