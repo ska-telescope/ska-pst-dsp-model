@@ -9,8 +9,27 @@ function test_polyphase_synthesis ()
     n_dat = 16384;
     test_vector = rand(n_pol, n_chan, n_dat);
 
-    polyphase_synthesis(test_vector, input_fft_length, os_factor);
-    polyphase_synthesis_alt(test_vector, input_fft_length, os_factor);
+    out = polyphase_synthesis(test_vector, input_fft_length, os_factor);
+    out_alt = polyphase_synthesis_alt(test_vector, input_fft_length, os_factor);
+    diff = abs(out - out_alt);
+    sum(diff(:))
+
+    ax = subplot(311);
+    plot(abs(reshape(out, numel(out), 1)));
+    title('Inversion, method 1')
+    grid(ax, 'on');
+
+    ax = subplot(312);
+    plot(abs(reshape(out_alt, numel(out_alt), 1)));
+    title('Inversion, method 2')
+    grid(ax, 'on');
+
+    ax = subplot(313);
+    plot(abs(reshape(diff, numel(diff), 1)));
+    title('Difference')
+    grid(ax, 'on');
+
+    saveas(gcf, 'products/test_polyphase_synthesis.png');
 
 
   end

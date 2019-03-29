@@ -1,4 +1,4 @@
-function out=polyphase_analysis_alt (in, filt, block, os_factor)
+function out=polyphase_analysis_alt (in, filt, block, os_factor, verbose_)
 
   % Polyphase analysis filterbank with cyclic shift of data into FFT
   % to remove spectrum rotation in output data
@@ -20,6 +20,11 @@ function out=polyphase_analysis_alt (in, filt, block, os_factor)
   %   The first dimension is time, the second frequency. The number of frequency
   %   frequency channels is equal to `block`
 
+  verbose = 0;
+  if exist('verbose_', 'var')
+    verbose = verbose_;
+  end
+
   in_size = size(in);
   n_pol = in_size(1);
   n_chan = in_size(2); % should always be 1
@@ -37,17 +42,25 @@ function out=polyphase_analysis_alt (in, filt, block, os_factor)
   filt_padded = pad_filter(filt, block);
   nblocks = floor((n_dat-length(filt_padded)) / step);
 
-  fprintf('polyphase_analysis_alt: dtype=%s\n', dtype);
-  fprintf('polyphase_analysis_alt: nblocks=%d\n', nblocks);
+  if verbose
+    fprintf('polyphase_analysis_alt: dtype=%s\n', dtype);
+    fprintf('polyphase_analysis_alt: nblocks=%d\n', nblocks);
+  end
 
   out = complex(zeros(n_pol, block, nblocks, dtype));
-
+  prev_bytes = 1;
   for i_pol = 1:n_pol
-    fprintf('polyphase_analysis_alt: %d/%d pol\n', i_pol, n_pol);
-    PFB_fn = PFB_factory(block, filt, os_factor, output_ndim, dtype, 1);
+    % if verbose
+    %   fprintf('polyphase_analysis_alt: %d/%d pol\n', i_pol, n_pol);
+    % end
+    PFB_fn = PFB_factory(block, filt, os_factor, output_ndim, dtype, 0);
     for n = 1:nblocks
-      if mod(n, 10000) == 0;
-        fprintf('polyphase_analysis_alt: %d/%d blocks\n', n, nblocks);
+
+      if mod(n, randi([5000, 10000],1,1)) == 0 && verbose;
+        for b=1:prev_bytes
+          fprintf('\b');
+        end
+        prev_bytes = fprintf('polyphase_analysis_alt: %d/%d blocks', (i_pol-1)*nblocks+n, n_pol*nblocks);
       end
       % fprintf('n_dat=%d, n*step=%d\n', n_dat, n*step);
       i_block = PFB_fn(squeeze(in(i_pol, 1, (n-1)*step+1:n*step)));
@@ -56,6 +69,9 @@ function out=polyphase_analysis_alt (in, filt, block, os_factor)
       % out(i_pol, :, n) = transpose(i_block);
       out(i_pol, :, n) = i_block;
     end
+  end
+  if verbose
+    fprintf('\n');
   end
 end
 

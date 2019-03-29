@@ -1,4 +1,4 @@
-function out=polyphase_analysis(in, filt, block, os_factor)
+function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
 
   % Polyphase analysis filterbank with cyclic shift of data into FFT
   % to remove spectrum rotation in output data
@@ -20,6 +20,11 @@ function out=polyphase_analysis(in, filt, block, os_factor)
   %   The first dimension is time, the second frequency. The number of frequency
   %   frequency channels is equal to `block`
 
+  verbose = 0;
+  if exist('verbose_', 'var')
+    verbose = verbose_;
+  end
+
   in_size = size(in);
   n_pol = in_size(1);
   n_chan = in_size(2); % This should always be 1.
@@ -38,18 +43,25 @@ function out=polyphase_analysis(in, filt, block, os_factor)
   nblocks=floor( (n_dat-length(f))/step);
   fl=length(f);
 
-  fprintf('polyphase_analysis: dtype=%s\n', dtype);
-  fprintf('polyphase_analysis: nblocks=%d\n', nblocks);
-
+  if verbose
+    fprintf('polyphase_analysis: dtype=%s\n', dtype);
+    fprintf('polyphase_analysis: nblocks=%d\n', nblocks);
+  end
   %block=block*2;     % Interleaved filterbank
   %phases=phases/2;   %produces critically sampled outputs as well as
                       %intermediate frequency outputs
+  prev_bytes = 1;
   out = complex(zeros(n_pol, block, nblocks, dtype));
   for i_pol = 1:n_pol
-    fprintf('polyphase_analysis: %d/%d pol\n', i_pol, n_pol);
+    if verbose
+      fprintf('polyphase_analysis: %d/%d pol\n', i_pol, n_pol);
+    end
     for k=0:nblocks-1
-      if mod(k, 10000) == 0;
-        fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
+      if mod(k, 10000) == 0 && verbose;
+        for b=1:prev_bytes
+          fprintf('\b');
+        end
+        prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
       end
       temp=f.*in(1+step*k:fl+step*k);
 
