@@ -1,4 +1,4 @@
-function signal = time_domain_impulse (n_bins, offsets, widths)
+function signal = time_domain_impulse (n_bins, offsets, widths, dtype_)
   % generate a time domain impulse. The location and width of each impulse
   % is specified in `offsets` and `widths`
   % @method time_domain_impulse
@@ -9,7 +9,12 @@ function signal = time_domain_impulse (n_bins, offsets, widths)
   %    specified in offsets
   % @param {double} bin_offset - Fractional offset from bin center
   % @return {double []} - time domain impulses
-  signal = complex(zeros(1, n_bins));
+  dtype = 'single';
+  if exist('dtype_', 'var')
+    dtype = dtype_;
+  end
+
+  signal = complex(zeros(1, n_bins, dtype));
   for i=1:length(offsets)
     o = offsets(i);
     w = widths(i);

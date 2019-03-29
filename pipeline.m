@@ -1,5 +1,6 @@
 function pipeline ()
 
+  dtype = 'single';
   default_header_file_path = 'config/default_header.json';
   fir_filter_path = 'config/OS_Prototype_FIR_8.mat';
 
@@ -19,7 +20,7 @@ function pipeline ()
   pos = 0.1;
   frequencies = [floor(pos*n_bins)];
   phases = [pi/4];
-  sinusoid = complex_sinusoid(n_bins, frequencies, phases, 0.1);
+  sinusoid = complex_sinusoid(n_bins, frequencies, phases, 0.1, dtype);
   input_data = complex(zeros(2, 1, n_bins, 'single'));
   input_data(1, 1, :) = sinusoid;
   input_data(2, 1, :) = sinusoid;
@@ -41,6 +42,7 @@ function pipeline ()
   % save channelized data
   channelized_data_file_name = sprintf('%s.%s', 'channelized', input_data_file_name);
   channelized_data_file_path = fullfile('data', channelized_data_file_name);
+  add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
   save_file(channelized_data_file_path, @write_dada_file, {channelized, channelized_header})
 
   % synthesize channelized data

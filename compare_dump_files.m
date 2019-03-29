@@ -17,6 +17,7 @@ function same = compare_dump_files (file_path1, file_path2)
     data_header = read_dada_file(file_id);
     fclose(file_id);
     data{i} = data_header{1};
+    data{i} = data{i} ./ max(data{i}(:))
     headers{i} = data_header{2};
     size_data = size(data{i});
     sizes(i) = size_data(3);
@@ -27,11 +28,11 @@ function same = compare_dump_files (file_path1, file_path2)
   end
 
   ax = subplot(311);
-  plot(squeeze(abs(data{1}(1, 1, :))));
+  plot(squeeze(real(data{1}(1, 1, :))));
   grid(ax, 'on')
 
   ax = subplot(312);
-  plot(squeeze(abs(data{2}(1, 1, :))));
+  plot(squeeze(real(data{2}(1, 1, :))));
   grid(ax, 'on')
 
   diff = abs(data{2} - data{1});
