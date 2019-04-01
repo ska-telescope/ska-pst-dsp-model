@@ -1,57 +1,95 @@
 function pipeline ()
-
-  dtype = 'single';
-  default_header_file_path = 'config/default_header.json';
-  fir_filter_path = 'config/OS_Prototype_FIR_8.mat';
-
-  % load in FIR filter coefficients
-  fir_filter_coeff = read_fir_filter_coeff(fir_filter_path);
-
-  % load the default header into a struct, and then a containers.Map object.
-  json_str = fileread(default_header_file_path);
-  default_header = struct2map(jsondecode(json_str));
+  config_struct = struct();
+  config_struct.dtype = 'single';
+  config_struct.header_file_path = 'config/default_header.json';
+  config_struct.fir_filter_path = 'config/OS_Prototype_FIR_8.mat';
 
   os_factor = struct('nu', 8, 'de', 7);
   n_chan = 8;
   input_fft_length = 16384;
-  n_bins = 10*normalize(os_factor, input_fft_length)*n_chan;
+  n_bins = 5*normalize(os_factor, input_fft_length)*n_chan;
 
-  % generate some impulse, either in the time or spectral domain
-  pos = 0.1;
-  frequencies = [floor(pos*n_bins)];
-  phases = [pi/4];
-  sinusoid = complex_sinusoid(n_bins, frequencies, phases, 0.1, dtype);
-  input_data = complex(zeros(2, 1, n_bins, 'single'));
-  input_data(1, 1, :) = sinusoid;
-  input_data(2, 1, :) = sinusoid;
-  input_header = default_header;
-  input_header('FREQ_LOC') = num2str(pos);
+  fprintf('Generating, channelizing and inverting frequency domain test vectors\n')
 
-  % save data
-  input_data_file_name = sprintf('complex_sinusoid.%s.dump', num2str(pos));
-  input_data_file_path = fullfile('data', input_data_file_name);
-  save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
+  test_vector_dir = 'data/test_vectors';
+  if ~exist(test_vector_dir, 'dir')
+    mkdir(test_vector_dir)
+  end
 
-  % channelize data
-  channelized = polyphase_analysis_alt(input_data, fir_filter_coeff, n_chan, os_factor);
-  channelized_header = default_header;
-  input_tsamp = str2num(channelized_header('TSAMP'));
-  channelized_header('TSAMP') = num2str(n_chan*normalize(os_factor, input_tsamp));
-  channelized_header('PFB_DC_CHAN') = '1';
+  for pos=0:0.1:1
+    frequencies = [floor(pos*n_bins)];
+    phases = [pi/4];
+    bin_offset = 0.1;
 
-  % save channelized data
-  channelized_data_file_name = sprintf('%s.%s', 'channelized', input_data_file_name);
-  channelized_data_file_path = fullfile('data', channelized_data_file_name);
-  add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
-  save_file(channelized_data_file_path, @write_dada_file, {channelized, channelized_header})
+    freq_dir = fullfile(test_vector_dir, 'freq');
+    if ~exist(freq_dir, 'dir')
+      mkdir(freq_dir);
+    end
 
-  % synthesize channelized data
-  synthesized = polyphase_synthesis_alt(channelized, input_fft_length, os_factor);
-  synthesized_header = default_header;
+    freq_sub_dir = fullfile(freq_dir, sprintf('f-%.3f_b-%.3f_p-%.3f', pos, bin_offset, phases(1)));
+    if ~exist(freq_sub_dir, 'dir')
+      mkdir(freq_sub_dir);
+    end
 
-  % save synthesized data
-  synthesized_data_file_name = sprintf('%s.%s', 'synthesized', input_data_file_name);
-  synthesized_data_file_path = fullfile('data', synthesized_data_file_name);
-  save_file(synthesized_data_file_path, @write_dada_file, {synthesized, synthesized_header})
+    meta_struct = struct();
+    meta_struct.freq_position = num2str(pos);
+    meta_struct.phase = num2str(phases(1));
+    meta_struct.bin_offset = num2str(bin_offset);
 
+
+    file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+                       input_fft_length, n_bins,...
+                       @complex_sinusoid,...
+                       {frequencies, phases, bin_offset}, @polyphase_analysis_alt,...
+                       @polyphase_synthesis, freq_sub_dir);
+
+    meta_struct.input_file = file_info{1};
+    meta_struct.channelized_file = file_info{2};
+    meta_struct.inverted_file = file_info{3};
+    meta_file_path = fullfile(freq_sub_dir, 'meta.json');
+    json_meta_str = jsonencode(meta_struct);
+    fid = fopen(meta_file_path,'wt');
+    fprintf(fid, json_meta_str);
+    fclose(fid);
+
+  end
+  fprintf('Generating, channelizing and inverting time domain test vectors\n')
+  for pos=0:0.1:1
+    offsets = [floor(pos*n_bins)];
+    if offsets(1) == 0
+      offsets(1) = 1;
+    end
+    widths = [1];
+
+    freq_dir = fullfile(test_vector_dir, 'time');
+    if ~exist(freq_dir, 'dir')
+      mkdir(freq_dir);
+    end
+
+    freq_sub_dir = fullfile(freq_dir, sprintf('o-%.3f_w-%.3f', pos, widths(1)));
+    if ~exist(freq_sub_dir, 'dir')
+      mkdir(freq_sub_dir);
+    end
+
+    meta_struct = struct();
+    meta_struct.impulse_position = num2str(pos);
+    meta_struct.impulse_width = num2str(widths(1));
+
+
+    file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+                       input_fft_length, n_bins,...
+                       @time_domain_impulse,...
+                       {offsets, widths}, @polyphase_analysis_alt,...
+                       @polyphase_synthesis, freq_sub_dir);
+
+    meta_struct.input_file = file_info{1};
+    meta_struct.channelized_file = file_info{2};
+    meta_struct.inverted_file = file_info{3};
+    meta_file_path = fullfile(freq_sub_dir, 'meta.json');
+    json_meta_str = jsonencode(meta_struct);
+    fid = fopen(meta_file_path,'wt');
+    fprintf(fid, json_meta_str);
+    fclose(fid);
+
+  end
 end

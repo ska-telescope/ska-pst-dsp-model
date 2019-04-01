@@ -18,6 +18,6 @@ function signal = time_domain_impulse (n_bins, offsets, widths, dtype_)
   for i=1:length(offsets)
     o = offsets(i);
     w = widths(i);
-    signal(o: o+w-1) = 1.0;
+    signal(o: o+w-1) = complex(1.0, 1.0);
   end
 end
