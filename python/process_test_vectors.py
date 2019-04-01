@@ -4,6 +4,7 @@ import json
 import logging
 
 from run_dspsr_with_dump import run_dspsr_with_dump, load_pulsar_params
+from iter_test_vectors import iter_test_vectors
 
 meta_data_file_name = "meta.json"
 
@@ -39,24 +40,14 @@ def _process_single_dir(sub_dir, pulsar_params=None, fft_size=16384) -> None:
     with open(meta_data_file_path, 'w') as f:
         json.dump(meta_data, f)
 
-    return dump
+    return meta_data
 
 
-def process_test_vectors(
-    base_dir: str,
-    **kwargs
-) -> dict:
-    report = {}
-    time_freq_dir = ["time", "freq"]
-    for domain in time_freq_dir:
-        sub_dir = os.path.join(base_dir, domain)
-        report[domain] = []
-        for sub_sub_dir in os.listdir(sub_dir):
-            dspsr_dump = _process_single_dir(os.path.join(
-                sub_dir, sub_sub_dir
-            ), **kwargs)
-            report[domain].append(dspsr_dump)
-
+def process_test_vectors(*args, **kwargs):
+    report = {"time": [], "freq": []}
+    for domain_dir, sub_dir in iter_test_vectors(*args):
+        dspsr_dump = _process_single_dir(sub_dir, **kwargs)
+        report[domain_dir].append(dspsr_dump)
     return report
 
 
