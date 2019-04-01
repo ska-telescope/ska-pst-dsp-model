@@ -7,10 +7,15 @@ from run_dspsr_with_dump import run_dspsr_with_dump, load_pulsar_params
 
 meta_data_file_name = "meta.json"
 
+module_logger = logging.getLogger(__name__)
+
 
 def _process_single_dir(sub_dir, pulsar_params=None, fft_size=16384) -> None:
     if not os.path.exists(sub_dir):
         raise RuntimeError(f"Can't find directory {sub_dir}")
+
+    module_logger.debug((f"_process_single_dir: "
+                         f"processing directory {sub_dir}"))
 
     if pulsar_params is None:
         pulsar_params = load_pulsar_params()

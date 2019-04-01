@@ -4,7 +4,7 @@ description = ""
 name = "comparator"
 optional = false
 python-versions = "^3.6"
-version = "0.7.1"
+version = "0.7.2"
 
 [package.dependencies]
 mypy = "^0.670.0"
@@ -12,7 +12,7 @@ numpy = "^1.16"
 scipy = "^1.2"
 
 [package.source]
-reference = "5529081c5cfa91c246757d289e089cb464bacdb6"
+reference = "30942a25a353286a9bcd41ec53dc9a364f217180"
 type = "git"
 url = "git@github.com:dean-shaff/comparator.git"
 [[package]]

@@ -40,6 +40,8 @@ def compare_dump_files(
     dat: list = None,
     fft_size: int = None,
     normalize: bool = False,
+    freq_domain: bool = True,
+    time_domain: list = None
 ):
     dada_files = [pfb.formats.DADAFile(f).load_data() for f in file_paths]
     pol = _process_dim(pol)
@@ -60,23 +62,31 @@ def compare_dump_files(
 
     comp = comparator.TimeFreqDomainComparator()
     comp.freq.domain = [0, fft_size]
+    if time_domain is not None:
+        comp.time.domain = time_domain
     # comp.time.domain = [0, 100]  # for plotting speed
 
     comp.operators["this"] = lambda a: a
     comp.operators["diff"] = lambda a, b: np.abs(a - b)
 
     comp.products["argmax"] = lambda a: np.argmax(a)
+    comp.products["mean"] = lambda a: np.mean(a)
+    comp.products["sum"] = lambda a: np.sum(a)
 
-    # res_op, res_prod = comp.freq.cartesian(*data_slice)
-    # print(res_prod["this"])
-    # comparator.util.plot_operator_result(res_op)
-    print(np.iscomplexobj(data_slice[0]))
-    print(data_slice)
-    res_op, res_prod = comp.time.cartesian(*data_slice)
-    print(res_prod["this"])
-    comparator.util.plot_operator_result(res_op)
+    if freq_domain:
+        res_op, res_prod = comp.freq.cartesian(*data_slice)
+        print(res_prod["this"])
+        print(res_prod["diff"])
+        comparator.util.plot_operator_result(res_op)
 
-    plt.show()
+    if time_domain is not None:
+        res_op, res_prod = comp.time.cartesian(*data_slice)
+        print(res_prod["this"])
+        print(res_prod["diff"])
+        comparator.util.plot_operator_result(res_op)
+
+    if time_domain or freq_domain:
+        plt.show()
 
 
 def create_parser():
@@ -91,6 +101,14 @@ def create_parser():
 
     parser.add_argument("-fft", "--fft_size",
                         dest="fft_size", type=int, required=False)
+
+    parser.add_argument("-t", "--time_domain",
+                        type=str, required=False,
+                        default=None,
+                        dest="time_domain")
+
+    parser.add_argument("-f", "--freq_domain",
+                        dest="freq_domain", action="store_true")
 
     parser.add_argument("-p", "--pol",
                         dest="pol", type=str, required=False, default="")
@@ -117,13 +135,23 @@ def main():
         level = logging.DEBUG
     logging.basicConfig(level=level)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
+
+    time_domain = parsed.time_domain
+    if time_domain is not None:
+        if time_domain == "":
+            time_domain = slice(0, None)
+        else:
+            time_domain = [int(s) for s in time_domain.split(",")]
+
     compare_dump_files(
         *parsed.input_file_paths,
         pol=_parse_dim(parsed.pol),
         chan=_parse_dim(parsed.chan),
         dat=_parse_dim(parsed.dat),
         fft_size=parsed.fft_size,
-        normalize=parsed.normalize
+        normalize=parsed.normalize,
+        freq_domain=parsed.freq_domain,
+        time_domain=time_domain
     )
 
 
