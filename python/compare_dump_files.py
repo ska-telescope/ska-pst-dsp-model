@@ -11,6 +11,13 @@ import numpy as np
 import pfb.formats
 import comparator
 
+__all__ = [
+    "load_n_chop",
+    "compare_dump_files"
+]
+
+module_logger = logging.getLogger(__name__)
+
 
 def _process_dim(dim) -> slice:
     if dim is None:
@@ -33,6 +40,25 @@ def _parse_dim(dim_info: str) -> list:
     return dim
 
 
+def load_n_chop(
+    *file_paths: typing.Tuple[str],
+    pol: list = None,
+    chan: list = None,
+    dat: list = None
+):
+    dada_files = [pfb.formats.DADAFile(f).load_data() for f in file_paths]
+    pol = _process_dim(pol)
+    chan = _process_dim(chan)
+    dat = _process_dim(dat)
+
+    module_logger.debug((f"load_n_chop: comparing pol={pol},"
+                         f" chan={chan}, dat={dat}"))
+
+    min_dat = np.amin([d.ndat for d in dada_files])
+    data = [d.data[:min_dat, :, :] for d in dada_files]
+    return data, dada_files
+
+
 def compare_dump_files(
     *file_paths: typing.Tuple[str],
     pol: list = None,
@@ -41,17 +67,10 @@ def compare_dump_files(
     fft_size: int = None,
     normalize: bool = False,
     freq_domain: bool = True,
-    time_domain: list = None
+    time_domain: list = None,
+    comp: comparator.MultiDomainComparator = None
 ):
-    dada_files = [pfb.formats.DADAFile(f).load_data() for f in file_paths]
-    pol = _process_dim(pol)
-    chan = _process_dim(chan)
-    dat = _process_dim(dat)
-
-    print(f"Comparing pol={pol}, chan={chan}, dat={dat}")
-
-    min_dat = np.amin([d.ndat for d in dada_files])
-    data = [d.data[:min_dat, :, :] for d in dada_files]
+    data = load_n_chop(*file_paths, pol, chan, dat)[0]
     data_slice = [d[dat, chan, pol].flatten() for d in data]
 
     if normalize:
@@ -60,18 +79,19 @@ def compare_dump_files(
     if fft_size is None:
         fft_size = len(data_slice[0])
 
-    comp = comparator.TimeFreqDomainComparator()
-    comp.freq.domain = [0, fft_size]
-    if time_domain is not None:
-        comp.time.domain = time_domain
-    # comp.time.domain = [0, 100]  # for plotting speed
+    if comp is None:
+        comp = comparator.TimeFreqDomainComparator()
+        comp.freq.domain = [0, fft_size]
+        if time_domain is not None:
+            comp.time.domain = time_domain
+        # comp.time.domain = [0, 100]  # for plotting speed
 
-    comp.operators["this"] = lambda a: a
-    comp.operators["diff"] = lambda a, b: np.abs(a - b)
+        comp.operators["this"] = lambda a: a
+        comp.operators["diff"] = lambda a, b: np.abs(a - b)
 
-    comp.products["argmax"] = lambda a: np.argmax(a)
-    comp.products["mean"] = lambda a: np.mean(a)
-    comp.products["sum"] = lambda a: np.sum(a)
+        comp.products["argmax"] = lambda a: np.argmax(a)
+        comp.products["mean"] = lambda a: np.mean(a)
+        comp.products["sum"] = lambda a: np.sum(a)
 
     if freq_domain:
         res_op, res_prod = comp.freq.cartesian(*data_slice)
