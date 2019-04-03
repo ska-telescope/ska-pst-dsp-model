@@ -16,7 +16,8 @@ function pipeline ()
     mkdir(test_vector_dir)
   end
 
-  for pos=0:0.1:1
+  for pos=0.01:0.05:1
+    fprintf('Creating input data with frequency at %.3f percent of total band\n', pos*100);
     frequencies = [floor(pos*n_bins)];
     phases = [pi/4];
     bin_offset = 0.1;
@@ -37,15 +38,23 @@ function pipeline ()
     meta_struct.bin_offset = num2str(bin_offset);
 
 
-    file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+    file_info_alt = test_data_pipeline(config_struct, n_chan, os_factor,...
                        input_fft_length, n_bins,...
                        @complex_sinusoid,...
                        {frequencies, phases, bin_offset}, @polyphase_analysis_alt,...
                        @polyphase_synthesis, freq_sub_dir);
 
-    meta_struct.input_file = file_info{1};
-    meta_struct.channelized_file = file_info{2};
-    meta_struct.inverted_file = file_info{3};
+   % file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+   %                    input_fft_length, n_bins,...
+   %                    @complex_sinusoid,...
+   %                    {frequencies, phases, bin_offset}, @polyphase_analysis,...
+   %                    @polyphase_synthesis, freq_sub_dir);
+
+    meta_struct.input_file = file_info_alt{1};
+    meta_struct.channelized_file = file_info_alt{2};
+    meta_struct.inverted_file = file_info_alt{3};
+    % meta_struct.channelized_file_alt = file_info{2};
+    % meta_struct.inverted_file_alt = file_info{3};
     meta_file_path = fullfile(freq_sub_dir, 'meta.json');
     json_meta_str = jsonencode(meta_struct);
     fid = fopen(meta_file_path,'wt');
@@ -54,7 +63,10 @@ function pipeline ()
 
   end
   fprintf('Generating, channelizing and inverting time domain test vectors\n')
-  for pos=0:0.1:1
+  for pos=0.01:0.05:1
+  % for pos=0.01:2:1
+    fprintf('Creating input data with input at %.3f percent of total band\n', pos*100);
+
     offsets = [floor(pos*n_bins)];
     if offsets(1) == 0
       offsets(1) = 1;
@@ -76,15 +88,23 @@ function pipeline ()
     meta_struct.impulse_width = num2str(widths(1));
 
 
-    file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+    file_info_alt = test_data_pipeline(config_struct, n_chan, os_factor,...
                        input_fft_length, n_bins,...
                        @time_domain_impulse,...
                        {offsets, widths}, @polyphase_analysis_alt,...
                        @polyphase_synthesis, freq_sub_dir);
 
-    meta_struct.input_file = file_info{1};
-    meta_struct.channelized_file = file_info{2};
-    meta_struct.inverted_file = file_info{3};
+   % file_info = test_data_pipeline(config_struct, n_chan, os_factor,...
+   %                    input_fft_length, n_bins,...
+   %                    @time_domain_impulse,...
+   %                    {offsets, widths}, @polyphase_analysis,...
+   %                    @polyphase_synthesis, freq_sub_dir);
+
+    meta_struct.input_file = file_info_alt{1};
+    meta_struct.channelized_file = file_info_alt{2};
+    meta_struct.inverted_file = file_info_alt{3};
+    % meta_struct.channelized_file_alt = file_info{2};
+    % meta_struct.inverted_file_alt = file_info{3};
     meta_file_path = fullfile(freq_sub_dir, 'meta.json');
     json_meta_str = jsonencode(meta_struct);
     fid = fopen(meta_file_path,'wt');

@@ -6,7 +6,6 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import comparator
-import pfb
 
 from run_dspsr_with_dump import run_dspsr_with_dump, load_pulsar_params
 from iter_test_vectors import iter_test_vectors
@@ -19,6 +18,27 @@ meta_data_file_name = "meta.json"
 
 module_logger = logging.getLogger(__name__)
 
+input_params_map = {
+    "f": "frequency",
+    "o": "offset"
+}
+
+
+def get_input_params_from_subdir(sub_dir: str) -> dict:
+    """
+    Given the name of some sub directory, get the parameters used to
+    create the input signal
+
+    Args:
+        sub_dir (str): The subdirectory where input data reside.
+    Returns:
+        dict: keys are parameter names, values are the corresponding values
+    """
+    sub_dir = os.path.basename(sub_dir)
+    sub_dir_split = [v.split("-") for v in sub_dir.split("_")]
+    result = {v[0]: v[1] for v in sub_dir_split}
+    return result
+
 
 def load_data_single_dir(sub_dir: str,
                          meta_data: dict):
@@ -27,7 +47,7 @@ def load_data_single_dir(sub_dir: str,
     """
     file_names = [meta_data["input_file"],
                   meta_data["inverted_file"],
-                  meta_data["dspsr_pre_Detection_dump"]]
+                  meta_data["dspsr_pre_dump"]]
 
     file_paths = [os.path.join(sub_dir, f) for f in file_names]
 
@@ -36,9 +56,19 @@ def load_data_single_dir(sub_dir: str,
     return loaded, dada_files
 
 
-def process_single_dir(sub_dir, pulsar_params=None, fft_size=16384) -> None:
+def process_single_dir(sub_dir: str,
+                       pulsar_params: dict = None,
+                       fft_size: int = 16384,
+                       dump_stage: str = "Convolution") -> None:
     if not os.path.exists(sub_dir):
         raise RuntimeError(f"Can't find directory {sub_dir}")
+
+    input_params = get_input_params_from_subdir(sub_dir)
+    for key in input_params_map:
+        if key in input_params:
+            module_logger.info(
+                (f"process_single_dir: processing input "
+                 f"{input_params_map[key]}={input_params[key]}"))
 
     module_logger.debug((f"_process_single_dir: "
                          f"processing directory {sub_dir}"))
@@ -57,10 +87,11 @@ def process_single_dir(sub_dir, pulsar_params=None, fft_size=16384) -> None:
         pulsar_params["dm"],
         pulsar_params["period"],
         output_dir=sub_dir,
-        extra_args=f"-IF 1:{fft_size}"
+        dump_stage=dump_stage,
+        extra_args=f"-IF 1:{fft_size} -V"
     )
     meta_data["dspsr_ar_file"] = os.path.basename(ar)
-    meta_data["dspsr_pre_Detection_dump"] = os.path.basename(dump)
+    meta_data["dspsr_pre_dump"] = os.path.basename(dump)
 
     with open(meta_data_file_path, 'w') as f:
         json.dump(meta_data, f)
@@ -68,10 +99,14 @@ def process_single_dir(sub_dir, pulsar_params=None, fft_size=16384) -> None:
     return meta_data
 
 
-def process_test_vectors(*args, fft_size=16384, pulsar_params=None):
+def process_test_vectors(*args: tuple,
+                         fft_size: int = 16384,
+                         pulsar_params: dict = None,
+                         dump_stage: str = "Convolution"):
     figsize = (16, 9)
     comp = comparator.MultiDomainComparator(domains={
-        "time": comparator.SingleDomainComparator("time"),
+        # "time": comparator.SingleDomainComparator("time"),
+        "time": comparator.TimeDomainComparator(),
         "freq": comparator.FrequencyDomainComparator()
     })
     comp.freq.domain = [0, fft_size]
@@ -88,10 +123,9 @@ def process_test_vectors(*args, fft_size=16384, pulsar_params=None):
     for domain_dir, sub_dir in iter_test_vectors(*args):
         key = key_map[domain_dir]
         meta_data = process_single_dir(
-            sub_dir, fft_size=fft_size, pulsar_params=pulsar_params)
+            sub_dir, fft_size=fft_size, pulsar_params=pulsar_params,
+            dump_stage=dump_stage)
         loaded, dada_files = load_data_single_dir(sub_dir, meta_data)
-        # dspsr_dada_file = dada_files[-1]
-        # os_factor = dspsr_dada_file["OS_FACTOR"]
         loaded[-1] /= 8*fft_size
         res = {
             "time": comp.time.cartesian(*loaded, labels=labels),
@@ -121,13 +155,13 @@ def process_test_vectors(*args, fft_size=16384, pulsar_params=None):
     return report
 
 
-def create_report_plot(report):
-
-    for domain_name in report:
-        domain_report = report[domain_name]
-        x = []
-        y_inverted = []
-        y_dspsr_inverted = []
+# def create_report_plot(report):
+#
+#     for domain_name in report:
+#         domain_report = report[domain_name]
+#         x = []
+#         y_inverted = []
+#         y_dspsr_inverted = []
 
 
 def create_parser():
@@ -158,10 +192,13 @@ def main():
     logging.basicConfig(level=level)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     pulsar_params = load_pulsar_params()
+    # for domain_dir, sub_dir in iter_test_vectors(parsed.base_dir):
+    #     get_input_params_from_subdir(sub_dir)
     report = process_test_vectors(
         parsed.base_dir,
         fft_size=parsed.fft_size,
-        pulsar_params=pulsar_params
+        pulsar_params=pulsar_params,
+        dump_stage="Convolution"
     )
     with open('./../products/report.json', 'w') as f:
         json.dump(report, f, cls=comparator.util.NumpyEncoder)

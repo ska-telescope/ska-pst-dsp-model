@@ -40,8 +40,8 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
       out_step_e = output_fft_length*n;
       spectra = transpose(squeeze(in(i_pol, :, in_step_s:in_step_e)));
       spectra = fft(spectra); % fft operates on each of the columns
-      spectra = fftshift(spectra,1);
-      spectra = fftshift(spectra,2);
+      spectra = fftshift(spectra, 1);
+      spectra = fftshift(spectra, 2);
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         discard = (1.0 - (os_factor.de/os_factor.nu))/2.0;
@@ -62,8 +62,8 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
           FFFF = [FFFF; FN(:,chan)];
       end
       FFFF = [FFFF; FN(1:FN_width/2,1)]; % lower half of chan 1 is last part of FFFF
-
     	% back transform
       out(i_pol, 1, out_step_s:out_step_e) = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);  % re-scale by OS factor
+      % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end
 end

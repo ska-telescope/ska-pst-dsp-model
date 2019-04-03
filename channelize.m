@@ -1,4 +1,4 @@
-function channelize (input_file_path, channels, os_factor_str, fir_filter_path, output_dir, output_file_name, verbose_)
+function channelize (varargin)
   % This function is meant to be used as a stand alone executable.
   % It takes as input a DADA dump file, and channelizes it.
   % @method channelize
@@ -12,15 +12,25 @@ function channelize (input_file_path, channels, os_factor_str, fir_filter_path, 
   % @param {string} verbose_ -  Optional verbosity flag.
   % @param {string} - output_file_name - The name of the output dada file.
 
-  verbose = 0;
-  if exist('verbose_', 'var')
-    if ~isnumeric(verbose_)
-      verbose_ = str2num(verbose_);
-    end
-    verbose = verbose_;
-  end
+  p = inputParser;
+  validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x > 0);
+  addRequired(p,'input_file_path', @ischar);
+  addRequired(p,'channels', @ischar);
+  addRequired(p,'os_factor_str', @ischar);
+  addRequired(p,'fir_filter_path', @ischar);
+  addRequired(p,'output_file_name', @ischar);
+  addOptional(p,'output_dir', './', @ischar);
+  addOptional(p,'verbose', '0', @ischar);
 
-  channels = str2num(channels);
+  parse(p, varargin{:});
+
+  input_file_path = p.Results.input_file_path;
+  channels = str2num(p.Results.channels);
+  os_factor_str = p.Results.os_factor_str;
+  fir_filter_path = p.Results.fir_filter_path;
+  output_dir = p.Results.output_dir;
+  output_file_name = p.Results.output_file_name;
+  verbose = str2num(p.Results.verbose);
 
   % get the oversampling factor, and load into os_factor struct
   os_factor_split = split(os_factor_str, '/');
@@ -56,6 +66,7 @@ function channelize (input_file_path, channels, os_factor_str, fir_filter_path, 
   input_tsamp = str2num(input_header('TSAMP'));
   channelized_header('TSAMP') = num2str(normalize(os_factor, input_tsamp) * channels);
   channelized_header('PFB_DC_CHAN') = '1';
+  channelized_header('NCHAN_PFB_0') = num2str(channels);
   channelized_header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
   add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
 

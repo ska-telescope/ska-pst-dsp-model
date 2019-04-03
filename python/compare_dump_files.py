@@ -1,10 +1,8 @@
 import argparse
 import typing
 import logging
-# import sys
-# import os
+import os
 
-# sys.path.insert(0, os.path.join(os.path.expanduser("~"), "ska/comparator"))
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -40,12 +38,46 @@ def _parse_dim(dim_info: str) -> list:
     return dim
 
 
+dtype_map = {
+    "f32": np.float32,
+    "f64": np.float64,
+    "c64": np.complex64,
+    "c128": np.complex128
+}
+
+
+def load_binary_data(file_path: str,
+                     dtype: np.dtype, offset: int = 0) -> np.ndarray:
+    with open(file_path, "rb") as f:
+        buffer = f.read()
+    data = np.frombuffer(buffer, dtype=dtype, offset=offset)
+    return data
+
+
+def load_n_chop_binary(
+    *file_paths: typing.Tuple[str],
+    dtype: np.dtype = None,
+    offset: int = 0
+):
+    module_logger.debug((f"load_n_chop_binary: loading data from "
+                         f"{len(file_paths)} files"))
+
+    data = [load_binary_data(f, dtype=dtype, offset=offset)
+            for f in file_paths]
+
+    min_dat = np.amin([d.shape[0] for d in data])
+    data = [d.data[:min_dat] for d in data]
+    return data
+
+
 def load_n_chop(
     *file_paths: typing.Tuple[str],
     pol: list = None,
     chan: list = None,
     dat: list = None
 ):
+    module_logger.debug((f"load_n_chop: loading data from "
+                         f"{len(file_paths)} files"))
     dada_files = [pfb.formats.DADAFile(f).load_data() for f in file_paths]
     pol = _process_dim(pol)
     chan = _process_dim(chan)
@@ -56,6 +88,7 @@ def load_n_chop(
 
     min_dat = np.amin([d.ndat for d in dada_files])
     data = [d.data[:min_dat, :, :] for d in dada_files]
+    data = [d[dat, chan, pol].flatten() for d in data]
     return data, dada_files
 
 
@@ -68,23 +101,37 @@ def compare_dump_files(
     normalize: bool = False,
     freq_domain: bool = True,
     time_domain: list = None,
-    comp: comparator.MultiDomainComparator = None
+    comp: comparator.MultiDomainComparator = None,
+    dtype: np.dtype = None,
+    offset: int = 0
 ):
-    data = load_n_chop(*file_paths, pol, chan, dat)[0]
-    data_slice = [d[dat, chan, pol].flatten() for d in data]
+    module_logger.debug((f"compare_dump_files: time_domain: {time_domain}, "
+                         f"freq_domain: {freq_domain}"))
+
+    if dtype is not None:
+        data_slice = load_n_chop_binary(
+            *file_paths, dtype=dtype, offset=offset)
+    else:
+        data_slice = load_n_chop(
+            *file_paths, pol=pol, chan=chan, dat=dat)[0]
 
     if normalize:
-        data_slice = [d/np.amax(d) for d in data_slice]
+        module_logger.debug("compare_dump_files: normalizing data")
+        data_slice = [d/np.amax(np.abs(d)) for d in data_slice]
 
     if fft_size is None:
         fft_size = len(data_slice[0])
 
     if comp is None:
-        comp = comparator.TimeFreqDomainComparator()
+        module_logger.debug("compare_dump_files: creating default comparator")
+        # comp = comparator.TimeFreqDomainComparator()
+        comp = comparator.MultiDomainComparator(domains={
+            "time": comparator.SingleDomainComparator("time"),
+            "freq": comparator.FrequencyDomainComparator()
+        })
         comp.freq.domain = [0, fft_size]
         if time_domain is not None:
             comp.time.domain = time_domain
-        # comp.time.domain = [0, 100]  # for plotting speed
 
         comp.operators["this"] = lambda a: a
         comp.operators["diff"] = lambda a, b: np.abs(a - b)
@@ -93,14 +140,16 @@ def compare_dump_files(
         comp.products["mean"] = lambda a: np.mean(a)
         comp.products["sum"] = lambda a: np.sum(a)
 
+    file_names = [os.path.basename(f) for f in file_paths]
+
     if freq_domain:
-        res_op, res_prod = comp.freq.cartesian(*data_slice)
+        res_op, res_prod = comp.freq.cartesian(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
         comparator.util.plot_operator_result(res_op)
 
     if time_domain is not None:
-        res_op, res_prod = comp.time.cartesian(*data_slice)
+        res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
         comparator.util.plot_operator_result(res_op)
@@ -123,6 +172,7 @@ def create_parser():
                         dest="fft_size", type=int, required=False)
 
     parser.add_argument("-t", "--time_domain",
+                        nargs="*",
                         type=str, required=False,
                         default=None,
                         dest="time_domain")
@@ -142,6 +192,18 @@ def create_parser():
     parser.add_argument("-n", "--normalize",
                         dest="normalize", action="store_true")
 
+    parser.add_argument("-dt", "--dtype",
+                        dest="dtype", type=str, required=False,
+                        default=None,
+                        help=("Specify the data type of the binary file. "
+                              f"Available types are {list(dtype_map.keys())}"))
+
+    parser.add_argument("--offset",
+                        dest="offset", type=int, required=False,
+                        default=0,
+                        help=("Specify the data location (in bytes) in "
+                              "the binary file."))
+
     parser.add_argument("-v", "--verbose",
                         dest="verbose", action="store_true")
 
@@ -158,10 +220,16 @@ def main():
 
     time_domain = parsed.time_domain
     if time_domain is not None:
-        if time_domain == "":
+        if len(time_domain) == 0:
             time_domain = slice(0, None)
+        elif len(time_domain) == 1:
+            time_domain = [int(s) for s in time_domain[0].split(",")]
         else:
-            time_domain = [int(s) for s in time_domain.split(",")]
+            time_domain = [int(i) for i in time_domain]
+
+    dtype = parsed.dtype
+    if dtype is not None:
+        dtype = dtype_map[dtype]
 
     compare_dump_files(
         *parsed.input_file_paths,
@@ -171,7 +239,9 @@ def main():
         fft_size=parsed.fft_size,
         normalize=parsed.normalize,
         freq_domain=parsed.freq_domain,
-        time_domain=time_domain
+        time_domain=time_domain,
+        dtype=dtype,
+        offset=parsed.offset
     )
 
 

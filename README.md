@@ -40,6 +40,33 @@ me@local:/path/to/repo/python$ poetry run python compare_dump_files.py -i ./../d
 The last command will compare the the original complex sinusoid, the result
 from dspsr's inversion, and the result from the Matlab inversion implementation.
 
+Alternative usage consists of using matlab executables to generate test vectors,
+channelize data, or synthesize data on the fly.
+
+Generating a dual polarization complex sinuosoid:
+
+```bash
+./build/generate_test_vector complex_sinusoid 1000 0.01,0.5,0.1 single 1 config/default_header.json test_complex_sinusoid.dump ./ 1
+```
+
+Generating a dual polarization time domain impulse of width 50:
+
+```bash
+./build/generate_test_vector time_domain_impulse 1000 0.01,50 single 2 config/default_header.json test_time_domain_impulse.dump ./ 1
+```
+
+Channelizing some data:
+
+```bash
+./build/channelize ./data/test_vectors/time/o-0.010_w-1.000/time_domain_impulse.dump 8 8/7 config/OS_Prototype_FIR_8.mat test.channelized.time_domain_impulse.dump ./data/test_vectors/time/o-0.010_w-1.000/ 1
+```
+
+Synthesizing data:
+
+```bash
+./build/synthesize ./data/test_vectors/time/o-0.010_w-1.000/polyphase_analysis_alt.time_domain_impulse.dump 16384 test_synthesis.dump ./data/test_vectors/time/o-0.010_w-1.000/ 1
+```
+
 
 The following is a list of the files in the repo, and a brief description
 of what they do.

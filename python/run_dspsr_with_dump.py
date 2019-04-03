@@ -30,6 +30,7 @@ def run_dspsr_with_dump(file_path: str,
                         period: float,
                         output_dir: str = None,
                         output_file_name: str = None,
+                        dump_stage: str = "Detection",
                         extra_args: str = None) -> typing.Tuple[str]:
 
     file_dir = os.path.dirname(file_path)
@@ -45,21 +46,25 @@ def run_dspsr_with_dump(file_path: str,
     if extra_args is None:
         extra_args = ""
 
+    dump_stage = dump_stage.capitalize()
+
     output_ar = os.path.join(output_dir, file_name_base)
     output_dump = os.path.join(
-        output_dir, f"pre_Detection.{file_name_base}.dump")
+        output_dir, f"pre_{dump_stage}.{file_name_base}.dump")
     output_log = os.path.join(
         output_dir, f"{file_name_base}.log")
 
+    module_logger.debug((f"run_dspsr_with_dump: "
+                         f"dumping after {dump_stage} operation"))
     module_logger.debug(f"run_dspsr_with_dump: output archive: {output_ar}")
     module_logger.debug(f"run_dspsr_with_dump: output dump: {output_dump}")
     module_logger.debug(f"run_dspsr_with_dump: output log: {output_log}")
     dspsr_cmd_str = (f"dspsr -c {period} -D {dm} {file_path} "
-                     f"-O {output_ar} -dump Detection {extra_args}")
+                     f"-O {output_ar} -dump {dump_stage} {extra_args}")
 
     module_logger.debug(f"run_dspsr_with_dump: dspsr command: {dspsr_cmd_str}")
 
-    after_cmd_str = f"mv pre_Detection.dump {output_dump}"
+    after_cmd_str = f"mv pre_{dump_stage}.dump {output_dump}"
 
     # cleanup_cmd_str = "rm *.dat"
 
@@ -94,6 +99,10 @@ def create_parser():
                         dest="extra_args",
                         required=False)
 
+    parser.add_argument("--dump-stage",
+                        default="Detection",
+                        dest="dump_stage", required=False)
+
     parser.add_argument("-od", "--output-dir",
                         dest="output_dir",
                         type=str,
@@ -115,6 +124,7 @@ if __name__ == '__main__':
         parsed.input_file_path,
         pulsar_params["dm"],
         pulsar_params["period"],
+        dump_stage=parsed.dump_stage,
         output_dir=parsed.output_dir,
         extra_args=parsed.extra_args
     )

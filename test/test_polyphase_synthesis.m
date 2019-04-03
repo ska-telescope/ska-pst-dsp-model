@@ -8,11 +8,14 @@ function test_polyphase_synthesis ()
     n_chan = 8;
     n_dat = 16384;
     test_vector = rand(n_pol, n_chan, n_dat);
-
+    % test_vector = reshape(1:n_pol*n_chan*n_dat, n_pol, n_chan, n_dat);
     out = polyphase_synthesis(test_vector, input_fft_length, os_factor);
     out_alt = polyphase_synthesis_alt(test_vector, input_fft_length, os_factor);
-    diff = abs(out - out_alt);
-    sum(diff(:))
+    diff_real = abs(real(out) - real(out_alt));
+    sum(diff_real(:))
+    diff_imag = abs(imag(out) - imag(out_alt));
+    sum(diff_imag(:))
+
 
     ax = subplot(311);
     plot(abs(reshape(out, numel(out), 1)));
@@ -24,14 +27,13 @@ function test_polyphase_synthesis ()
     title('Inversion, method 2')
     grid(ax, 'on');
 
+
     ax = subplot(313);
-    plot(abs(reshape(diff, numel(diff), 1)));
-    title('Difference')
+    plot(abs(reshape(diff_real, numel(diff_real), 1)));
+    title('Difference (Real component)')
     grid(ax, 'on');
 
     saveas(gcf, 'products/test_polyphase_synthesis.png');
-
-
   end
 
   function test_simulated_pulsar_data ()
@@ -55,6 +57,13 @@ function test_polyphase_synthesis ()
     fclose(file_id);
 
     inverted = polyphase_synthesis(data, input_fft_length, os_factor);
+    inverted_alt = polyphase_synthesis_alt(data, input_fft_length, os_factor);
+
+    diff_real = abs(real(inverted) - real(inverted_alt));
+    sum(diff_real(:))
+    diff_imag = abs(imag(inverted) - imag(inverted_alt));
+    sum(diff_imag(:))
+
 
     ax = subplot(211);
     plot(abs(reshape(inverted, numel(inverted), 1)));
@@ -71,6 +80,6 @@ function test_polyphase_synthesis ()
   end
 
   test_polyphase_synthesis_;
-  % test_simulated_pulsar_data;
+  test_simulated_pulsar_data;
 
 end

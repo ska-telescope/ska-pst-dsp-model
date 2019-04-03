@@ -23,8 +23,16 @@ function file_info = test_data_pipeline(...
 
   impulse_data = test_vector_handler(n_bins, test_vector_handler_args{:}, dtype);
   input_data = complex(zeros(2, 1, n_bins, 'single'));
-  input_data(1, 1, :) = impulse_data;
-  input_data(2, 1, :) = impulse_data;
+  input_data(1, 1, :) = impulse_data(:);
+  input_data(2, 1, :) = impulse_data(:);
+
+  % input_data_flattened = reshape(input_data, 1, numel(input_data));
+  % k = find(input_data_flattened)
+
+  % plot(real(reshape(impulse_data, numel(impulse_data), 1)))
+  % ax = subplot(311); plot(real(squeeze(input_data(1, 1, :)))); grid(ax, 'on');
+  % ax = subplot(312); plot(real(squeeze(input_data(2, 1, :)))); grid(ax, 'on');
+  % ax = subplot(313); plot(abs(input_data_flattened)); grid(ax, 'off');
   input_header = default_header;
 
   % save data
@@ -39,6 +47,7 @@ function file_info = test_data_pipeline(...
   channelized_header('TSAMP') = num2str(n_chan*normalize(os_factor, input_tsamp));
   channelized_header('OS_FACTOR') = os_factor_str;
   channelized_header('PFB_DC_CHAN') = '1';
+  channelized_header('NCHAN_PFB_0') = num2str(n_chan);
 
   % save channelized data
   channelized_data_file_name = sprintf('%s.%s', func2str(analysis_handler), input_data_file_name);

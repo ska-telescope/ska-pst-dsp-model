@@ -2,6 +2,7 @@
 *.png
 *.log
 *.ar
+*.dat
 deprecated/
 python/__pycache__
 data/test_vectors/
