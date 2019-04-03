@@ -23,6 +23,11 @@ input_params_map = {
     "o": "offset"
 }
 
+key_map = {
+    "time": "impulse_position",
+    "freq": "freq_position"
+}
+
 
 def get_input_params_from_subdir(sub_dir: str) -> dict:
     """
@@ -102,11 +107,12 @@ def process_single_dir(sub_dir: str,
 def process_test_vectors(*args: tuple,
                          fft_size: int = 16384,
                          pulsar_params: dict = None,
-                         dump_stage: str = "Convolution"):
+                         dump_stage: str = "Convolution",
+                         plot: bool = True):
     figsize = (16, 9)
     comp = comparator.MultiDomainComparator(domains={
-        # "time": comparator.SingleDomainComparator("time"),
-        "time": comparator.TimeDomainComparator(),
+        "time": comparator.SingleDomainComparator("time"),
+        # "time": comparator.TimeDomainComparator(),
         "freq": comparator.FrequencyDomainComparator()
     })
     comp.freq.domain = [0, fft_size]
@@ -119,7 +125,6 @@ def process_test_vectors(*args: tuple,
     comp.products["max"] = np.amax
     labels = ["input", "inverted", "dspsr_inverted"]
     report = {"time": [], "freq": []}
-    key_map = {"time": "impulse_position", "freq": "freq_position"}
     for domain_dir, sub_dir in iter_test_vectors(*args):
         key = key_map[domain_dir]
         meta_data = process_single_dir(
@@ -134,10 +139,11 @@ def process_test_vectors(*args: tuple,
         report[domain_dir].append({})
         for res_key in res:
             res_op, res_prod = res[res_key]
-            figs, axes = comparator.util.plot_operator_result(
-                res_op, figsize=figsize)
-            for i, fig in enumerate(figs):
-                fig.savefig(os.path.join(sub_dir, f"{res_key}.{i}.png"))
+            if plot:
+                figs, axes = comparator.util.plot_operator_result(
+                    res_op, figsize=figsize)
+                for i, fig in enumerate(figs):
+                    fig.savefig(os.path.join(sub_dir, f"{res_key}.{i}.png"))
             module_logger.debug((f"process_test_vectors: {sub_dir} max "
                                  f"products: {res_prod['this']['max']}"))
             module_logger.debug((f"process_test_vectors: {sub_dir} argmax "
@@ -155,13 +161,49 @@ def process_test_vectors(*args: tuple,
     return report
 
 
-# def create_report_plot(report):
-#
-#     for domain_name in report:
-#         domain_report = report[domain_name]
-#         x = []
-#         y_inverted = []
-#         y_dspsr_inverted = []
+def create_report_plot(report):
+
+    for domain_name in report:
+        domain_report = report[domain_name]
+        dat = [
+            (float(d["time"][key_map[domain_name]]),
+             d["time"]["diff"][1][2],
+             d["freq"]["diff"][1][2]) for d in domain_report
+        ]
+        dat.sort(key=lambda x: x[0])
+        dat = list(zip(*dat))
+
+        fig, axes = plt.subplots(2, 2)
+        fig.suptitle(f"Comparison of {domain_name} domain test vectors")
+        ax = fig.add_subplot(111, frameon=False)
+        plt.tick_params(
+            labelcolor="none",
+            top=False,
+            bottom=False,
+            left=False,
+            right=False
+        )
+        ax.set_xlabel("Impulse position as percentage of ndat")
+        ax.set_ylabel("Numerical difference")
+        axes[0, 0].plot(dat[0], [d[0] for d in dat[1]])
+        axes[0, 0].set_title("Time domain comparison: real component")
+        axes[0, 0].grid(True)
+
+        axes[0, 1].plot(dat[0], [d[1] for d in dat[1]])
+        axes[0, 1].set_title("Time domain comparison: imaginary component")
+        axes[0, 1].grid(True)
+
+        axes[1, 0].plot(dat[0], [d[0] for d in dat[2]])
+        axes[1, 0].set_title("Frequency domain comparison: magnitude")
+        axes[1, 0].grid(True)
+
+        axes[1, 1].plot(dat[0], [d[1] for d in dat[2]])
+        axes[1, 1].set_title("Frequency domain comparison: phase")
+        axes[1, 1].grid(True)
+        fig.savefig(
+            os.path.join(product_dir, f"{domain_name}.comparison.png"))
+
+    plt.show()
 
 
 def create_parser():
@@ -177,6 +219,9 @@ def create_parser():
     parser.add_argument("-fft", "--fft_size",
                         dest="fft_size", type=int,
                         required=False, default=16384)
+
+    parser.add_argument("-pl", "--plot",
+                        dest="plot", action="store_true")
 
     parser.add_argument("-v", "--verbose",
                         dest="verbose", action="store_true")
@@ -198,10 +243,13 @@ def main():
         parsed.base_dir,
         fft_size=parsed.fft_size,
         pulsar_params=pulsar_params,
-        dump_stage="Convolution"
+        dump_stage="Convolution",
+        plot=parsed.plot
     )
-    with open('./../products/report.json', 'w') as f:
+    with open(os.path.join(product_dir, "report.json"), "w") as f:
         json.dump(report, f, cls=comparator.util.NumpyEncoder)
+        
+    create_report_plot(report)
 
 
 if __name__ == "__main__":
