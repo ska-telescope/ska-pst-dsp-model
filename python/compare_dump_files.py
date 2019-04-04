@@ -98,6 +98,7 @@ def compare_dump_files(
     chan: list = None,
     dat: list = None,
     fft_size: int = None,
+    fft_offset: int = 0,
     normalize: bool = False,
     freq_domain: bool = True,
     time_domain: list = None,
@@ -114,13 +115,14 @@ def compare_dump_files(
     else:
         data_slice = load_n_chop(
             *file_paths, pol=pol, chan=chan, dat=dat)[0]
-
+    
     if normalize:
         module_logger.debug("compare_dump_files: normalizing data")
         data_slice = [d/np.amax(np.abs(d)) for d in data_slice]
 
     if fft_size is None:
         fft_size = len(data_slice[0])
+        fft_offset = 0
 
     if comp is None:
         module_logger.debug("compare_dump_files: creating default comparator")
@@ -129,7 +131,8 @@ def compare_dump_files(
             "time": comparator.SingleDomainComparator("time"),
             "freq": comparator.FrequencyDomainComparator()
         })
-        comp.freq.domain = [0, fft_size]
+        comp.freq.domain = [fft_offset, fft_size+fft_offset]
+        print(comp.freq._operation_domain)
         if time_domain is not None:
             comp.time.domain = time_domain
 
@@ -143,12 +146,16 @@ def compare_dump_files(
     file_names = [os.path.basename(f) for f in file_paths]
 
     if freq_domain:
-        res_op, res_prod = comp.freq.cartesian(*data_slice, labels=file_names)
+        module_logger.info(
+            "compare_dump_files: doing frequency domain comparison")
+        res_op, res_prod = comp.freq.polar(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
         comparator.util.plot_operator_result(res_op)
 
     if time_domain is not None:
+        module_logger.info(
+            "compare_dump_files: doing time domain comparison")
         res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
@@ -170,6 +177,9 @@ def create_parser():
 
     parser.add_argument("-fft", "--fft_size",
                         dest="fft_size", type=int, required=False)
+
+    parser.add_argument("--fft_offset",
+                        dest="fft_offset", type=int, required=False)
 
     parser.add_argument("-t", "--time_domain",
                         nargs="*",
@@ -237,6 +247,7 @@ def main():
         chan=_parse_dim(parsed.chan),
         dat=_parse_dim(parsed.dat),
         fft_size=parsed.fft_size,
+        fft_offset=parsed.fft_offset,
         normalize=parsed.normalize,
         freq_domain=parsed.freq_domain,
         time_domain=time_domain,

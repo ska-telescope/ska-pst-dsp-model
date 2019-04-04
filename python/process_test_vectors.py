@@ -10,11 +10,11 @@ import comparator
 from run_dspsr_with_dump import run_dspsr_with_dump, load_pulsar_params
 from iter_test_vectors import iter_test_vectors
 from compare_dump_files import load_n_chop
+from data_gen import (
+    generate_test_vector, channelize, synthesize, meta_data_file_name)
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 product_dir = os.path.join(os.path.dirname(cur_dir), "products")
-
-meta_data_file_name = "meta.json"
 
 module_logger = logging.getLogger(__name__)
 
@@ -236,9 +236,9 @@ def main():
         level = logging.DEBUG
     logging.basicConfig(level=level)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
+    # generate_test_vector("time", n_pol=2)(1000, 0.1, 1, np.float32)
     pulsar_params = load_pulsar_params()
-    # for domain_dir, sub_dir in iter_test_vectors(parsed.base_dir):
-    #     get_input_params_from_subdir(sub_dir)
+
     report = process_test_vectors(
         parsed.base_dir,
         fft_size=parsed.fft_size,
@@ -248,7 +248,7 @@ def main():
     )
     with open(os.path.join(product_dir, "report.json"), "w") as f:
         json.dump(report, f, cls=comparator.util.NumpyEncoder)
-        
+
     create_report_plot(report)
 
 
