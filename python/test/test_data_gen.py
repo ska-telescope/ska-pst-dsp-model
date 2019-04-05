@@ -4,7 +4,10 @@ import os
 
 import numpy as np
 
-from data_gen import generate_test_vector
+from data_gen import generate_test_vector, channelize, synthesize
+
+test_dir = os.path.dirname(os.path.abspath(__file__))
+test_data_dir = os.path.join(test_dir, "test_data")
 
 
 class TestDataGen(unittest.TestCase):
@@ -20,6 +23,11 @@ class TestDataGen(unittest.TestCase):
                               output_dir="./",
                               output_file_name="complex_sinusoid.dump",
                               dtype=np.complex64)
+
+    channelized_data_file_path = os.path.join(
+        test_data_dir, "polyphase_analysis_alt.complex_sinusoid.dump")
+    channelizer_input_data_file_path = os.path.join(
+        test_data_dir, "complex_sinusoid.dump")
 
     @classmethod
     def setUpClass(cls):
@@ -67,6 +75,30 @@ class TestDataGen(unittest.TestCase):
 
         self.time_domain_kwargs["output_file_name"] = original_val
         self.__class__.file_paths.append(dada_file.file_path)
+
+    def test_channelize_matlab(self):
+
+        channelizer = channelize(backend="matlab")
+        dada_file = channelizer(
+            self.channelizer_input_data_file_path, 8, "8/7")
+
+        print(dada_file.file_path)
+
+    @unittest.skip("")
+    def test_channelize_python(self):
+        pass
+
+    # @unittest.skip("")
+    def test_synthesize_matlab(self):
+        synthesizer = synthesize(backend="matlab")
+        dada_file = synthesizer(
+            self.channelized_data_file_path, 512)
+        print(dada_file.file_path)
+
+    @unittest.skip("")
+    def test_synthesize_python(self):
+        pass
+
 
     @classmethod
     def tearDownClass(cls):

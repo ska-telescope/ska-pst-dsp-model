@@ -219,75 +219,91 @@ def generate_test_vector(backend="matlab"):
     return _generate_test_vector
 
 
-def channelize(output_file_name: str = None,
-               output_dir: str = "./",
-               backend="matlab"):
+def channelize(backend="matlab"):
+    """
+    Sample Matlab command line call
+    ./build/channelize single_channel.dump 8 8/7 \
+        config/OS_Prototype_FIR_8.mat channelized_data.dump ./ 1
+    """
 
-    if backend == "matlab":
+    def _channelize(input_data_file_path: str,
+                    channels: int,
+                    os_factor_str: str,
+                    fir_filter_path: str = None,
+                    output_file_name: str = None,
+                    output_dir: str = "./",):
+
+        if fir_filter_path is None:
+            fir_filter_path = os.path.join(
+                config_dir, config["fir_filter_coeff_file_path"])
+
         matlab_cmd_str = "channelize"
 
-        def _channelize(input_data_file_path,
-                        channels, os_factor_str, fir_filter_path):
-            """
-            ./build/channelize single_channel.dump 8 8/7 \
-                config/OS_Prototype_FIR_8.mat channelized_data.dump ./ 1
-            """
-            _output_file_name = output_file_name
-            output_base = (f"{matlab_cmd_str}.{channels}."
-                           f"{'-'.join(os_factor_str.split('/'))}")
+        output_base = (f"{matlab_cmd_str}.{channels}."
+                       f"{'-'.join(os_factor_str.split('/'))}")
 
-            output_base, log_file_name, _output_file_name = \
-                _create_output_file_names(_output_file_name, output_base)
+        output_base, log_file_name, output_file_name = \
+            _create_output_file_names(output_file_name, output_base)
+
+        if backend == "matlab":
 
             cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                        f"{input_data_file_path} "
-                       f"{channels} {os_factor_str} {fir_filter_path}"
-                       f"{_output_file_name} {output_dir} 1")
+                       f"{channels} {os_factor_str} {fir_filter_path} "
+                       f"{output_file_name} {output_dir} 1")
+
             module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
 
             _run_cmd(cmd_str, log_file_path=os.path.join(
                 output_dir, log_file_name))
-            return os.path.join(output_dir, output_file_name)
 
-    elif backend == "python":
-        def _channelize(channels, os_factor_str, fir_filter_path):
+            return pfb.formats.DADAFile(
+                os.path.join(output_dir, output_file_name)).load_data()
+
+        elif backend == "python":
             raise NotImplementedError(("channelize not "
                                        "implemented in Python"))
 
     return _channelize
 
 
-def synthesize(output_file_name: str = None,
-               output_dir: str = "./",
-               backend="matlab"):
-    if backend == "matlab":
+def synthesize(backend="matlab"):
+    """
+    Sample Matlab command:
+
+    .. code-block:: bash
+        ./build/synthesize \
+            channelized_data.dump \
+            16384 test_synthesis.dump ./ 1
+    """
+    def _synthesize(input_data_file_path,
+                    input_fft_length,
+                    output_file_name: str = None,
+                    output_dir: str = "./",):
+        """
+
+        """
         matlab_cmd_str = "synthesize"
+        output_base = (f"{matlab_cmd_str}.{input_fft_length}")
 
-        def _synthesize(input_data_file_path, input_fft_length):
-            """
-            ./build/synthesize \
-                channelized_data.dump \
-                16384 test_synthesis.dump ./ 1
-            """
-            _output_file_name = output_file_name
-            output_base = (f"{matlab_cmd_str}.{input_fft_length}."
-                           f"{'-'.join(os_factor_str.split('/'))}")
+        output_base, log_file_name, output_file_name = \
+            _create_output_file_names(output_file_name, output_base)
 
-            output_base, log_file_name, output_file_name = \
-                _create_output_file_names(_output_file_name, output_base)
+        if backend == "matlab":
 
             cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                        f"{input_data_file_path} "
-                       f"{input_fft_length}"
-                       f"{_output_file_name} {output_dir} 1")
+                       f"{input_fft_length} "
+                       f"{output_file_name} {output_dir} 1")
+
             module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
 
             _run_cmd(cmd_str, log_file_path=os.path.join(
                 output_dir, log_file_name))
-            return os.path.join(output_dir, output_file_name)
+            return pfb.formats.DADAFile(
+                os.path.join(output_dir, output_file_name)).load_data()
 
-    elif backend == "python":
-        def _synthesize(input_fft_length):
+        elif backend == "python":
             raise NotImplementedError(("synthesize not "
                                        "implemented in Python"))
 
