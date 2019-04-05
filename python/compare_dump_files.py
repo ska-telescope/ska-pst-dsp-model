@@ -5,6 +5,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.signal
 
 import pfb.formats
 import comparator
@@ -13,6 +14,9 @@ __all__ = [
     "load_n_chop",
     "compare_dump_files"
 ]
+
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+products_dir = os.path.join(os.path.dirname(cur_dir), "products")
 
 module_logger = logging.getLogger(__name__)
 
@@ -104,10 +108,16 @@ def compare_dump_files(
     time_domain: list = None,
     comp: comparator.MultiDomainComparator = None,
     dtype: np.dtype = None,
-    offset: int = 0
+    offset: int = 0,
+    save_plots: bool = False,
+    plot_file_name_base: str = "",
+    plot_output_dir: str = None
 ):
     module_logger.debug((f"compare_dump_files: time_domain: {time_domain}, "
                          f"freq_domain: {freq_domain}"))
+
+    if plot_output_dir is None:
+        plot_output_dir = products_dir
 
     if dtype is not None:
         data_slice = load_n_chop_binary(
@@ -115,7 +125,7 @@ def compare_dump_files(
     else:
         data_slice = load_n_chop(
             *file_paths, pol=pol, chan=chan, dat=dat)[0]
-    
+
     if normalize:
         module_logger.debug("compare_dump_files: normalizing data")
         data_slice = [d/np.amax(np.abs(d)) for d in data_slice]
@@ -138,20 +148,24 @@ def compare_dump_files(
 
         comp.operators["this"] = lambda a: a
         comp.operators["diff"] = lambda a, b: np.abs(a - b)
+        comp.operators["xcorr"] = lambda a, b: \
+            scipy.signal.fftconvolve(a, b[::-1], mode="full")
+        # comp.operators["xcorr"] = lambda a, b: np.correlate(a, b, mode="full")
 
         comp.products["argmax"] = lambda a: np.argmax(a)
         comp.products["mean"] = lambda a: np.mean(a)
         comp.products["sum"] = lambda a: np.sum(a)
 
     file_names = [os.path.basename(f) for f in file_paths]
-
+    figs = []
     if freq_domain:
         module_logger.info(
             "compare_dump_files: doing frequency domain comparison")
         res_op, res_prod = comp.freq.polar(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
-        comparator.util.plot_operator_result(res_op)
+        f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
+        figs.extend(f)
 
     if time_domain is not None:
         module_logger.info(
@@ -159,9 +173,17 @@ def compare_dump_files(
         res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
         print(res_prod["this"])
         print(res_prod["diff"])
-        comparator.util.plot_operator_result(res_op)
+        f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
+        figs.extend(f)
 
     if time_domain or freq_domain:
+        if save_plots:
+            if plot_file_name_base != "":
+                plot_file_name_base = f"{plot_file_name_base}."
+            for i in range(len(figs)):
+                file_name = f"compare_dump_files.{plot_file_name_base}{i}.png"
+                file_path = os.path.join(plot_output_dir, file_name)
+                figs[i].savefig(file_path)
         plt.show()
 
 
@@ -217,6 +239,14 @@ def create_parser():
     parser.add_argument("-v", "--verbose",
                         dest="verbose", action="store_true")
 
+    parser.add_argument("-sp", "--save_plots",
+                        dest="save_plots", action="store_true")
+
+    parser.add_argument("--plot_file_name_base",
+                        dest="plot_file_name_base", type=str, required=False,
+                        default="",
+                        help="Specify the plot file base name")
+
     return parser
 
 
@@ -252,7 +282,9 @@ def main():
         freq_domain=parsed.freq_domain,
         time_domain=time_domain,
         dtype=dtype,
-        offset=parsed.offset
+        offset=parsed.offset,
+        save_plots=parsed.save_plots,
+        plot_file_name_base=parsed.plot_file_name_base
     )
 
 

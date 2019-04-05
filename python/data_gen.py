@@ -269,7 +269,7 @@ class DataVectorProducer:
             test_vector_args.pop(0)
             for i, v in enumerate(vector_params):
                 test_vector_args.insert(i+1, v)
-                
+
             input_file_path = f(*test_vector_args)
 
             f = channelize(output_dir=output_dir)
