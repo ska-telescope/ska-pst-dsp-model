@@ -1,6 +1,6 @@
 # data_gen.py
-# generate impulses, and complex sinusoids. Channelize data, and synthesized
-# chanenlized data.
+# generate impulses, and complex sinusoids.
+# Channelize data, and synthesize channelized data.
 import os
 import typing
 import subprocess
@@ -9,33 +9,36 @@ import json
 import logging
 
 import numpy as np
+import pfb.formats
+
+from config import load_config
 
 __all__ = [
     "generate_test_vector",
     "channelize",
     "synthesize",
-    "meta_data_file_name"
+    "meta_data_file_name",
+    "complex_sinusoid",
+    "time_domain_impulse"
 ]
 
 module_logger = logging.getLogger(__name__)
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(os.path.dirname(cur_dir), "build")
 config_dir = os.path.join(os.path.dirname(cur_dir), "config")
-
-matlab_domain_name_map = {
-    "time": "time_domain_impulse",
-    "freq": "complex_sinusoid"
-}
+config = load_config()
 
 matlab_dtype_lookup = {
     np.float32: "single",
-    np.float64: "double"
+    np.float64: "double",
+    np.complex64: "single",
+    np.complex128: "double"
 }
 
 meta_data_file_name = "meta.json"
 
 
-def _run_cmd(cmd_str, log_file_path=None):
+def _run_cmd(cmd_str: str, log_file_path: str = None):
 
     cmd_split = shlex.split(cmd_str)
     if log_file_path is not None:
@@ -63,53 +66,155 @@ def _create_output_file_names(output_file_name, default_base):
     return output_base, log_file_name, output_file_name
 
 
-def generate_test_vector(domain_name,
-                         header_template: str = None,
-                         output_file_name: str = None,
-                         output_dir: str = "./",
-                         n_pol: int = 1,
-                         backend="matlab") -> typing.Callable:
+def complex_sinusoid(n: int,
+                     freqs: typing.List[float],
+                     phases: typing.List[float],
+                     bin_offset: float = 0.0,
+                     dtype: np.dtype = np.complex64):
+    """
+    Generate a complex sinusoid of length n.
+    The sinusoid will be comprised of len(freq) frequencies. Each composite
+    sinusoid will have a corresponding phase shift from phasesself.
+    Frequencies should be expressed as a fraction of `n`
+    """
+    if not hasattr(freqs, "__iter__"):
+        freqs = [freqs]
+        phases = [phases]
+
+    t = np.arange(n)
+    sig = np.zeros(n, dtype=dtype)
+    for i in range(len(freqs)):
+        sig += np.exp(1j*(2*np.pi*(int(n*freqs[i]) + bin_offset)/n*t + phases[i]))
+    return sig
 
 
-    if header_template is None:
-        header_template = os.path.join(config_dir, "default_header.json")
+def time_domain_impulse(n: int,
+                        offsets: typing.List[float],
+                        widths: typing.List[int],
+                        dtype: np.dtype = np.complex64):
+    """
+    Offsets should be expressed as a fraction of `n`
+    """
+    if not hasattr(offsets, "__iter__"):
+        offsets = [offsets]
+        widths = [widths]
 
-    if backend == "matlab":
-        matlab_handler_name = matlab_domain_name_map[domain_name]
-        matlab_cmd_str = "generate_test_vector"
+    sig = np.zeros(n, dtype=dtype)
+    for i in range(len(offsets)):
+        offset = int(offsets[i]*n)
+        width = widths[i]
+        sig[offset: offset+width] = 1.0
+    return sig
 
-        def _generate_test_vector(n_bins, *args):
-            """
-            Sample command line use of Matlab `generate_test_vector`:
-            ```
-            generate_test_vector complex_sinusoid 1000 0.01,0.5,0.1 single 1 \
-                config/default_header.json single_channel.dump ./ 1
-            ```
-            """
-            _output_file_name = output_file_name
-            list_args = list(args)
-            dtype = matlab_dtype_lookup[list_args.pop(-1)]
-            args_str = ",".join([f"{f:.3f}" for f in list_args])
-            output_base = (f"{matlab_handler_name}.{n_bins}"
-                           f".{'-'.join(args_str.split(','))}.{dtype}")
-            output_base, log_file_name, _output_file_name = \
-                _create_output_file_names(_output_file_name, output_base)
+
+def generate_test_vector(backend="matlab"):
+    """
+    Sample Matlab command line call:
+
+    .. code-block:: bash
+
+        generate_test_vector complex_sinusoid 1000 0.01,0.5,0.1 single 1 \
+            config/default_header.json single_channel.dump ./ 1
+
+
+    Usage:
+
+    .. code-block:: python
+
+        generator = generate_test_vector("matlab")
+        dada_file = generator("freq", 1000, [10], [np.pi/4], 0.1, n_pol=2,
+                              output_dir="./",
+                              output_file_name="complex_sinusoid.dump",
+                              dtype=np.complex64)
+
+        generator = generate_test_vector("python")
+        dada_file = generator("freq", 1000, [10], [np.pi/4], 0.1, n_pol=2,
+                              output_dir="./",
+                              output_file_name="complex_sinusoid.dump",
+                              dtype=np.complex64)
+
+    Args:
+        backend (str): Whether use Matlab or Python
+    """
+
+    def _generate_test_vector(domain_name,
+                              n_bins,
+                              *args,
+                              header_template: str = None,
+                              output_file_name: str = None,
+                              output_dir: str = "./",
+                              n_pol: int = 1,
+                              dtype: np.dtype = np.complex64):
+
+        if header_template is None:
+            header_template = os.path.join(
+                config_dir, config["header_file_path"])
+
+        output_base_template = ("{{func_name}}.{n_bins}.{args}."
+                                "{n_pol}.{dtype}.{backend}")
+
+        args_str = "-".join([f"{f:.3f}" for f in args])
+
+        matlab_dtype_str = matlab_dtype_lookup[dtype]
+
+        output_base = output_base_template.format(
+            n_bins=n_bins,
+            args=args_str,
+            n_pol=n_pol,
+            dtype=matlab_dtype_str,
+            backend=backend
+        )
+        args_str = ",".join([f"{f:.3f}" for f in args])
+
+        if backend == "matlab":
+            matlab_domain_name_map = {
+                "time": "time_domain_impulse",
+                "freq": "complex_sinusoid"
+            }
+            matlab_cmd_str = "generate_test_vector"
+            matlab_handler_name = matlab_domain_name_map[domain_name]
+
+            output_base = output_base.format(func_name=matlab_handler_name)
+
+            output_base, log_file_name, output_file_name = \
+                _create_output_file_names(output_file_name, output_base)
+
             cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                        f"{matlab_handler_name} {n_bins} "
-                       f"{args_str} {dtype} {n_pol} "
-                       f"{header_template} {_output_file_name} {output_dir} 1")
+                       f"{args_str} {matlab_dtype_str} {n_pol} "
+                       f"{header_template} {output_file_name} {output_dir} 1")
 
-            module_logger.debug(f"_generate_test_vector: cmd_str={cmd_str}")
+            module_logger.debug((f"_generate_test_vector: backend={backend} "
+                                 f"cmd_str={cmd_str}"))
 
             _run_cmd(cmd_str, log_file_path=os.path.join(
                 output_dir, log_file_name))
 
-            return os.path.join(output_dir, output_file_name)
+            return pfb.formats.DADAFile(
+                os.path.join(output_dir, output_file_name)).load_data()
 
-    elif backend == "python":
-        def _generate_test_vector(n_bins, *args):
-            raise NotImplementedError(("generate_test_vector not "
-                                       "implemented in Python"))
+        elif backend == "python":
+            func_lookup = {
+                "time": time_domain_impulse,
+                "freq": complex_sinusoid
+            }
+            sig = func_lookup[domain_name](n_bins, *args, dtype=dtype)
+            output_data = np.zeros((sig.shape[0], 1, n_pol), dtype=dtype)
+            for i_pol in range(n_pol):
+                output_data[:, 0, i_pol] = sig
+
+            output_base = output_base.format(
+                func_name=func_lookup[domain_name].__name__)
+
+            output_base, log_file_name, output_file_name = \
+                _create_output_file_names(output_file_name, output_base)
+
+            dada_file = pfb.formats.DADAFile(
+                os.path.join(output_dir, output_file_name))
+
+            dada_file.data = output_data
+            dada_file.dump_data()
+            return dada_file
 
     return _generate_test_vector
 
