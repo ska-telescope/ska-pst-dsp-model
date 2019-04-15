@@ -4,5 +4,14 @@
   "os_factor": "8/7",
   "channels": 8,
   "input_fft_length": 16384,
-  "blocks": 5
+  "blocks": 5,
+  "backend": {
+    "test_vectors": "python",
+    "channelize": "python",
+    "synthesize": "matlab"
+  },
+  "n_pol": 2,
+  "dm": 2.64476,
+  "period": 0.00575745,
+  "dump_stage": "Convolution"
 }

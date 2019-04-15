@@ -3,16 +3,16 @@ BUILD_DIR=build/
 
 .PHONY: clean
 
-channelize: channelize.m
+channelize: matlab/channelize.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 
-pipeline: pipeline.m
+pipeline: matlab/pipeline.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 
-synthesize: synthesize.m
+synthesize: matlab/synthesize.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 
-generate_test_vector: generate_test_vector.m
+generate_test_vector: matlab/generate_test_vector.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 
 clean:

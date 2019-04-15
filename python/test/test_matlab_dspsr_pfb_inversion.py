@@ -82,15 +82,22 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                 n_pol=config["n_pol"],
                 header_template=header_file_path,
                 output_dir=self.output_dir)
+            channelized_file_name = "channelized." + \
+                os.path.basename(test_vector_dada_file.file_path)
+            synthesized_file_name = "synthesized." + \
+                os.path.basename(test_vector_dada_file.file_path)
+
             channelized_dada_file = self.__class__.channelizer(
                 test_vector_dada_file.file_path,
                 config["channels"],
                 config["os_factor"],
                 fir_filter_path=fir_filter_path,
+                output_file_name=channelized_file_name,
                 output_dir=self.output_dir)
             synthesized_dada_file = self.__class__.synthesizer(
                 channelized_dada_file.file_path,
                 config["input_fft_length"],
+                output_file_name=synthesized_file_name,
                 output_dir=self.output_dir)
 
             ar, dump = run_dspsr_with_dump(
@@ -106,6 +113,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                 synthesized_dada_file.data.flatten(),
                 dump.data.flatten() / self.normalize
             )
+
+            print(list(res_prod["diff"]["mean"])[0][1])
             print("{:6e}".format(res_prod["diff"]))
 
     def test_complex_sinusoid(self):
