@@ -40,6 +40,18 @@ function generate_test_vector (varargin)
   output_file_name = p.Results.output_file_name;
   verbose = str2num(p.Results.verbose);
 
+  % if verbose
+  %   fprintf('generate_test_vector: %s\n', handler_name);
+  %   fprintf('generate_test_vector: %d\n', n_bins);
+  %   fprintf('generate_test_vector: %s\n', params);
+  %   fprintf('generate_test_vector: %s\n', dtype);
+  %   fprintf('generate_test_vector: %d\n', n_pol);
+  %   fprintf('generate_test_vector: %s\n', header_template);
+  %   fprintf('generate_test_vector: %s\n', output_dir);
+  %   fprintf('generate_test_vector: %s\n', output_file_name);
+  %   fprintf('generate_test_vector: %d\n', verbose);
+  % end
+
 
   params_split = strsplit(params, ',');
   params = {};
@@ -48,7 +60,6 @@ function generate_test_vector (varargin)
   end
   params{1} = [n_bins*params{1}];
   params{2} = [params{2}];
-  % params
 
 
   json_str = fileread(header_template);
@@ -57,8 +68,9 @@ function generate_test_vector (varargin)
   output_data = complex(zeros(n_pol, 1, n_bins, dtype));
   handler = handler_map(handler_name);
   test_vector = handler(n_bins, params{:}, dtype);
-  output_data(1, 1, :) = test_vector;
-  output_data(2, 1, :) = test_vector;
+  for i_pol=1:n_pol
+    output_data(i_pol, 1, :) = test_vector;
+  end
 
   if verbose
     fprintf('generate_test_vector: saving data\n')

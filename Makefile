@@ -6,6 +6,9 @@ BUILD_DIR=build/
 channelize: channelize.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 
+pipeline: pipeline.m
+	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
+
 synthesize: synthesize.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)
 

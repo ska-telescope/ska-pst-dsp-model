@@ -96,6 +96,14 @@ def load_n_chop(
     return data, dada_files
 
 
+def correlate(a, b):
+    # print(a.shape, a.dtype)
+    # print(b.shape, b.dtype)
+    f_a = np.fft.fft(a)
+    f_b = np.fft.fft(b)
+    return f_a*np.conj(f_b)
+
+
 def compare_dump_files(
     *file_paths: typing.Tuple[str],
     pol: list = None,
@@ -147,10 +155,14 @@ def compare_dump_files(
             comp.time.domain = time_domain
 
         comp.operators["this"] = lambda a: a
-        comp.operators["diff"] = lambda a, b: np.abs(a - b)
-        comp.operators["xcorr"] = lambda a, b: \
-            scipy.signal.fftconvolve(a, b[::-1], mode="full")
+        # comp.operators["diff"] = lambda a, b: np.abs(a - b)
+        # comp.operators["scipy.signal.fftconvolve"] = lambda a, b: \
+        #     scipy.signal.fftconvolve(a, b[::-1], mode="full")
+        comp.operators["scipy.signal.correlate"] = lambda a, b: \
+            np.fft.ifft(scipy.signal.correlate(a, b, mode="same", method="fft"))
+
         # comp.operators["xcorr"] = lambda a, b: np.correlate(a, b, mode="full")
+        comp.operators["correlate"] = correlate
 
         comp.products["argmax"] = lambda a: np.argmax(a)
         comp.products["mean"] = lambda a: np.mean(a)
@@ -161,20 +173,27 @@ def compare_dump_files(
     if freq_domain:
         module_logger.info(
             "compare_dump_files: doing frequency domain comparison")
-        res_op, res_prod = comp.freq.polar(*data_slice, labels=file_names)
+        res_op, res_prod = comp.freq.cartesian(*data_slice, labels=file_names)
         print(res_prod["this"])
-        print(res_prod["diff"])
+        # print(res_prod["diff"])
         f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
         figs.extend(f)
 
     if time_domain is not None:
         module_logger.info(
             "compare_dump_files: doing time domain comparison")
-        res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
+        res_op, res_prod = comp.time.polar(*data_slice, labels=file_names)
         print(res_prod["this"])
-        print(res_prod["diff"])
+        # print(res_prod["diff"])
         f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
         figs.extend(f)
+
+        # res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
+        # print(res_prod["this"])
+        # # print(res_prod["diff"])
+        # f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
+        # figs.extend(f)
+
 
     if time_domain or freq_domain:
         if save_plots:

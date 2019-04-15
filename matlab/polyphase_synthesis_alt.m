@@ -1,4 +1,4 @@
-function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
+function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_offset_)
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   %
@@ -17,6 +17,13 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
   %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %   return array and the input array will not be the same
 
+  sample_offset = 1;
+  if exist('sample_offset_', 'var')
+    sample_offset = sample_offset_;
+  end
+
+  in = in(:, :, sample_offset:end);
+
   size_in = size(in);
   n_pol = size_in(1);
   n_chan = size_in(2);
@@ -32,6 +39,17 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
+  phase_shift_arr = [0,...
+    1j,...
+    0.5 + (sqrt(3.0)/2.0)*1j,...
+    sqrt(3.0)/2.0 + 0.5i,...
+    1,...
+    sqrt(3.0)/2.0 - 0.5i,...
+    0.5 - (sqrt(3.0)/2.0)*1j,...
+    -1j
+  ];
+
+
   for i_pol=1:n_pol
     for n=1:n_blocks
       in_step_s = input_fft_length*(n-1)+1;
@@ -45,8 +63,10 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor)
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         discard = (1.0 - (os_factor.de/os_factor.nu))/2.0;
+        phase_shift_arr(chan);
+        % FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan).*phase_shift_arr(chan);
         FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan);
-        % if(equaliseRipple)
+        % if (equaliseRipple)
         %     for ii = 1:passbandLength
         %         % fprintf('%d, %d\n', ii, passbandLength-ii+2)
         %         FN(ii,chan) = FN(ii,chan)*deripple(passbandLength-ii+2);

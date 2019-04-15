@@ -52,7 +52,7 @@ function synthesize (varargin)
   synthesized_header = input_header;
   input_tsamp = str2num(input_header('TSAMP'));
   synthesized_header('TSAMP') = num2str(input_tsamp / normalize(os_factor, 1) / channels);
-  synthesized = polyphase_synthesis(input_data, input_fft_length, os_factor);
+  synthesized = polyphase_synthesis_alt(input_data, input_fft_length, os_factor);
 
   if verbose
     fprintf('synthesize: synthesis complete\n')

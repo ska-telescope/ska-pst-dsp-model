@@ -7,10 +7,10 @@ function channelize (varargin)
   % @param {string} os_factor_str - A string representing the oversampling
   %   factor. This should be represented as a fraction, eg `'8/7'`.
   %   To channelize with a criticall sampled PFB, use `'1/1'`.
+  % @param {string} output_file_name - The name of the output dada file.
   % @param {string} output_dir - The directory where the channelized output
   %   dada file will be saved.
   % @param {string} verbose_ -  Optional verbosity flag.
-  % @param {string} - output_file_name - The name of the output dada file.
 
   p = inputParser;
   validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x > 0);

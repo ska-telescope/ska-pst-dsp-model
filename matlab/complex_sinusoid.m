@@ -14,7 +14,7 @@ function signal = complex_sinusoid (n_bins, frequencies, phases, bin_offset, dty
     dtype = dtype_;
   end
 
-  t = 1:n_bins;
+  t = 0:n_bins-1;
   signal = complex(zeros(1, n_bins, dtype));
   for i = 1:length(frequencies)
     signal = signal + exp(j*(2*pi*(frequencies(i) + bin_offset)/n_bins*t + phases(i)));

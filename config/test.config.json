@@ -1,0 +1,8 @@
+{
+  "fir_filter_coeff_file_path": "OS_Prototype_FIR_8.mat",
+  "header_file_path": "default_header.json",
+  "os_factor": "8/7",
+  "channels": 8,
+  "input_fft_length": 16384,
+  "blocks": 5
+}

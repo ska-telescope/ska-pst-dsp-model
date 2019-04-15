@@ -6,7 +6,7 @@ function test_write_dada_file ()
 
     data = complex(rand(2, 1, 1000, 'single'));
 
-    output_file_path = 'data/test_write_dada_file.dump';
+    output_file_path = './../data/test_write_dada_file.dump';
 
     file_id = fopen(output_file_path, 'w');
     write_dada_file(file_id, data, header);
@@ -26,7 +26,7 @@ function test_write_dada_file ()
 
 
     fprintf('test_write_header\n')
-    output_file_path = 'data/test_write_dada_file.dump';
+    output_file_path = './../data/test_write_dada_file.dump';
     file_id = fopen(output_file_path, 'w');
     header = containers.Map();
     header('HDR_SIZE') = '4096';

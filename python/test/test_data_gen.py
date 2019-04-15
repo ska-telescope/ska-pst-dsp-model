@@ -36,6 +36,7 @@ class TestDataGen(unittest.TestCase):
             cls.time_domain_kwargs["output_file_name"]
         ]
 
+    @unittest.skip("")
     def test_generate_test_vectors_matlab(self):
         generator = generate_test_vector(backend="matlab")
         dada_file = generator(*self.time_domain_args,
@@ -60,6 +61,11 @@ class TestDataGen(unittest.TestCase):
         self.assertTrue(self.freq_domain_kwargs["output_file_name"]
                         in dada_file.file_path)
 
+        dada_file = generator("noise", 35840, output_file_name="noise.dump",
+                              output_dir="./..", n_pol=2)
+        print(dada_file.file_path)
+
+    @unittest.skip("")
     def test_generate_test_vectors_default_name(self):
         original_val = self.time_domain_kwargs["output_file_name"]
 
@@ -76,6 +82,7 @@ class TestDataGen(unittest.TestCase):
         self.time_domain_kwargs["output_file_name"] = original_val
         self.__class__.file_paths.append(dada_file.file_path)
 
+    @unittest.skip("")
     def test_channelize_matlab(self):
 
         channelizer = channelize(backend="matlab")
@@ -88,7 +95,7 @@ class TestDataGen(unittest.TestCase):
     def test_channelize_python(self):
         pass
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_synthesize_matlab(self):
         synthesizer = synthesize(backend="matlab")
         dada_file = synthesizer(
@@ -99,10 +106,8 @@ class TestDataGen(unittest.TestCase):
     def test_synthesize_python(self):
         pass
 
-
     @classmethod
     def tearDownClass(cls):
-
         for file_path in cls.file_paths:
             os.remove(file_path)
 

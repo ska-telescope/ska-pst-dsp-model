@@ -37,6 +37,15 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
   % ifft2write = zeros(output_fft_length, 2, dtype);
   % file_id = fopen('stitched.after.matlab.dat', 'wb');
   % file_id1 = fopen('ifft.after.matlab.dat', 'wb');
+  phase_shift_arr = [0,...
+    1j,...
+    0.5 + (sqrt(3.0)/2.0)*1j,...
+    sqrt(3.0)/2.0 + 0.5i,...
+    1,...
+    sqrt(3.0)/2.0 - 0.5i,...
+    0.5 - (sqrt(3.0)/2.0)*1j,...
+    -1j
+  ];
 
 
   os_factor_float = os_factor.nu / os_factor.de;
@@ -49,7 +58,7 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
     for i_pol = 1:n_pol
       for i_chan = 1:n_chan
         time_domain_i_chan = squeeze(in(i_pol, i_chan, in_step_s:in_step_e));
-        freq_domain_i_chan = fft(time_domain_i_chan);
+        freq_domain_i_chan = fft(time_domain_i_chan); %.*phase_shift_arr(i_chan);
         idx_1_s = input_fft_length-input_os_keep_2+1;
         % idx = (i_chan-1)*input_os_keep;
         % stitched(1, 1, idx+1: idx+input_os_keep_2) = freq_domain_i_chan(idx_1_s:end);

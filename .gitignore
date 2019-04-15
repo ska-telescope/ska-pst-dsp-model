@@ -5,4 +5,5 @@
 *.dat
 deprecated/
 python/__pycache__
+python/test/__pycache__
 data/test_vectors/

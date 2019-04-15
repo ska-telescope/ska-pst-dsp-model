@@ -1,14 +1,14 @@
 import unittest
 import logging
+import os
 
 import numpy as np
 
-from .config import load_config
+from config import load_config
 
+config = load_config()
 test_dir = os.path.dirname(os.path.abspath(__file__))
 config_dir = os.path.join(os.path.dirname(os.path.dirname(test_dir)), "config")
-
-test_config_file_path = os.path.join(config_dir, "test.config.json")
 
 
 class TestMatlabDspsrPfbInversion(unittest.TestCase):
@@ -21,8 +21,6 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     size of input array.
     """
 
-    n_bins =
-
     time_domain_params = {
         "offset": np.arange(0.01, 1, 0.05),
         "width": [1]
@@ -34,6 +32,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         "bin_offset": [0.1]
     }
 
+    freq_domain_formatter = "f-0.100_b-0.100_p-0.785"
+    time_domain_formatter = ""
 
     def test_time_domain_impulse(self):
         """

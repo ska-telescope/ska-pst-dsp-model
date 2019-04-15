@@ -25,6 +25,6 @@ function single_double_fft ()
   plot(ax2, f_diff);
   grid(ax2, 'on'); xlim([0, size]); title('Difference between FFT output')
 
-  saveas(gcf, 'products/single_double_fft.png');
+  saveas(gcf, './../products/single_double_fft.png');
 
 end

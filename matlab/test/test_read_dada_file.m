@@ -4,7 +4,7 @@ function test_read_dada_file ()
     % test the read_header function on a DADA file
 
     fprintf('test_read_header\n');
-    data_file_path = 'data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    data_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
     file_id = fopen(data_file_path);
     hdr_map = read_header(file_id);
 
@@ -14,7 +14,7 @@ function test_read_dada_file ()
     assert(hdr_map('HDR_SIZE') == "4096");
     fclose(file_id);
 
-    data_file_path = 'data/pfb.os_8-7.nchan_8.ntaps_321.dump';
+    data_file_path = './../data/pfb.os_8-7.nchan_8.ntaps_321.dump';
     file_id = fopen(data_file_path);
     hdr_map = read_header(file_id);
 
@@ -31,9 +31,9 @@ function test_read_dada_file ()
     fprintf('test_read_dada_file\n');
 
     % the following is a single channel DADA file
-    % data_file_path = 'data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    % data_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
     % the following data file is a multichannel DADA file
-    data_file_path = 'data/py_channelized.simulated_pulsar.noise_0.0.nseries_10.ndim_2.os.dump';
+    data_file_path = './../data/py_channelized.simulated_pulsar.noise_0.0.nseries_10.ndim_2.os.dump';
 
     file_id = fopen(data_file_path);
     data_header = read_dada_file(file_id);

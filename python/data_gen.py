@@ -19,7 +19,8 @@ __all__ = [
     "synthesize",
     "meta_data_file_name",
     "complex_sinusoid",
-    "time_domain_impulse"
+    "time_domain_impulse",
+    "find_existing_test_data"
 ]
 
 module_logger = logging.getLogger(__name__)
@@ -84,7 +85,8 @@ def complex_sinusoid(n: int,
     t = np.arange(n)
     sig = np.zeros(n, dtype=dtype)
     for i in range(len(freqs)):
-        sig += np.exp(1j*(2*np.pi*(int(n*freqs[i]) + bin_offset)/n*t + phases[i]))
+        sig += np.exp(
+            1j*(2*np.pi*(int(n*freqs[i]) + bin_offset)/n*t + phases[i]))
     return sig
 
 
@@ -153,7 +155,12 @@ def generate_test_vector(backend="matlab"):
         output_base_template = ("{{func_name}}.{n_bins}.{args}."
                                 "{n_pol}.{dtype}.{backend}")
 
-        args_str = "-".join([f"{f:.3f}" for f in args])
+        if len(args) > 0:
+            args_str = "-".join([f"{f:.3f}" for f in args])
+            args_str_comma_sep = ",".join([f"{f:.3f}" for f in args])
+        else:
+            args_str = ""
+            args_str_comma_sep = ""
 
         matlab_dtype_str = matlab_dtype_lookup[dtype]
 
@@ -181,7 +188,7 @@ def generate_test_vector(backend="matlab"):
 
             cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                        f"{matlab_handler_name} {n_bins} "
-                       f"{args_str} {matlab_dtype_str} {n_pol} "
+                       f"{args_str_comma_sep} {matlab_dtype_str} {n_pol} "
                        f"{header_template} {output_file_name} {output_dir} 1")
 
             module_logger.debug((f"_generate_test_vector: backend={backend} "
@@ -196,7 +203,10 @@ def generate_test_vector(backend="matlab"):
         elif backend == "python":
             func_lookup = {
                 "time": time_domain_impulse,
-                "freq": complex_sinusoid
+                "freq": complex_sinusoid,
+                "noise": lambda n, dtype=np.float32: (
+                    np.random.rand(n) +
+                    1j*np.random.rand(n)).astype(dtype)
             }
             sig = func_lookup[domain_name](n_bins, *args, dtype=dtype)
             output_data = np.zeros((sig.shape[0], 1, n_pol), dtype=dtype)
@@ -310,106 +320,44 @@ def synthesize(backend="matlab"):
     return _synthesize
 
 
-def coro(fn):
-
-    def _coro(*args, **kwargs):
-        ret = fn(*args, **kwargs)
-        next(ret)
-        return ret
-
-    return _coro
-
-
-class DataVectorProducer:
-
+def find_existing_test_data(base_dir, domain_name, params):
     """
-    Usage:
+    Determine if any existing test data exist in given base_dir
 
-    .. code-block:: python
-
-        prod = DataVectorProducer(
-            "./../data/test_vectors", "time", {"offset": 1.0, "width": 1.0})
-        if prod.meta_data is None:
-            # two polarizations, 1000 data points, single precision
-            # note that the other params are already provided!
-            prod.send(2, 1000, np.float32)
-            # 8 channel channelization, 8/7 oversampling, FIR coefficient file
-            prod.send(8, "8/7", "./../config/OS_Prototype_FIR_8.mat")
-            # size of forward fft for inverse PFB
-            prod.send(1024)
-        meta_data = prod.meta_data
-
+    Args:
+        base_dir (str): The base directory from where search will begin
+        domain_name (str): "time" or "freq"
+        params (tuple or dict): Dictionary or tuple of arguments for
+            test vector creation
     """
+
+    arg_order = {
+        "time": ("offset", "width"),
+        "freq": ("frequency", "phase", "bin_offset")
+    }
 
     sub_dir_format_map = {
         "time": "o-{offset:.3f}_w-{width:.3f}",
         "freq": "f-{frequency:.3f}_b-{bin_offset:.3f}_p-{phase:.3f}"
     }
 
-    domain_param_order = {
-        "time": ("offset", "width"),
-        "freq": ("frequency", "phase", "bin_offset")
-    }
+    sub_dir_formatter = sub_dir_format_map[domain_name]
 
-    def __init__(self, base_dir, domain_name, params):
+    if not hasattr(params, "keys"):
+        params_dict = {
+            arg_name: params[i]
+            for i, arg_name in enumerate(arg_order[domain_name])
+        }
+    else:
+        params_dict = params
 
-        self.meta_data = None
-        self.base_dir = base_dir
-        self.domain_name = domain_name
-        self.params = params
-        self.sink = self.data_vector_producer()
+    sub_dir = sub_dir_formatter.format(**params_dict)
 
-    @coro
-    def data_vector_producer(self):
-        """
-        """
-        sub_dir_formatter = self.sub_dir_format_map[self.domain_name]
-        sub_dir = sub_dir_formatter.format(**self.params)
+    sub_dir_full = os.path.join(base_dir, domain_name, sub_dir)
+    meta_data = None
+    if os.path.exists(sub_dir_full):
+        meta_data_file_path = os.path.join(sub_dir, meta_data_file_name)
+        with open(meta_data_file_path, 'r') as f:
+            meta_data = json.load(f)
 
-        sub_dir_full = os.path.join(self.base_dir, self.domain_name, sub_dir)
-
-        if os.path.exists(sub_dir_full):
-            meta_data_file_path = os.path.join(sub_dir, meta_data_file_name)
-            with open(meta_data_file_path, 'r') as f:
-                meta_data = json.load(f)
-            self.meta_data = meta_data
-        else:
-            # we have to create the requested data files
-            os.makedirs(sub_dir_full)
-            output_dir = sub_dir_full
-
-            meta_data = self.params.copy()
-
-            test_vector_args = (yield)
-            f = generate_test_vector(
-                self.domain_name, output_dir=output_dir,
-                n_pol=test_vector_args[0])
-            vector_params = [self.params[p] for
-                             p in self.domain_param_order[self.domain_name]]
-            test_vector_args = list(test_vector_args)
-            test_vector_args.pop(0)
-            for i, v in enumerate(vector_params):
-                test_vector_args.insert(i+1, v)
-
-            input_file_path = f(*test_vector_args)
-
-            f = channelize(output_dir=output_dir)
-            channelized_args = (yield)
-            synthesized_args = (input_file_path, ) + channelized_args
-            channelized_file_path = f(*channelized_args)
-
-            synthesized_args = (yield)
-            synthesized_args = (channelized_file_path, ) + synthesized_args
-            synthesized_file_path = f(*synthesized_args)
-
-            meta_data["input_file"] = os.path.basename(
-                input_file_path)
-            meta_data["channelized_file"] = os.path.basename(
-                channelized_file_path)
-            meta_data["inverted_file"] = os.path.basename(
-                synthesized_file_path)
-
-            self.meta_data = meta_data
-
-    def send(self, *args):
-        self.sink.send(args)
+    return meta_data

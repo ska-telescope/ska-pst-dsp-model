@@ -15,8 +15,8 @@ function test_polyphase_analysis ()
 
   function test_simulated_pulsar_data ()
 
-    input_file_path = 'data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
-    fir_filter_path = 'config/OS_Prototype_FIR_8.mat';
+    input_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    fir_filter_path = './../config/OS_Prototype_FIR_8.mat';
 
     file_id = fopen(input_file_path); data_header = read_dada_file (file_id); fclose(file_id);
     data = data_header{1};
@@ -40,7 +40,7 @@ function test_polyphase_analysis ()
     out = polyphase_analysis_alt(data(:, :, 1:n_dat_process), fir_filter_coeff, n_chan, os_factor);
     % out = polyphase_analysis_alt(data, fir_filter_coeff, n_chan, os_factor);
 
-    output_file_path = 'data/channelized.alt.simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    output_file_path = './../data/channelized.alt.simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
     file_id = fopen(output_file_path, 'w');
     write_dada_file(file_id, out, header);
     fclose(file_id);
@@ -48,7 +48,7 @@ function test_polyphase_analysis ()
     out = polyphase_analysis(data(:, :, 1:n_dat_process), fir_filter_coeff, n_chan, os_factor);
     % out = polyphase_analysis(data, fir_filter_coeff, n_chan, os_factor);
 
-    output_file_path = 'data/channelized.simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    output_file_path = './../data/channelized.simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
     file_id = fopen(output_file_path, 'w');
     write_dada_file(file_id, out, header);
     fclose(file_id);

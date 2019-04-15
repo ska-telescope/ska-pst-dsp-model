@@ -1,7 +1,7 @@
 function test_pipeline ()
 
-  input_file_path = 'data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
-  fir_filter_path = 'config/OS_Prototype_FIR_8.mat';
+  input_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+  fir_filter_path = './../config/OS_Prototype_FIR_8.mat';
 
   file_id = fopen(input_file_path); data_header = read_dada_file (file_id); fclose(file_id);
   data = data_header{1};
@@ -35,6 +35,6 @@ function test_pipeline ()
   plot(abs(reshape(data_subset, numel(data_subset), 1)));
   grid(ax, 'on');
 
-  saveas(gcf, 'products/test_pipeline.png');
+  saveas(gcf, './../products/test_pipeline.png');
 
 end

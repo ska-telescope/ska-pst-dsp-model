@@ -33,7 +33,7 @@ function test_polyphase_synthesis ()
     title('Difference (Real component)')
     grid(ax, 'on');
 
-    saveas(gcf, 'products/test_polyphase_synthesis.png');
+    saveas(gcf, './../products/test_polyphase_synthesis.png');
   end
 
   function test_simulated_pulsar_data ()
@@ -41,7 +41,7 @@ function test_polyphase_synthesis ()
     input_fft_length = 32768;
     os_factor = struct('nu', 8, 'de', 7);
 
-    input_file_path = 'data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
+    input_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
     file_id = fopen(input_file_path);
     data_header = read_dada_file(file_id);
     input_data = data_header{1};
@@ -49,7 +49,7 @@ function test_polyphase_synthesis ()
     fclose(file_id);
 
 
-    channelized_file_path = 'data/full_channelized_simulated_pulsar.noise_0.0.nseries_10.ndim_2.os.dump';
+    channelized_file_path = './../data/full_channelized_simulated_pulsar.noise_0.0.nseries_10.ndim_2.os.dump';
     file_id = fopen(channelized_file_path);
     data_header = read_dada_file(file_id);
     data = data_header{1};
@@ -75,7 +75,7 @@ function test_polyphase_synthesis ()
     title('simulated pulsar data')
     grid(ax, 'on');
 
-    saveas(gcf, 'products/test_polyphase_synthesis.png');
+    saveas(gcf, './../products/test_polyphase_synthesis.png');
 
   end
 
