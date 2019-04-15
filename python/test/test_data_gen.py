@@ -100,7 +100,7 @@ class TestDataGen(unittest.TestCase):
         module_logger.info((f"test_channelize_python: "
                             f"python channelizer took {delta:.3f} seconds"))
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_synthesize_matlab(self):
         synthesizer = synthesize(backend="matlab")
         synthesizer(

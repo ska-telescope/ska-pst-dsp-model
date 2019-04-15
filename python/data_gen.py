@@ -149,6 +149,16 @@ def generate_test_vector(backend="matlab"):
                               n_pol: int = 1,
                               dtype: np.dtype = np.complex64):
 
+        module_logger.debug((f"_generate_test_vector: "
+                             f"domain_name={domain_name}, "
+                             f"n_bins={n_bins}, "
+                             f"args={args}, "
+                             f"header_template={header_template}, "
+                             f"output_file_name={output_file_name}, "
+                             f"output_dir={output_dir}, "
+                             f"n_pol={n_pol}, "
+                             f"dtype={dtype}"))
+
         if header_template is None:
             header_template = os.path.join(
                 config_dir, config["header_file_path"])
@@ -244,6 +254,14 @@ def channelize(backend="matlab"):
                     output_file_name: str = None,
                     output_dir: str = "./",):
 
+        module_logger.debug((f"_channelize: "
+                             f"input_data_file_path={input_data_file_path}, "
+                             f"channels={channels}, "
+                             f"os_factor_str={os_factor_str}, "
+                             f"fir_filter_path={fir_filter_path}, "
+                             f"output_file_name={output_file_name}, "
+                             f"output_dir={output_dir}"))
+
         if fir_filter_path is None:
             fir_filter_path = os.path.join(
                 config_dir, config["fir_filter_coeff_file_path"])
@@ -302,6 +320,12 @@ def synthesize(backend="matlab"):
         """
 
         """
+        module_logger.debug((f"_synthesize: "
+                             f"input_data_file_path={input_data_file_path}, "
+                             f"input_fft_length={input_fft_length}, "
+                             f"output_file_name={output_file_name}, "
+                             f"output_dir={output_dir}"))
+
         matlab_cmd_str = "synthesize"
         output_base = (f"{matlab_cmd_str}.{input_fft_length}")
 

@@ -12,7 +12,11 @@ _required_fields = {
     "os_factor",
     "channels",
     "input_fft_length",
-    "blocks"
+    "blocks",
+    "backend",
+    "dm",
+    "period",
+    "dump_stage"
 }
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
