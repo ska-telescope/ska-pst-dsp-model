@@ -9,6 +9,7 @@ import json
 import logging
 
 import numpy as np
+import pfb.pfb_channelizer
 import pfb.formats
 
 from config import load_config
@@ -271,8 +272,16 @@ def channelize(backend="matlab"):
                 os.path.join(output_dir, output_file_name)).load_data()
 
         elif backend == "python":
-            raise NotImplementedError(("channelize not "
-                                       "implemented in Python"))
+            channelizer = pfb.pfb_channelizer.PFBChannelizer.from_input_files(
+                input_data_file_path,
+                fir_filter_path
+            )
+
+            channelizer.channelize(
+                channels, os_factor_str,
+                output_file_path=os.path.join(output_dir, output_file_name)
+            )
+            return channelizer.output_data_file
 
     return _channelize
 
