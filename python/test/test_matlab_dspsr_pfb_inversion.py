@@ -10,12 +10,13 @@ import pfb.rational
 import psr_formats
 import comparator
 
+import data_gen
 import data_gen.util
-import data_gen.generate_test_vector
-import data_gen.channelize
-import data_gen.synthesize
-import data_gen.run_dspsr_with_dump
-import data_gen.pipeline
+# import data_gen.generate_test_vector
+# import data_gen.channelize
+# import data_gen.synthesize
+# import data_gen.run_dspsr_with_dump
+# import data_gen.pipeline
 
 module_logger = logging.getLogger(__name__)
 
@@ -66,20 +67,20 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             data_gen.config["channels"] * data_gen.config["blocks"]
         cls.normalize = normalize
         cls.n_samples = n_samples
-        cls.generator = data_gen.generate_test_vector.generate_test_vector(
+        cls.generator = data_gen.generate_test_vector(
             backend=data_gen.config["backend"]["test_vectors"])
-        cls.channelizer = data_gen.channelize.channelize(
+        cls.channelizer = data_gen.channelize(
             backend=data_gen.config["backend"]["channelize"])
-        cls.synthesizer = data_gen.synthesize.synthesize(
+        cls.synthesizer = data_gen.synthesize(
             backend=data_gen.config["backend"]["synthesize"])
-        cls.pipeline = data_gen.pipeline.pipeline(
+        cls.pipeline = data_gen.pipeline(
             cls.generator,
             cls.channelizer,
             cls.synthesizer,
             output_dir=cls.output_dir
         )
         cls.dspsr_dumper = functools.partial(
-            data_gen.run_dspsr_with_dump.run_dspsr_with_dump,
+            data_gen.run_dspsr_with_dump,
             dm=data_gen.config["dm"],
             period=data_gen.config["period"],
             output_dir=cls.output_dir,
@@ -166,7 +167,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         inverting simulated pulsar data.
         """
         sub_report = []
-        sim_psr_pipeline = data_gen.pipeline.pipeline(
+        sim_psr_pipeline = data_gen.pipeline(
             lambda a, **kwargs: psr_formats.DADAFile(a).load_data(),
             self.__class__.channelizer,
             self.__class__.synthesizer,
