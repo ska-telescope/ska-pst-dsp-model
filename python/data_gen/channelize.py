@@ -1,3 +1,4 @@
+import argparse
 import os
 import logging
 
@@ -85,3 +86,53 @@ def channelize(backend: str = "matlab"):
             return channelizer.output_data_file
 
     return _channelize
+
+
+def create_parser():
+
+    parser = argparse.ArgumentParser(
+        description="Channelize file(s)")
+
+    parser.add_argument("-i", "--input-files",
+                        dest="input_file_paths",
+                        nargs="+", type=str,
+                        required=True)
+
+    parser.add_argument("-c", "--channels",
+                        dest="channels", type=int, required=True)
+
+    parser.add_argument("-osf", "--os_factor",
+                        dest="os_factor", type=str, required=True)
+
+    parser.add_argument("-b", "--backend",
+                        dest="backend", type=str, required=False,
+                        default="python",
+                        help=("Specify a backend to use, "
+                              "either \"matlab\" or \"python\""))
+
+    parser.add_argument("-od", "--output_dir",
+                        dest="output_dir", type=str, required=False,
+                        default="./")
+
+    parser.add_argument("-v", "--verbose",
+                        dest="verbose", action="store_true")
+
+    return parser
+
+
+if __name__ == "__main__":
+    parsed = create_parser().parse_args()
+    level = logging.INFO
+    if parsed.verbose:
+        level = logging.DEBUG
+    logging.basicConfig(level=level)
+    channelizer = channelize(backend=parsed.backend.lower())
+    for file_path in parsed.input_file_paths:
+        output_file_name = "channelized." + os.path.basename(file_path)
+        channelizer(
+            file_path,
+            channels=parsed.channels,
+            os_factor_str=parsed.os_factor,
+            output_dir=parsed.output_dir,
+            output_file_name=output_file_name
+        )
