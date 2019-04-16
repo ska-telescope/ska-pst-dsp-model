@@ -1,129 +1,28 @@
 import unittest
 import logging
 import os
+import functools
+import json
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pfb.rational
+import psr_formats
 import comparator
 
-import util
-from data_gen import generate_test_vector, channelize, synthesize
-from run_dspsr_with_dump import run_dspsr_with_dump
-from config import load_config
-
+import data_gen
+import data_gen.util
 
 module_logger = logging.getLogger(__name__)
 
 plt.ion()
 
-config = load_config()
-test_dir = util.curdir(__file__)
-base_dir = util.updir(test_dir, 2)
-config_dir = os.path.join(base_dir, "config")
+test_dir = data_gen.util.curdir(__file__)
+base_dir = data_gen.util.updir(test_dir, 2)
 data_dir = os.path.join(base_dir, "data")
+products_dir = os.path.join(base_dir, "products")
 
 
-def default_comparison(
-    domain_name: str,
-    domain_args: tuple,
-    output_dir: str,
-    test_vector_generator: callable,
-    channelizer: callable,
-    synthesizer: callable
-):
-    header_file_path = os.path.join(
-        config_dir, config["header_file_path"])
-    fir_filter_path = os.path.join(
-        config_dir, config["fir_filter_coeff_file_path"])
-    test_vector_dada_file = test_vector_generator(
-        domain_name,
-        *domain_args,
-        n_pol=config["n_pol"],
-        header_template=header_file_path,
-        output_dir=output_dir)
-    channelized_file_name = "channelized." + \
-        os.path.basename(test_vector_dada_file.file_path)
-    synthesized_file_name = "synthesized." + \
-        os.path.basename(test_vector_dada_file.file_path)
-
-    channelized_dada_file = channelizer(
-        test_vector_dada_file.file_path,
-        config["channels"],
-        config["os_factor"],
-        fir_filter_path=fir_filter_path,
-        output_file_name=channelized_file_name,
-        output_dir=output_dir)
-    synthesized_dada_file = synthesizer(
-        channelized_dada_file.file_path,
-        config["input_fft_length"],
-        output_file_name=synthesized_file_name,
-        output_dir=output_dir)
-
-    ar, dump = run_dspsr_with_dump(
-        channelized_dada_file.file_path,
-        config["dm"],
-        config["period"],
-        output_dir=output_dir,
-        dump_stage=config["dump_stage"],
-        extra_args=f"-IF 1:{config['input_fft_length']} -V"
-    )
-    dump = pfb.formats.DADAFile(dump).load_data()
-    return synthesized_dada_file, dump
-
-
-def multi_domain_comparison(
-    domain_names,
-    test_method_names,
-    domain_test_parameters,
-    domain_args
-):
-
-    def test_method_factory(domain_name, domain_test_parameters,
-                            domain_args, test_method_name):
-        def _test_method(self):
-            for test_param in domain_test_parameters:
-                args = [self.n_samples, test_param]
-                args.extend(domain_args)
-                matlab_dump, dspsr_dump = default_comparison(
-                    domain_name,
-                    args,
-                    self.output_dir,
-                    self.__class__.generator,
-                    self.__class__.channelizer,
-                    self.__class__.synthesizer
-                )
-                res_op, res_prod = self.comp.cartesian(
-                    matlab_dump.data.flatten(),
-                    dspsr_dump.data.flatten() / self.normalize
-                )
-                # comparator.plot_operator_result(res_op)
-                # input(">>> ")
-                mean_diff = list(res_prod["diff"]["mean"])[0][1]
-                self.assertTrue(all([d < self.thresh for d in mean_diff]))
-                module_logger.info((f"{test_method_name}: "
-                                    f"param={test_param}\n"
-                                    f"{res_prod['diff']:.6e}"))
-        return _test_method
-
-    def _multi_domain_comparison(cls):
-        for i in range(len(domain_names)):
-            test_method = test_method_factory(
-                domain_names[i],
-                domain_test_parameters[i],
-                domain_args[i],
-                test_method_names[i])
-            setattr(cls, test_method_names[i], test_method)
-        return cls
-    return _multi_domain_comparison
-
-
-@multi_domain_comparison(
-    ["time", "freq"],
-    ["test_time_domain_impulse", "test_complex_sinusoid"],
-    [[0.11], [0.11]],
-    [[1], [np.pi/4, 0.1]]
-)
 class TestMatlabDspsrPfbInversion(unittest.TestCase):
     """
     These tests attempt to determine whether the PFB inversion algorithm
@@ -135,49 +34,160 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     """
     thresh = 1e-5
     output_dir = data_dir
-    # time_domain_params = {
-    #     # "offset": np.arange(0.01, 1, 0.05),
-    #     "offset": [0.11],
-    #     "width": [1]
-    # }
-    #
-    # freq_domain_params = {
-    #     # "frequency": np.arange(0.01, 1, 0.05),
-    #     "frequency": [0.11],
-    #     "phase": [np.pi/4.],
-    #     "bin_offset": [0.1]
-    # }
+
+    simulated_pulsar_file_path = os.path.join(
+        data_dir, "simulated_pulsar.noise_0.0.nseries_3.ndim_2.dump"
+    )
+
+    time_domain_args = {
+        # "offset": [0.11],
+        "offset": np.arange(1, 20)/20,
+        "width": 1
+    }
+
+    freq_domain_args = {
+        # "frequency": [0.11],
+        "frequency": np.arange(1, 20)/20,
+        "phase": np.pi/4,
+        "bin_offset": 0.1
+    }
 
     @classmethod
     def setUpClass(cls):
-        os_factor = pfb.rational.Rational(*config["os_factor"].split("/"))
-        normalize = config["input_fft_length"] * config["channels"]
-        n_samples = os_factor.normalize(config["input_fft_length"]) * \
-            config["channels"] * config["blocks"]
+        os_factor = pfb.rational.Rational(
+            *data_gen.config["os_factor"].split("/"))
+        normalize = data_gen.config["input_fft_length"] *\
+            data_gen.config["channels"]
+        n_samples = os_factor.normalize(data_gen.config["input_fft_length"]) *\
+            data_gen.config["channels"] * data_gen.config["blocks"]
         cls.normalize = normalize
         cls.n_samples = n_samples
-        cls.generator = generate_test_vector(
-            backend=config["backend"]["test_vectors"])
-        cls.channelizer = channelize(
-            backend=config["backend"]["channelize"])
-        cls.synthesizer = synthesize(
-            backend=config["backend"]["synthesize"])
-
+        cls.generator = data_gen.generate_test_vector(
+            backend=data_gen.config["backend"]["test_vectors"])
+        cls.channelizer = data_gen.channelize(
+            backend=data_gen.config["backend"]["channelize"])
+        cls.synthesizer = data_gen.synthesize(
+            backend=data_gen.config["backend"]["synthesize"])
+        cls.pipeline = data_gen.pipeline(
+            cls.generator,
+            cls.channelizer,
+            cls.synthesizer,
+            output_dir=cls.output_dir
+        )
+        cls.dspsr_dumper = functools.partial(
+            data_gen.run_dspsr_with_dump,
+            dm=data_gen.config["dm"],
+            period=data_gen.config["period"],
+            output_dir=cls.output_dir,
+            dump_stage=data_gen.config["dump_stage"],
+            extra_args=f"-IF 1:{data_gen.config['input_fft_length']} -V"
+        )
         comp = comparator.SingleDomainComparator(name="time")
         comp.operators["diff"] = lambda a, b: a - b
         comp.operators["this"] = lambda a: a
 
-        comp.products["sum"] = np.sum
-        comp.products["mean"] = np.mean
+        comp.products["sum"] = lambda a: np.sum(np.abs(a))
+        comp.products["mean"] = lambda a: np.mean(np.abs(a))
 
         cls.comp = comp
+        cls.report = {}
 
+    def compare_dump_files(self, matlab_dump_file, dspsr_dump_file):
+
+        res_op, res_prod = self.comp.cartesian(
+            matlab_dump_file.data.flatten(),
+            dspsr_dump_file.data.flatten() / self.normalize
+        )
+        mean_diff = list(res_prod["diff"]["mean"])[0][1]
+        sum_diff = list(res_prod["diff"]["sum"])[0][1]
+        self.assertTrue(all([d < self.thresh for d in mean_diff]))
+        return res_op, res_prod, mean_diff, sum_diff
+
+    def test_time_domain_impulse(self):
+        sub_report = []
+        args = (self.time_domain_args["width"], )
+        for offset in self.time_domain_args["offset"]:
+            dada_files = self.__class__.pipeline(
+                "time", self.n_samples, offset, *args)
+            dspsr_dump = self.__class__.dspsr_dumper(dada_files[1].file_path)
+
+            res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
+                dada_files[-1], dspsr_dump)
+
+            prod_str = f"{res_prod['diff']:.6e}"
+
+            sub_report.append({
+                "offset": offset,
+                "mean": mean_diff,
+                "sum": sum_diff,
+                "str": prod_str
+            })
+
+            module_logger.info((f"test_time_domain_impulse: "
+                                f"offset={offset}\n"
+                                f"{prod_str}"))
+
+        self.__class__.report["test_time_domain_impulse"] = sub_report
+
+    def test_complex_sinusoid(self):
+        sub_report = []
+        args = (self.freq_domain_args["phase"],
+                self.freq_domain_args["bin_offset"])
+        for freq in self.freq_domain_args["frequency"]:
+            dada_files = self.__class__.pipeline(
+                "freq", self.n_samples, freq, *args)
+            dspsr_dump = self.__class__.dspsr_dumper(dada_files[1].file_path)
+
+            res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
+                dada_files[-1], dspsr_dump)
+
+            prod_str = f"{res_prod['diff']:.6e}"
+
+            sub_report.append({
+                "freq": freq,
+                "mean": mean_diff,
+                "sum": sum_diff,
+                "str": prod_str
+            })
+            module_logger.info((f"test_complex_sinusoid: "
+                                f"freq={freq}\n"
+                                f"{prod_str}"))
+
+        self.__class__.report["test_complex_sinusoid"] = sub_report
+
+    # @unittest.skip("")
     def test_simulated_pulsar(self):
         """
         Determine whether dspsr and matlab produce the same result when
         inverting simulated pulsar data.
         """
-        pass
+        sub_report = []
+        sim_psr_pipeline = data_gen.pipeline(
+            lambda a, **kwargs: psr_formats.DADAFile(a).load_data(),
+            self.__class__.channelizer,
+            self.__class__.synthesizer,
+            output_dir=self.output_dir
+        )
+
+        dada_files = sim_psr_pipeline(self.simulated_pulsar_file_path)
+        dspsr_dump = self.dspsr_dumper(dada_files[1].file_path)
+        res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
+            dada_files[-1], dspsr_dump
+        )
+        prod_str = f"{res_prod['diff']:.6e}"
+        module_logger.info((f"test_simulated_pulsar: \n"
+                            f"{prod_str}"))
+        sub_report.append({
+            "mean": mean_diff,
+            "sum": sum_diff,
+            "str": prod_str
+        })
+        self.__class__.report["test_simulated_pulsar"] = sub_report
+
+    @classmethod
+    def tearDownClass(cls):
+        with open(os.path.join(products_dir, "report.json"), "w") as f:
+            json.dump(cls.report, f)
 
 
 if __name__ == "__main__":

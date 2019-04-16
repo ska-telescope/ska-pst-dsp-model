@@ -1,6 +1,5 @@
 # run_dspsr_with_dump.py
 import os
-import json
 import glob
 import logging
 import subprocess
@@ -8,30 +7,57 @@ import argparse
 import shlex
 import typing
 
+import psr_formats
+
+from .config import config
 
 module_logger = logging.getLogger(__name__)
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-
-def load_pulsar_params(pulsar_param_file_path: str = None):
-    if pulsar_param_file_path is None:
-        pulsar_param_file_path = os.path.join(
-            current_dir,
-            "pulsar_params.json"
-        )
-
-    with open(pulsar_param_file_path, "r") as f:
-        return json.load(f)
+__all__ = [
+    "run_dspsr_with_dump"
+]
 
 
 def run_dspsr_with_dump(file_path: str,
-                        dm: float,
-                        period: float,
+                        dm: float = None,
+                        period: float = None,
                         output_dir: str = None,
                         output_file_name: str = None,
                         dump_stage: str = "Detection",
                         extra_args: str = None) -> typing.Tuple[str]:
+    """
+    Run `dspsr`, creating a dump file after a specified step.
+
+    Usage:
+
+    Run inverse filterbank, saving before Convolution step
+
+    .. code-block:: python
+
+        dada_file = run_dspsr_with_dump(
+            "channelized.dump",
+            dm=2.64476,
+            period=0.00575745,
+            output_dir="./",
+            dump_stage="Convolution",
+            extra_args="-IF 1:16384"
+        )
+
+    Args:
+        file_path (str): Path to file containing data on which to operate
+        dm (float): dispersion measure
+        period (float): pulsar period
+        output_dir (str): directory where dump file should go
+        output_file_name (str): name of output dump file
+        dump_stage (str): stage at which to create dump file
+        extra_args (str): Extra arguments to pass to dspsr command.
+    Returns:
+        psr_formats.DADAFile: DADAFile object corresponding to dump file
+    """
+    if dm is None:
+        dm = config["dm"]
+    if period is None:
+        period = config["period"]
 
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path)
@@ -83,8 +109,8 @@ def run_dspsr_with_dump(file_path: str,
             for dat_file in dat_files:
                 os.remove(dat_file)
             # subprocess.run(cleanup_cmd_str, shell=True)
-
-    return (f"{output_ar}.ar", output_dump)
+    return psr_formats.DADAFile(output_dump).load_data()
+    # return (f"{output_ar}.ar", output_dump)
 
 
 def create_parser():
@@ -119,11 +145,10 @@ def create_parser():
 
 if __name__ == '__main__':
     parsed = create_parser().parse_args()
-    pulsar_params = load_pulsar_params(parsed.pulsar_param_file_path)
     run_dspsr_with_dump(
         parsed.input_file_path,
-        pulsar_params["dm"],
-        pulsar_params["period"],
+        dm=config["dm"],
+        period=config["period"],
         dump_stage=parsed.dump_stage,
         output_dir=parsed.output_dir,
         extra_args=parsed.extra_args

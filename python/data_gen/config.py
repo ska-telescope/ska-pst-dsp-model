@@ -1,9 +1,14 @@
 import json
 import os
 
+from . import util
+
 __all__ = [
     "load_config",
-    "save_config"
+    "save_config",
+    "config",
+    "config_dir",
+    "build_dir"
 ]
 
 _required_fields = {
@@ -19,12 +24,17 @@ _required_fields = {
     "dump_stage"
 }
 
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-config_dir = os.path.join(os.path.dirname(cur_dir), "config")
-test_config_file_path = os.path.join(config_dir, "test.config.json")
+cur_dir = util.curdir(__file__)
+config_dir = os.path.join(util.updir(cur_dir, 2), "config")
+build_dir = os.path.join(util.updir(cur_dir, 2), "build")
+test_config_file_name = "test.config.json"
+test_config_file_path = os.path.join(config_dir, test_config_file_name)
 
 
 def load_config():
+    if not os.path.exists(test_config_file_path):
+        raise RuntimeError((f"Cannot find {test_config_file_name} "
+                            f"in {config_dir}"))
     with open(test_config_file_path, "r") as f:
         config = json.load(f)
     return config
@@ -43,3 +53,6 @@ def save_config(new_config):
         raise RuntimeError(
             ("New configuration does not have all "
              "required configuration fields"))
+
+
+config = load_config()
