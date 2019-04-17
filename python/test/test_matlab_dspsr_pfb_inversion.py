@@ -12,11 +12,6 @@ import comparator
 
 import data_gen
 import data_gen.util
-# import data_gen.generate_test_vector
-# import data_gen.channelize
-# import data_gen.synthesize
-# import data_gen.run_dspsr_with_dump
-# import data_gen.pipeline
 
 module_logger = logging.getLogger(__name__)
 
@@ -45,14 +40,14 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     )
 
     time_domain_args = {
-        # "offset": [0.11],
-        "offset": np.arange(1, 20)/20,
+        "offset": [0.11],
+        # "offset": np.arange(1, 20)/20,
         "width": 1
     }
 
     freq_domain_args = {
-        # "frequency": [0.11],
-        "frequency": np.arange(1, 20)/20,
+        "frequency": [0.11],
+        # "frequency": np.arange(1, 20)/20,
         "phase": np.pi/4,
         "bin_offset": 0.1
     }
@@ -114,7 +109,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         for offset in self.time_domain_args["offset"]:
             dada_files = self.__class__.pipeline(
                 "time", self.n_samples, offset, *args)
-            dspsr_dump = self.__class__.dspsr_dumper(dada_files[1].file_path)
+            dspsr_dump = self.__class__.dspsr_dumper(
+                dada_files[1].file_path)[0]
 
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
@@ -141,7 +137,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         for freq in self.freq_domain_args["frequency"]:
             dada_files = self.__class__.pipeline(
                 "freq", self.n_samples, freq, *args)
-            dspsr_dump = self.__class__.dspsr_dumper(dada_files[1].file_path)
+            dspsr_dump = self.__class__.dspsr_dumper(
+                dada_files[1].file_path)[0]
 
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
@@ -175,7 +172,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         )
 
         dada_files = sim_psr_pipeline(self.simulated_pulsar_file_path)
-        dspsr_dump = self.dspsr_dumper(dada_files[1].file_path)
+        dspsr_dump = self.dspsr_dumper(dada_files[1].file_path)[0]
         res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
             dada_files[-1], dspsr_dump
         )

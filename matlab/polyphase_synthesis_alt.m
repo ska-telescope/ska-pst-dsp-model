@@ -35,7 +35,7 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
   output_fft_length = normalize(os_factor, input_fft_length) * n_chan;
   out = complex(zeros(n_pol, 1, n_blocks*output_fft_length, dtype));
 
-  fprintf('polyphase_synthesis_alt: n_blocks=%d, output_fft_length=%d\n', n_blocks, output_fft_length);
+  fprintf('polyphase_synthesis_alt: n_blocks=%d, output_fft_length=%d, sample_offset=%d\n', n_blocks, output_fft_length, sample_offset);
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 

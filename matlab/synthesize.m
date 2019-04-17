@@ -10,11 +10,12 @@ function synthesize (varargin)
   % @param {string} verbose -  Optional verbosity flag.
 
   p = inputParser;
-  addRequired(p,'input_file_path', @ischar);
-  addRequired(p,'input_fft_length', @ischar);
-  addRequired(p,'output_file_name', @ischar);
-  addOptional(p,'output_dir', './', @ischar);
-  addOptional(p,'verbose', '0', @ischar);
+  addRequired(p, 'input_file_path', @ischar);
+  addRequired(p, 'input_fft_length', @ischar);
+  addRequired(p, 'output_file_name', @ischar);
+  addOptional(p, 'output_dir', './', @ischar);
+  addOptional(p, 'verbose', '0', @ischar);
+  addOptional(p, 'sample_offset', '1', @ischar);
 
   parse(p, varargin{:});
 
@@ -23,6 +24,7 @@ function synthesize (varargin)
   output_dir = p.Results.output_dir;
   output_file_name = p.Results.output_file_name;
   verbose = str2num(p.Results.verbose);
+  sample_offset = str2num(p.Results.sample_offset);
 
   % load in input data
   if verbose
@@ -52,7 +54,8 @@ function synthesize (varargin)
   synthesized_header = input_header;
   input_tsamp = str2num(input_header('TSAMP'));
   synthesized_header('TSAMP') = num2str(input_tsamp / normalize(os_factor, 1) / channels);
-  synthesized = polyphase_synthesis_alt(input_data, input_fft_length, os_factor);
+  synthesized = polyphase_synthesis_alt(...
+    input_data, input_fft_length, os_factor, sample_offset);
 
   if verbose
     fprintf('synthesize: synthesis complete\n')

@@ -1,9 +1,12 @@
 import contextlib
 import os
+import logging
 
 __all__ = [
     "dispose"
 ]
+
+module_logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
@@ -61,8 +64,17 @@ def dispose(*callbacks: tuple):
     else:
         yield files
 
-    for f in files:
+    def remove_file(f):
+        module_logger.debug(f"dispose.remove_file: {f}")
         if hasattr(f, "file_path"):
             f = f.file_path
-        if os.path.exists(f):
-            os.remove(f)
+        if hasattr(f, "format"):
+            if os.path.exists(f):
+                os.remove(f)
+
+    for f in files:
+        if isinstance(f, (tuple, list)):
+            module_logger.debug("dispose: tuple or list!")
+            list(map(remove_file, f))
+        else:
+            remove_file(f)

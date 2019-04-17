@@ -1,4 +1,4 @@
-from .run_dspsr_with_dump import run_dspsr_with_dump
+from .dspsr_util import run_dspsr, run_dspsr_with_dump, run_psrdiff, run_psrtxt
 from .generate_test_vector import (
     generate_test_vector,
     complex_sinusoid,
@@ -11,7 +11,10 @@ from .config import config, config_dir
 
 
 __all__ = [
+    "run_dspsr",
     "run_dspsr_with_dump",
+    "run_psrdiff",
+    "run_psrtxt",
     "generate_test_vector",
     "complex_sinusoid",
     "time_domain_impulse",
