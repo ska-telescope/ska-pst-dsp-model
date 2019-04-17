@@ -6,6 +6,7 @@ from .generate_test_vector import (
 from .channelize import channelize
 from .synthesize import synthesize
 from .pipeline import pipeline
+from .dispose import dispose
 from .config import config, config_dir
 
 
@@ -17,6 +18,7 @@ __all__ = [
     "channelize",
     "synthesize",
     "pipeline",
+    "dispose",
     "config",
     "config_dir"
 ]
