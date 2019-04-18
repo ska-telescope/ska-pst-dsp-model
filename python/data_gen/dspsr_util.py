@@ -18,7 +18,8 @@ __all__ = [
     "run_dspsr_with_dump",
     "run_dspsr",
     "run_psrdiff",
-    "run_psrtxt"
+    "run_psrtxt",
+    "find_in_log"
 ]
 
 
@@ -283,6 +284,31 @@ class PsrtxtRunner(BaseRunner):
         except subprocess.CalledProcessError as err:
             module_logger.error(
                 f"Couldn't execute command {psrtxt_cmd_str}: {err}")
+
+
+def find_in_log(log_file_path: str,
+                *keywords: typing.Tuple[str],
+                sep: str = "=",
+                delimiter: str = " "):
+    """
+    Get a value from a log file.
+    """
+    with open(log_file_path, "r") as f:
+        txt = f.read()
+
+    def _get_val_after_keyword(txt: str, keyword: str):
+        if keyword not in txt:
+            raise RuntimeError(f"find_in_log: couldn't find {keyword}")
+        key_idx = txt.find(keyword)
+        sep_idx = txt.find(sep, key_idx)
+        delim_idx = txt.find(delimiter, sep_idx)
+        val = txt[sep_idx+1:delim_idx]
+        return val
+
+    vals = []
+    for key in keywords:
+        vals.append(_get_val_after_keyword(txt, key))
+    return vals
 
 
 run_dspsr = DspsrRunner()

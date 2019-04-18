@@ -66,6 +66,9 @@ class TestDSPSRUtil(unittest.TestCase):
         )
         self.__class__.file_paths |= set(output)
 
+    def test_find_in_log(self):
+        pass
+
     @classmethod
     def tearDownClass(cls):
         print(cls.file_paths)

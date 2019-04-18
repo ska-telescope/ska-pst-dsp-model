@@ -10,7 +10,7 @@ module_logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def dispose(*callbacks: tuple):
+def dispose(*callbacks: tuple, dispose=True):
     """
 
     Usage:
@@ -71,10 +71,12 @@ def dispose(*callbacks: tuple):
         if hasattr(f, "format"):
             if os.path.exists(f):
                 os.remove(f)
-
-    for f in files:
-        if isinstance(f, (tuple, list)):
-            module_logger.debug("dispose: tuple or list!")
-            list(map(remove_file, f))
-        else:
-            remove_file(f)
+    if dispose:
+        for f in files:
+            if isinstance(f, (tuple, list)):
+                module_logger.debug("dispose: tuple or list!")
+                list(map(remove_file, f))
+            else:
+                remove_file(f)
+    else:
+        module_logger.debug("dispose: not removing files")
