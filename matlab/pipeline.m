@@ -2,13 +2,16 @@ function pipeline ()
   config_struct = struct();
   config_struct.dtype = 'single';
   config_struct.header_file_path = './../config/default_header.json';
-  % config_struct.fir_filter_path = './../config/OS_Prototype_FIR_8.mat';
-  % config_struct.fir_filter_path = './../config/Prototype_FIR.40.mat';
-  % config_struct.fir_filter_path = './../config/Prototype_FIR.120.mat';
-  % config_struct.fir_filter_path = './../config/Prototype_FIR.320.mat';
-  config_struct.fir_filter_path = './../config/Prototype_FIR.480.mat';
+  % config_struct.fir_filter_path = './../config/OS_Prototype_FIR_8.mat'; % 6
+  config_struct.fir_filter_path = './../config/Prototype_FIR.48.mat'; % 5
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.40.mat'; % 5
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.120.mat'; % 5
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.180.mat'; % 3
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.240.mat'; % 1
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.320.mat'; % 1
+  % config_struct.fir_filter_path = './../config/Prototype_FIR.480.mat'; % 1
   % config_struct.fir_filter_path = './../config/ADE_R6_OSFIR.mat';
-  n_blocks = 4;
+  n_blocks = 2;
   os_factor = struct('nu', 8, 'de', 7);
   % os_factor = struct('nu', 32, 'de', 27);
   n_chan = 8;
@@ -24,7 +27,7 @@ function pipeline ()
   end
 
   fprintf('Generating, channelizing and inverting time domain test vectors\n')
-  pos = 0.25;
+  pos = 0.11;
   fprintf('Creating input data with input at %.3f percent of total band\n', pos*100);
 
   offsets = [floor(pos*n_bins)];
@@ -34,7 +37,9 @@ function pipeline ()
   meta_struct.impulse_position = num2str(pos);
   meta_struct.impulse_width = num2str(widths(1));
 
-  for sample_offset = 1;
+  deripple = struct('apply_deripple', 1);
+
+  for sample_offset = 1:9
     % polyphase_analysis_alt is Ian Morrison's code
     % polyphase_analysis is John Bunton's code
     % res = test_data_pipeline(config_struct, n_chan, os_factor,...
@@ -46,7 +51,7 @@ function pipeline ()
                       input_fft_length, n_bins,...
                       @time_domain_impulse,...
                       {offsets, widths}, @polyphase_analysis, {1},...
-                      @polyphase_synthesis_alt, {sample_offset}, test_vector_dir);
+                      @polyphase_synthesis_alt, {deripple, sample_offset}, test_vector_dir);
 
     file_info = res{1};
     data = res{2};
@@ -91,8 +96,16 @@ function pipeline ()
     xcorr = fft(sim_squeezed) .* conj(fft(inv_squeezed));
     lag = ifft(xcorr);
     [valmax, argmax] = max(lag);
+    if argmax > round(length(lag)/2)
+      argmax = length(lag) - argmax;
+    end
     fprintf("Lag=%d\n", argmax);
-    ax = subplot(413); plot(abs(lag)); grid(ax, 'on');
+    ax = subplot(413); plot(abs(inv_squeezed)); grid(ax, 'on');
+    inv_copy = inv_squeezed;
+    inv_copy(argmax_inv) = complex(0, 0);
+    xlim([offsets(1)-100, offsets(1)+100]);
+    ylim([0, abs(max(inv_copy))*1.2]);
+    % ax = subplot(413); plot(abs(lag)); grid(ax, 'on');
     ax = subplot(414); plot(angle(xcorr)); grid(ax, 'on');
     % ax = subplot(413); plot(angle(fft(sim_squeezed))); grid(ax, 'on');
     % ax = subplot(414); plot(angle(fft(inv_squeezed))); grid(ax, 'on');

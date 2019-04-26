@@ -1,4 +1,4 @@
-function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_offset_)
+function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, deripple_, sample_offset_)
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   %
@@ -13,6 +13,11 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
   % @param {struct} os_factor - The oversampling factor. This is a struct
   %   with members `nu` and `de` corresponding to the oversampling factor's
   %   numerator and denominator, respectively.
+  % @param {struct} deripple_ - A struct containing filter coefficients
+  %     used to channelize data. If the "apply_deripple" struct flag is true,
+  %     apply derippling correction or "ripple equalization".
+  % @param {int} sample_offset_ - offset applied to channelized input prior to
+  %   processing.
   % @return {double/single []} - Upsampled time domain output array. The
   %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %   return array and the input array will not be the same
@@ -20,6 +25,11 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
   sample_offset = 1;
   if exist('sample_offset_', 'var')
     sample_offset = sample_offset_;
+  end
+
+  deripple = struct('apply_deripple', 0, 'filter_coeff', []);
+  if exist('deripple_', 'var')
+    deripple = deripple_;
   end
 
   in = in(:, :, sample_offset:end);
@@ -40,6 +50,18 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
+  if deripple.apply_deripple
+    fprintf("polyphase_synthesis_alt: applying deripple\n");
+    passband_length = FN_width/2;
+    [H0,W] = freqz(deripple.filter_coeff, 1, n_chan*passband_length);
+    % figure; ax = gca;
+    % plot(abs(H0));
+    % grid(ax, 'on');
+    % use just the baseband passband section of transfer function
+    % - apply to both halves of channel
+    filter_response = ones(passband_length+1,1)./abs(H0(1:passband_length+1,1));
+    filter_response
+  end
   % j is complex number.
   % in Python we have to write 1j; this is not necessary in Matlab
   phase_shift_arr = [0,...
@@ -51,7 +73,6 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
     0.5 - (sqrt(3.0)/2.0)*j,...
     -j
   ];
-
 
   for i_pol=1:n_pol
     for n=1:n_blocks
@@ -69,17 +90,13 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
         % phase_shift_arr(chan);
         % FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan).*phase_shift_arr(chan);
         FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan);
-        % if (equaliseRipple)
-        %     for ii = 1:passbandLength
-
-
-
-
-        %         % fprintf('%d, %d\n', ii, passbandLength-ii+2)
-        %         FN(ii,chan) = FN(ii,chan)*deripple(passbandLength-ii+2);
-        %         FN(passbandLength+ii,chan) = FN(passbandLength+ii,chan)*deripple(ii);
-        %     end;
-        % end;
+        if deripple.apply_deripple
+          for ii = 1:passband_length
+              % fprintf('%d, %d\n', ii, passband_length-ii+2)
+              FN(ii,chan) = FN(ii,chan)*filter_response(passband_length-ii+2);
+              FN(passband_length+ii,chan) = FN(passband_length+ii,chan)*filter_response(ii);
+          end
+        end
       end
       % size(FN(:, 1))
       % catted = cat(1, FN(:, 1), FN(:, 2));

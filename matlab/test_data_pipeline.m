@@ -62,6 +62,7 @@ function res = test_data_pipeline(...
   save_file(channelized_data_file_path, @write_dada_file, {channelized, channelized_header})
 
   % synthesize channelized data
+  synthesis_handler_args{1}.filter_coeff = fir_filter_coeff;
   synthesized = synthesis_handler(channelized, input_fft_length, os_factor, synthesis_handler_args{:});
   synthesized_header = default_header;
 
