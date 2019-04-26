@@ -1,4 +1,4 @@
-function out = polyphase_synthesis (in, input_fft_length, os_factor)
+function out = polyphase_synthesis (in, input_fft_length, os_factor, sample_offset_)
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   % @method polyphase_synthesis
@@ -12,6 +12,14 @@ function out = polyphase_synthesis (in, input_fft_length, os_factor)
   % @return {double/single []} - Upsampled time domain output array. The
   %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %   return array and the input array will not be the same
+
+  sample_offset = 1;
+  if exist('sample_offset_', 'var')
+    sample_offset = sample_offset_;
+  end
+
+  in = in(:, :, sample_offset:end);
+
 
   in_size = size(in);
   n_pol = in_size(1);

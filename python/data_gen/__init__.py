@@ -3,7 +3,9 @@ from .dspsr_util import (
     run_dspsr_with_dump,
     run_psrdiff,
     run_psrtxt,
-    find_in_log)
+    load_psrtxt_data,
+    find_in_log,
+    BaseRunner)
 from .generate_test_vector import (
     generate_test_vector,
     complex_sinusoid,
@@ -21,7 +23,9 @@ __all__ = [
     "run_dspsr_with_dump",
     "run_psrdiff",
     "run_psrtxt",
+    "load_psrtxt_data",
     "find_in_log",
+    "BaseRunner",
     "generate_test_vector",
     "complex_sinusoid",
     "time_domain_impulse",

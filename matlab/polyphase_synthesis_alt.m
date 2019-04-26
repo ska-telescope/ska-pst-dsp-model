@@ -31,6 +31,7 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
   dtype = class(in);
   n_blocks = floor(n_dat / input_fft_length);
   fprintf('polyphase_synthesis_alt: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
+  fprintf('polyphase_synthesis_alt: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
 
   output_fft_length = normalize(os_factor, input_fft_length) * n_chan;
   out = complex(zeros(n_pol, 1, n_blocks*output_fft_length, dtype));
@@ -39,14 +40,16 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
+  % j is complex number.
+  % in Python we have to write 1j; this is not necessary in Matlab
   phase_shift_arr = [0,...
-    1j,...
-    0.5 + (sqrt(3.0)/2.0)*1j,...
+    j,...
+    0.5 + (sqrt(3.0)/2.0)*j,...
     sqrt(3.0)/2.0 + 0.5i,...
     1,...
     sqrt(3.0)/2.0 - 0.5i,...
-    0.5 - (sqrt(3.0)/2.0)*1j,...
-    -1j
+    0.5 - (sqrt(3.0)/2.0)*j,...
+    -j
   ];
 
 
@@ -63,17 +66,26 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, sample_
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         discard = (1.0 - (os_factor.de/os_factor.nu))/2.0;
-        phase_shift_arr(chan);
+        % phase_shift_arr(chan);
         % FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan).*phase_shift_arr(chan);
         FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan);
         % if (equaliseRipple)
         %     for ii = 1:passbandLength
+
+
+
+
         %         % fprintf('%d, %d\n', ii, passbandLength-ii+2)
         %         FN(ii,chan) = FN(ii,chan)*deripple(passbandLength-ii+2);
         %         FN(passbandLength+ii,chan) = FN(passbandLength+ii,chan)*deripple(ii);
         %     end;
         % end;
       end
+      % size(FN(:, 1))
+      % catted = cat(1, FN(:, 1), FN(:, 2));
+      % ax = subplot(211); plot(angle(catted)); grid(ax, 'on');
+      % ax = subplot(212); plot(abs(catted)); grid(ax, 'on');
+      % pause
 
       %% Combine chunks & back-transform
 

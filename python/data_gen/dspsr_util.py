@@ -8,6 +8,7 @@ import shlex
 import typing
 import functools
 
+import numpy as np
 import psr_formats
 
 from .config import config
@@ -19,7 +20,9 @@ __all__ = [
     "run_dspsr",
     "run_psrdiff",
     "run_psrtxt",
-    "find_in_log"
+    "load_psrtxt_data",
+    "find_in_log",
+    "BaseRunner"
 ]
 
 
@@ -82,6 +85,23 @@ class BaseRunner(metaclass=Singleton):
             output_dir = os.path.dirname(file_path)
         self.output_dir = output_dir
         self.extra_args = extra_args
+
+    @staticmethod
+    def chain(*callbacks):
+        """
+        Chain callbacks together
+        """
+        def _chain(*args):
+            res = []
+            res.append(callbacks[0](*args))
+            for callback in callbacks[1:]:
+                if hasattr(res[-1], "format"):
+                    res.append(callback(res[-1]))
+                else:
+                    res.append(callback(res[-1][0]))
+            return res
+
+        return _chain
 
 
 class DspsrRunner(BaseRunner):
@@ -285,6 +305,26 @@ class PsrtxtRunner(BaseRunner):
             module_logger.error(
                 f"Couldn't execute command {psrtxt_cmd_str}: {err}")
 
+        return output_file_path, log_file_path
+
+
+def load_psrtxt_data(psrtxt_file_path: str):
+    """
+    Load in data from a `psrtxt` dump file
+    """
+    with open(psrtxt_file_path, "r") as f:
+        txt_data = f.read()
+
+    data = []
+    for line in txt_data.split("\n"):
+        if line == "":
+            continue
+        data.append([float(v) for v in line.split(" ")])
+
+    data = np.array([np.array(a) for a in data]).transpose()
+
+    return data
+
 
 def find_in_log(log_file_path: str,
                 *keywords: typing.Tuple[str],
@@ -308,7 +348,11 @@ def find_in_log(log_file_path: str,
     vals = []
     for key in keywords:
         vals.append(_get_val_after_keyword(txt, key))
-    return vals
+
+    if len(keywords) == 1:
+        return vals[0]
+    else:
+        return vals
 
 
 run_dspsr = DspsrRunner()

@@ -1,4 +1,4 @@
-function file_info = test_data_pipeline(...
+function res = test_data_pipeline(...
     config_struct,...
     n_chan, os_factor,...
     input_fft_length, n_bins,...
@@ -27,7 +27,9 @@ function file_info = test_data_pipeline(...
   input_data = complex(zeros(2, 1, n_bins, 'single'));
   input_data(1, 1, :) = impulse_data(:);
   input_data(2, 1, :) = impulse_data(:);
-
+  % input_data = input_data(:, :, 43:end);
+  fprintf('test_data_pipeline: size(input_data)=');
+  size(input_data)
   % input_data_flattened = reshape(input_data, 1, numel(input_data));
   % k = find(input_data_flattened)
 
@@ -38,6 +40,8 @@ function file_info = test_data_pipeline(...
   input_header = default_header;
 
   % save data
+  fprintf('output_dir=%s\n', output_dir);
+
   input_data_file_name = sprintf('%s.dump', func2str(test_vector_handler));
   input_data_file_path = fullfile(output_dir, input_data_file_name);
   save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
@@ -61,11 +65,13 @@ function file_info = test_data_pipeline(...
   synthesized = synthesis_handler(channelized, input_fft_length, os_factor, synthesis_handler_args{:});
   synthesized_header = default_header;
 
+
   % save synthesized data
   synthesized_data_file_name = sprintf('%s.%s', func2str(synthesis_handler), input_data_file_name);
   synthesized_data_file_path = fullfile(output_dir, synthesized_data_file_name);
   save_file(synthesized_data_file_path, @write_dada_file, {synthesized, synthesized_header});
 
   file_info = {input_data_file_name, channelized_data_file_name, synthesized_data_file_name};
-
+  data = {input_data, channelized, synthesized};
+  res = {file_info, data};
 end

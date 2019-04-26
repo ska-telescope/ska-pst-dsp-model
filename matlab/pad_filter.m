@@ -7,6 +7,6 @@ function padded = pad_filter (filter_coeff, n_chan)
   % @return {double/single []} - filter coefficients with zero padding.
 
   phases=ceil(length(filter_coeff)/n_chan);
-  padded=zeros(phases*n_chan, class(filter_coeff));
+  padded=zeros(phases*n_chan, 1, class(filter_coeff));
   padded(1:length(filter_coeff))=filter_coeff;
 end

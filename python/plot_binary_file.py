@@ -14,9 +14,13 @@ def plot_binary_files(*file_paths: str, dtype=None, offset=0):
 
     if dtype is None:
         raise RuntimeError("Have to specify a data type")
+    data = []
+    for f in file_paths:
+        if f.endswith(".npy"):
+            data.append(np.load(f).flatten())
+        else:
+            data.append(load_binary_data(f, dtype=dtype, offset=offset))
 
-    data = [load_binary_data(f, dtype=dtype, offset=offset)
-            for f in file_paths]
     iscomplex = np.iscomplexobj(data[0])
     n_z = 2 if iscomplex else 1
     n_z_fn = [np.real, np.imag]

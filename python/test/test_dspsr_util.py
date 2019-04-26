@@ -13,11 +13,19 @@ data_dir = os.path.join(base_dir, "data")
 
 class TestDSPSRUtil(unittest.TestCase):
 
+    test_log_file_path = os.path.join(
+        test_dir, "test_data", "test_log_file.log"
+    )
+
     simulated_pulsar_file_path = os.path.join(
         data_dir, "simulated_pulsar.noise_0.0.nseries_3.ndim_2.dump"
     )
     psrtxt_test_file_path = os.path.join(
         test_dir, "test_data", "psrdiff.out"
+    )
+
+    test_load_psrtxt_data_file_path = os.path.join(
+        test_dir, "test_data", "test_psrtxt.txt"
     )
 
     psrdiff_test_file_paths = [os.path.join(
@@ -67,7 +75,21 @@ class TestDSPSRUtil(unittest.TestCase):
         self.__class__.file_paths |= set(output)
 
     def test_find_in_log(self):
-        pass
+        val = data_gen.find_in_log(
+            self.test_log_file_path,
+            "output_fft_length")
+        self.assertTrue(val == "229376")
+
+        with self.assertRaises(RuntimeError):
+            data_gen.find_in_log(
+                self.test_log_file_path,
+                "foo")
+
+    def test_load_psrtxt_data(self):
+
+        data = data_gen.load_psrtxt_data(
+            self.test_load_psrtxt_data_file_path)
+        self.assertTrue(data[3, 330] == -0.000184)
 
     @classmethod
     def tearDownClass(cls):

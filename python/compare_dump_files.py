@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
 
-import pfb.formats
+import psr_formats
 import comparator
 
 __all__ = [
@@ -65,16 +65,45 @@ def load_n_chop_binary(
 ):
     module_logger.debug((f"load_n_chop_binary: loading data from "
                          f"{len(file_paths)} files"))
+    data = []
 
-    data = [load_binary_data(f, dtype=dtype, offset=offset)
-            for f in file_paths]
+    for file_path in file_paths:
+        data.append(
+            load_binary_data(file_path, dtype=dtype, offset=offset))
 
     min_dat = np.amin([d.shape[0] for d in data])
-    data = [d.data[:min_dat] for d in data]
+    data = [d[:min_dat] for d in data]
     return data
 
 
-def load_n_chop(
+def load_n_chop_npy(
+    *file_paths,
+    chan: list = None,
+    dat: list = None,
+    arrangement: str = None
+):
+
+    if arrangement is None:
+        arrangement = {'dat': 0, 'chan': 1}
+
+    module_logger.debug((f"load_n_chop: loading data from "
+                         f"{len(file_paths)} files"))
+    chan = _process_dim(chan)
+    dat = _process_dim(dat)
+    data = []
+    for f in file_paths:
+        arr = np.load(f)
+        if arr.ndim == 2:
+            s = [slice(None) for i in range(2)]
+            s[arrangement['dat']] = dat
+            s[arrangement['chan']] = chan
+            arr = arr[s].flatten()
+        data.append(arr)
+
+    return data
+
+
+def load_n_chop_dada(
     *file_paths: typing.Tuple[str],
     pol: list = None,
     chan: list = None,
@@ -82,7 +111,7 @@ def load_n_chop(
 ):
     module_logger.debug((f"load_n_chop: loading data from "
                          f"{len(file_paths)} files"))
-    dada_files = [pfb.formats.DADAFile(f).load_data() for f in file_paths]
+    dada_files = [psr_formats.DADAFile(f).load_data() for f in file_paths]
     pol = _process_dim(pol)
     chan = _process_dim(chan)
     dat = _process_dim(dat)
@@ -131,8 +160,11 @@ def compare_dump_files(
         data_slice = load_n_chop_binary(
             *file_paths, dtype=dtype, offset=offset)
     else:
-        data_slice = load_n_chop(
-            *file_paths, pol=pol, chan=chan, dat=dat)[0]
+        if file_paths[0].endswith(".dump"):
+            data_slice = load_n_chop_dada(
+                *file_paths, pol=pol, chan=chan, dat=dat)[0]
+        else:
+            data_slice = load_n_chop_npy(*file_paths, chan=chan, dat=dat)
 
     if normalize:
         module_logger.debug("compare_dump_files: normalizing data")
@@ -189,6 +221,7 @@ def compare_dump_files(
         res_op, res_prod = comp.time.cartesian(*data_slice, labels=file_names)
         # print(res_prod["this"])
         print(res_prod["this"])
+        print(res_op["this"].result[0])
         # print(res_prod["diff"])
         f, a = comparator.util.plot_operator_result(res_op, figsize=(16, 9))
         figs.extend(f)
