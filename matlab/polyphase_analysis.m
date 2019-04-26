@@ -39,13 +39,21 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
   % Making sure the filter has an integer multiple of block size.
   % length(filt)
   f = pad_filter(filt, block);
-  % length(f)
+  input_pad_length = floor(length(filt)/2);
+  sample_offset = mod(input_pad_length, block);
+  if sample_offset ~= 0
+    sample_offset
+    input_pad_length = input_pad_length + block - sample_offset;
+  end
+
   phases = length(f) / block;
 
   nblocks=floor( (n_dat-length(f))/step);
   fl=length(f);
 
   if verbose
+    fprintf('polyphase_analysis: length(filt)=%d\n', length(filt));
+    fprintf('polyphase_analysis: input_pad_length=%d\n', input_pad_length);
     fprintf('polyphase_analysis: fl=%d\n', fl);
     fprintf('polyphase_analysis: step=%d\n', step);
     fprintf('polyphase_analysis: dtype=%s\n', dtype);
@@ -65,9 +73,7 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
     end
     in_pol = squeeze(in(i_pol, 1, :));
     in_pol_padded = in_pol;
-    in_pol_padded = cat(1, zeros(floor(length(filt)/2), 1), in_pol);
-    % in_pol_padded = cat(1, zeros(length(f), 1), in_pol);
-    % in_pol_padded = cat(1, zeros(112, 1), in_pol);
+    in_pol_padded = cat(1, zeros(input_pad_length, 1), in_pol);
     for k=0:nblocks-1
       % if mod(k, 10000) == 0 && verbose;
       %   for b=1:prev_bytes

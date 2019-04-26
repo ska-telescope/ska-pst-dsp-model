@@ -1,4 +1,4 @@
-function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, deripple_, sample_offset_)
+function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, deripple_, sample_offset_, calc_overlap_handler_)
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   %
@@ -22,6 +22,11 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
   %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %   return array and the input array will not be the same
 
+  function overlap = default_calc_overlap(input_fft_length)
+    overlap = round(input_fft_length*0.125);
+  end
+
+
   sample_offset = 1;
   if exist('sample_offset_', 'var')
     sample_offset = sample_offset_;
@@ -32,6 +37,12 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
     deripple = deripple_;
   end
 
+  if exist('calc_overlap_handler_', 'var')
+    calc_overlap_handler = calc_overlap_handler_;
+  else
+    calc_overlap_handler = @default_calc_overlap;
+  end
+
   in = in(:, :, sample_offset:end);
 
   size_in = size(in);
@@ -39,14 +50,28 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
   n_chan = size_in(2);
   n_dat = size_in(3);
   dtype = class(in);
-  n_blocks = floor(n_dat / input_fft_length);
   fprintf('polyphase_synthesis_alt: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
   fprintf('polyphase_synthesis_alt: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
 
-  output_fft_length = normalize(os_factor, input_fft_length) * n_chan;
-  out = complex(zeros(n_pol, 1, n_blocks*output_fft_length, dtype));
+  input_overlap = calc_overlap_handler(input_fft_length);
+  input_keep = input_fft_length - 2*input_overlap;
 
-  fprintf('polyphase_synthesis_alt: n_blocks=%d, output_fft_length=%d, sample_offset=%d\n', n_blocks, output_fft_length, sample_offset);
+  n_blocks = floor(n_dat / input_keep) - 1;
+
+  output_fft_length = normalize(os_factor, input_fft_length) * n_chan;
+  output_overlap = normalize(os_factor, input_overlap) * n_chan;
+  output_keep = output_fft_length - 2*output_overlap;
+
+  out = complex(zeros(n_pol, 1, n_blocks*output_keep, dtype));
+
+  fprintf('polyphase_synthesis_alt: n_blocks=%d\n', n_blocks);
+  fprintf('polyphase_synthesis_alt: input_fft_length=%d\n', input_fft_length);
+  fprintf('polyphase_synthesis_alt: output_fft_length=%d\n', output_fft_length);
+  fprintf('polyphase_synthesis_alt: input_overlap=%d\n', input_overlap);
+  fprintf('polyphase_synthesis_alt: output_overlap=%d\n', output_overlap);
+  fprintf('polyphase_synthesis_alt: input_keep=%d\n', input_keep);
+  fprintf('polyphase_synthesis_alt: output_keep=%d\n', output_keep);
+  fprintf('polyphase_synthesis_alt: sample_offset=%d\n', sample_offset);
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
@@ -60,7 +85,6 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
     % use just the baseband passband section of transfer function
     % - apply to both halves of channel
     filter_response = ones(passband_length+1,1)./abs(H0(1:passband_length+1,1));
-    filter_response
   end
   % j is complex number.
   % in Python we have to write 1j; this is not necessary in Matlab
@@ -76,10 +100,10 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
 
   for i_pol=1:n_pol
     for n=1:n_blocks
-      in_step_s = input_fft_length*(n-1)+1;
-      in_step_e = input_fft_length*n;
-      out_step_s = output_fft_length*(n-1)+1;
-      out_step_e = output_fft_length*n;
+      in_step_s = input_keep*(n-1) + 1;
+      in_step_e = in_step_s + input_fft_length - 1;
+      out_step_s = output_keep*(n-1) + 1;
+      out_step_e = out_step_s + output_keep - 1;
       spectra = transpose(squeeze(in(i_pol, :, in_step_s:in_step_e)));
       spectra = fft(spectra); % fft operates on each of the columns
       spectra = fftshift(spectra, 1);
@@ -112,7 +136,9 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
       end
       FFFF = [FFFF; FN(1:FN_width/2,1)]; % lower half of chan 1 is last part of FFFF
     	% back transform
-      out(i_pol, 1, out_step_s:out_step_e) = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);  % re-scale by OS factor
+      iFFFF = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);
+      out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);  % re-scale by OS factor
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end
+  end
 end
