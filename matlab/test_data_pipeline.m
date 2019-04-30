@@ -10,6 +10,11 @@ function res = test_data_pipeline(...
     synthesis_handler_args,...
     output_dir...
 )
+  % test_vector_handler_args
+  % analysis_handler_args
+  % synthesis_handler_args
+
+
   dtype = config_struct.dtype;
 
   % load in FIR filter coefficients
@@ -24,7 +29,7 @@ function res = test_data_pipeline(...
   % generate some impulse, either in the time or spectral domain
 
   impulse_data = test_vector_handler(n_bins, test_vector_handler_args{:}, dtype);
-  input_data = complex(zeros(2, 1, n_bins, 'single'));
+  input_data = complex(zeros(2, 1, n_bins, dtype));
   input_data(1, 1, :) = impulse_data(:);
   input_data(2, 1, :) = impulse_data(:);
   % input_data = input_data(:, :, 43:end);
@@ -40,13 +45,16 @@ function res = test_data_pipeline(...
   input_header = default_header;
 
   % save data
-  fprintf('output_dir=%s\n', output_dir);
+  fprintf('test_data_pipeline: output_dir=%s\n', output_dir);
 
   input_data_file_name = sprintf('%s.dump', func2str(test_vector_handler));
   input_data_file_path = fullfile(output_dir, input_data_file_name);
   save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
 
+  fprintf('test_data_pipeline: analysis_handler_args=%s\n', analysis_handler_args{:});
+  analysis_handler_args
   % channelize data
+
   channelized = analysis_handler(input_data, fir_filter_coeff, n_chan, os_factor, analysis_handler_args{:});
   channelized_header = default_header;
   input_tsamp = str2num(channelized_header('TSAMP'));
@@ -66,6 +74,8 @@ function res = test_data_pipeline(...
   synthesized = synthesis_handler(channelized, input_fft_length, os_factor, synthesis_handler_args{:});
   synthesized_header = default_header;
 
+  % calculate the offset between input and inverted data due to the FIR filter
+  fir_offset = round((length(fir_filter_coeff) - 1) / 2);
 
   % save synthesized data
   synthesized_data_file_name = sprintf('%s.%s', func2str(synthesis_handler), input_data_file_name);
@@ -74,5 +84,7 @@ function res = test_data_pipeline(...
 
   file_info = {input_data_file_name, channelized_data_file_name, synthesized_data_file_name};
   data = {input_data, channelized, synthesized};
-  res = {file_info, data};
+  meta = struct('fir_offset', fir_offset);
+  res = {file_info, data, meta};
+
 end

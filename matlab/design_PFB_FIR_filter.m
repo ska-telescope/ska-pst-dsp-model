@@ -1,9 +1,15 @@
-function design_PFB_FIR_filter(n_chan, os_factor, n_taps)
+function design_PFB_FIR_filter(n_chan, os_factor, n_taps, display_)
   % Design a FIR appropriate for polyphase filterbank.
   % @method design_PFB
   % @param {single/double} n_chan - number of PFB output channels
   % @param {struct} os_factor - oversampling factor struct
   % @param {single} n_taps - Number of filter taps
+
+  display = 0;
+  if exist('display_', 'var')
+    display = display_;
+  end
+
   % Oversampling Factor
   OS = os_factor.nu/os_factor.de;
 
@@ -35,7 +41,7 @@ function design_PFB_FIR_filter(n_chan, os_factor, n_taps)
   h = H_Obj_0.Numerator;
 
   % Save impulse response h, and other parameters
-  save(sprintf('./../config/Prototype_FIR.%d.mat', n_taps), 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
+  save(sprintf('./../config/Prototype_FIR.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps), 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
 
   % Save a sampled version of the Transfer Function for later equalisation
   % - length should be n_chan times the half-channel width (where width is FFTlength/OS_factor)
@@ -44,41 +50,42 @@ function design_PFB_FIR_filter(n_chan, os_factor, n_taps)
 %     save('./../config/TF_points.mat', 'H0', 'W');
 %
 %     % Optionally display design
-%     if (display==1)
-%         [H0,W] = freqz (h, 1, n_taps*n_chan);
-%
-%         %Rescaling the frequency axis
-%         W = W/pi;
-%
-%         figure;
-%         subplot(3,1,1)
-%         plot (W, abs(H0));
-%         axis ([0 3.5*Fp -0.15 1.15]);
-%         title('Transfer Function of the Prototype Filter')
-%         grid on; box on;
-%
-%         subplot(3,1,2)
-%         hold on;
-%         plot (W, 20*log10(abs(H0)));
-%         plot([0 Fp], [-0.5*Ap -0.5*Ap],'k-.','LineWidth',1);
-%         plot([0 Fp], [ 0.5*Ap  0.5*Ap],'k-.','LineWidth',1);
-%         hold off;
-%         axis ([0 1.5*Fp -4.5*Ap 4.5*Ap]);
-%         title ('Passband')
-%         grid on; box on;
-%
-%         subplot (3,1,3);
-%         hold on;
-%         plot (W, 20*log10(abs(H0)));
-%         plot([Fs 1], [-As -As],'r-','LineWidth',1);
-%         hold off;
-%         axis ([0 1 -(As+10) 3]);
-%         title ('Stopband')
-%         grid on; box on;
-%
-%         pause;
-%     end;
-%
+  if (display==1)
+    [H0,W] = freqz (h, 1, n_taps*n_chan);
+
+    %Rescaling the frequency axis
+    W = W/pi;
+
+    fig = figure;
+    subplot(1,1,1)
+    plot (W, abs(H0), 'LineWidth', 1.5);
+    axis ([0 3.5*Fp -0.15 1.15]);
+    title(sprintf('Transfer Function of the Prototype Filter with %d taps', n_taps));
+    grid on; box on;
+
+    % subplot(3,1,2)
+    % hold on;
+    % plot (W, 20*log10(abs(H0)));
+    % % plot([0 Fp], [-0.5*Ap -0.5*Ap],'k-.','LineWidth',1);
+    % % plot([0 Fp], [ 0.5*Ap  0.5*Ap],'k-.','LineWidth',1);
+    % hold off;
+    % axis ([0 1.5*Fp -1000*Ap 1000*Ap]);
+    % title ('Passband')
+    % grid on; box on;
+    %
+    % subplot (3,1,3);
+    % hold on;
+    % plot (W, 20*log10(abs(H0)));
+    % plot([Fs 1], [-As -As],'r-','LineWidth',1);
+    % hold off;
+    % axis ([0 1 -(As+10) 3]);
+    % title ('Stopband')
+    % grid on; box on;
+
+    saveas(fig, sprintf('./../products/FIR_filter_response.%d.png', n_taps));
+
+  end;
+
 %     close all;
 %
 % return

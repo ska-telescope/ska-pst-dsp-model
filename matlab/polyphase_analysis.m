@@ -73,7 +73,7 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
     end
     in_pol = squeeze(in(i_pol, 1, :));
     in_pol_padded = in_pol;
-    in_pol_padded = cat(1, zeros(input_pad_length, 1), in_pol);
+    % in_pol_padded = cat(1, zeros(input_pad_length, 1), in_pol);
     for k=0:nblocks-1
       % if mod(k, 10000) == 0 && verbose;
       %   for b=1:prev_bytes
