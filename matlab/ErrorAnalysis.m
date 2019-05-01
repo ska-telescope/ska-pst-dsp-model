@@ -13,7 +13,12 @@ classdef ErrorAnalysis
 
     function val = max_spurious_power(obj, a)
       a = obj.zero_max_val(a);
-      val =  max(a);
+      val = max(a);
+    end
+
+    function val = mean_spurious_power(obj, a)
+      a = obj.zero_max_val(a);
+      val =  mean(a);
     end
 
     function val = total_spurious_power(obj, a)
