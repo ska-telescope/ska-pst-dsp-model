@@ -66,21 +66,26 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             backend=data_gen.config["backend"]["test_vectors"])
         cls.channelizer = data_gen.channelize(
             backend=data_gen.config["backend"]["channelize"])
-        cls.synthesizer = data_gen.synthesize(
+        synthesizer = data_gen.synthesize(
             backend=data_gen.config["backend"]["synthesize"])
+        cls.synthesizer = functools.partial(
+            synthesizer,
+            deripple=data_gen.config["deripple"])
         cls.pipeline = data_gen.pipeline(
             cls.generator,
             cls.channelizer,
             cls.synthesizer,
             output_dir=cls.output_dir
         )
+        deripple_str = "-dr" if data_gen.config["deripple"] else ""
         cls.dspsr_dumper = functools.partial(
             data_gen.run_dspsr_with_dump,
             dm=data_gen.config["dm"],
             period=data_gen.config["period"],
             output_dir=cls.output_dir,
             dump_stage=data_gen.config["dump_stage"],
-            extra_args=f"-IF 1:{data_gen.config['input_fft_length']} -V"
+            extra_args=(f"-IF 1:{data_gen.config['input_fft_length']} "
+                        f"{deripple_str} -V")
         )
         comp = comparator.SingleDomainComparator(name="time")
         comp.operators["diff"] = lambda a, b: a - b

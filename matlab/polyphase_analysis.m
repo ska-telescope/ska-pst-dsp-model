@@ -37,12 +37,11 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
   % step will be the same as block in the critically sampled case.
   step = floor((block * os_factor.de) / os_factor.nu);
   % Making sure the filter has an integer multiple of block size.
-  % length(filt)
   f = pad_filter(filt, block);
   input_pad_length = floor(length(filt)/2);
   sample_offset = mod(input_pad_length, block);
   if sample_offset ~= 0
-    sample_offset
+    sample_offset;
     input_pad_length = input_pad_length + block - sample_offset;
   end
 

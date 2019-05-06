@@ -1,4 +1,4 @@
-function design_PFB_FIR_filter(n_chan, os_factor, n_taps, display_)
+function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, display_)
   % Design a FIR appropriate for polyphase filterbank.
   % @method design_PFB
   % @param {single/double} n_chan - number of PFB output channels
@@ -41,7 +41,8 @@ function design_PFB_FIR_filter(n_chan, os_factor, n_taps, display_)
   h = H_Obj_0.Numerator;
 
   % Save impulse response h, and other parameters
-  save(sprintf('./../config/Prototype_FIR.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps), 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
+  fir_filter_path = sprintf('./../config/Prototype_FIR.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
+  save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
 
   % Save a sampled version of the Transfer Function for later equalisation
   % - length should be n_chan times the half-channel width (where width is FFTlength/OS_factor)

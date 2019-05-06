@@ -4,23 +4,24 @@ function pipeline ()
   config.header_file_path = './../config/default_header.json';
   config.fir_filter_path = './../config/Prototype_FIR.8-7.8.80.mat'; % 1
 
-  n_blocks = 4;
-  config.os_factor = struct('nu', 8, 'de', 7);
-  config.n_chan = 8;
+  n_blocks = 4000;
+  % config.os_factor = struct('nu', 8, 'de', 7);
+  % config.n_chan = 8;
   config.input_fft_length = 128;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;
   n_bins = n_blocks*block_size;
-
+  n_bins
 
   pos = 0.1874;
 
   offsets = [floor(pos*n_bins)];
   widths = [1];
 
-  pos = 0.00002;
-  frequencies = [floor(pos*n_bins)];
+  % pos = 0.000001;
+  % frequencies = [floor(pos*n_bins)];
+  frequencies = [4];
   phases = [pi/4];
-  bin_offset = 0.1;
+  bin_offset = 0.0;
 
   meta_struct = struct();
   % meta_struct.impulse_position = num2str(pos);

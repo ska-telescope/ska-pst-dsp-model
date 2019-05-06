@@ -14,8 +14,8 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
   %   with members `nu` and `de` corresponding to the oversampling factor's
   %   numerator and denominator, respectively.
   % @param {struct} deripple_ - A struct containing filter coefficients
-  %     used to channelize data. If the "apply_deripple" struct flag is true,
-  %     apply derippling correction or "ripple equalization".
+  %     used to channelize data. If the 'apply_deripple' struct flag is true,
+  %     apply derippling correction or 'ripple equalization'.
   % @param {int} sample_offset_ - offset applied to channelized input prior to
   %   processing.
   % @return {double/single []} - Upsampled time domain output array. The
@@ -77,7 +77,7 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
   if deripple.apply_deripple
-    fprintf("polyphase_synthesis_alt: applying deripple\n");
+    fprintf('polyphase_synthesis_alt: applying deripple\n');
     passband_length = FN_width/2;
     [H0,W] = freqz(deripple.filter_coeff, 1, n_chan*passband_length);
     % figure; ax = gca;
@@ -106,8 +106,21 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
       out_step_s = output_keep*(n-1) + 1;
       out_step_e = out_step_s + output_keep - 1;
       in_dat = squeeze(in(i_pol, :, in_step_s:in_step_e));
+      % size(in_dat)
+      % % zero first and last input_discard:
+      ax = subplot(2, 1, 1);
+      plot(abs(in_dat(:)));
+      % ax = subplot(2, 1, 2);
+      % plot(imag(in_dat(:)));
+      % pause;
+      in_dat(:, 1:input_overlap) = complex(0, 0);
+      in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
+      ax = subplot(2, 1, 2);
+      plot(abs(in_dat(:)));
+      pause
+
       spectra = transpose(in_dat);
-      spectra = fft(spectra); % fft operates on each of the columns
+      spectra = fft(spectra, input_fft_length); % fft operates on each of the columns
       spectra = fftshift(spectra, 1);
       spectra = fftshift(spectra, 2);
       FN = complex(zeros(FN_width, n_chan, dtype));

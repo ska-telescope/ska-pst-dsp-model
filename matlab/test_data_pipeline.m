@@ -52,7 +52,6 @@ function res = test_data_pipeline(...
   save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
 
   fprintf('test_data_pipeline: analysis_handler_args=%s\n', analysis_handler_args{:});
-  analysis_handler_args
   % channelize data
 
   channelized = analysis_handler(input_data, fir_filter_coeff, n_chan, os_factor, analysis_handler_args{:});

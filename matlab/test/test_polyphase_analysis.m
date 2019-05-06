@@ -13,6 +13,20 @@ function test_polyphase_analysis ()
     polyphase_analysis_alt(test_vector, filt, n_chan, os_factor);
   end
 
+  function benchmark ()
+    n_chan = 8;
+    n_pol = 1;
+    os_factor = struct('nu', 8, 'de', 7);
+    test_vector = complex(rand(n_pol, 1, 1e6));
+    filt = rand(88, 1);
+
+    for i=1:10
+      tic;
+      polyphase_analysis(test_vector, filt, n_chan, os_factor);
+      toc;
+    end
+  end
+
   function test_simulated_pulsar_data ()
 
     input_file_path = './../data/simulated_pulsar.noise_0.0.nseries_10.ndim_2.dump';
@@ -56,6 +70,7 @@ function test_polyphase_analysis ()
 
   end
 
-  test_sample_data;
-  test_simulated_pulsar_data;
+  % test_sample_data;
+  % test_simulated_pulsar_data;
+  benchmark;
 end

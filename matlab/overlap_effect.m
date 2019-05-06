@@ -1,8 +1,12 @@
 function overlap_effect()
   % Quantify the effect introducing overlap save has on processing blocks of data.
   config = default_config()
+  config.input_fft_length = 128;
 
-  n_blocks = 4;
+  filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
+  filt_offset = round((length(filt_coeff) - 1)/2);
+
+  n_blocks = 5;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;  % this is also the output_fft_length
   n_bins = n_blocks*block_size;
 
@@ -10,6 +14,10 @@ function overlap_effect()
   frequencies = [1*n_blocks];
   phases = [pi/4];
   bin_offset = 0.1;
+  total_freq = frequencies(1) + bin_offset;
+
+  offsets = [block_size];
+  widths = [1];
 
   meta_struct = struct();
 
@@ -27,112 +35,124 @@ function overlap_effect()
     end
     overlap_handler = @calc_overlap;
   end
-  % for d = 8
+  % factors = 32;
   % factors = [0, 256, 128, 64, 32, 16, 8];
   factors = 0:2:48;
-  % 0.0010    0.0304    0.0000
-  % 0.0350    0.1600    0.0000
-  % factors = [0, 2, 48];
-  % factors = [0, 4, 16, 32]
-  % factors = 32;
-  % factors = 0:4:16;
+  % factors = round(config.input_fft_length / 8);
   overlaps = [];
   temporal = [];
   spectral = [];
+  inversion_blocks = [];
+
+  perf = DomainPerformance;
+  names = {'Max', 'Total', 'Mean'};
 
   for d = factors
     calc_overlap_handler = overlap_factory(d);
     forward_overlap = calc_overlap_handler(config.input_fft_length);
     backward_overlap = normalize(config.os_factor, forward_overlap)*config.n_chan;
-    % backward_overlap = calc_overlap_handler(block_size);
+    % offsets(1) = block_size - 2*backward_overlap + filt_offset;
+    offsets(1) = block_size - backward_overlap + filt_offset
+    % offsets(1) = 23351;
+    % offsets(1) = round(1.5*block_size) + filt_offset;
+    % offsets(1) = filt_offset;
+    % offsets(1)
+    % pause
+    % res = test_data_pipeline(config, config.n_chan, config.os_factor,...
+    %                          config.input_fft_length, n_bins,...
+    %                          @complex_sinusoid,...
+    %                          {frequencies, phases, bin_offset}, @polyphase_analysis, {1},...
+    %                          @polyphase_synthesis_alt, ...
+    %                          {deripple, sample_offset, calc_overlap_handler},...
+    %                          config.data_dir);
+
     res = test_data_pipeline(config, config.n_chan, config.os_factor,...
-                             config.input_fft_length, n_bins,...
-                             @complex_sinusoid,...
-                             {frequencies, phases, bin_offset}, @polyphase_analysis, {1},...
-                             @polyphase_synthesis_alt, ...
-                             {deripple, sample_offset, calc_overlap_handler},...
-                             config.data_dir);
+                            config.input_fft_length, n_bins,...
+                            @time_domain_impulse,...
+                            {offsets, widths}, @polyphase_analysis, {1},...
+                            @polyphase_synthesis_alt, ...
+                            {deripple, sample_offset, calc_overlap_handler},...
+                            config.data_dir);
+    fft_length = 2*block_size;
+    chopped = chop(res, backward_overlap);
+    sim = chopped{1};
+    inv = chopped{2};
 
-    data = res{2};
-    meta = res{3};
-
-    size_inv = size(data{3});
-    ndat_inv = size_inv(3);
-    fprintf('ndat_inv=%d\n', ndat_inv);
-
-    sim_squeezed = squeeze(data{1}(1, 1, :));
-    inv_squeezed = squeeze(data{3}(1, 1, :));
-    % fir_offset = 0;
-    % fft_length = floor(ndat_inv / block_size) * block_size;
-    fft_length = block_size;
-    sim_squeezed = sim_squeezed(backward_overlap+meta.fir_offset+1:end);
-    sim = sim_squeezed(1:ndat_inv);
-    inv = inv_squeezed(1:ndat_inv);
     diff = inv - sim;
     if length(factors) == 1
       fig = plot_performance(sim, inv, fft_length);
-      suptitle(sprintf('input fft length: %d, overlap: %d', config.input_fft_length, forward_overlap));
+      p = perf.temporal_performance(inv)
+      for idx=1:length(p)
+        fprintf('%s spurious power = %f\n', names{idx}, 10*log10(p(idx) + 1e-13));
+      end
+      % suptitle(sprintf('%.2f Hz signal, input fft length: %d, overlap: %d', total_freq, config.input_fft_length, forward_overlap));
+      suptitle(sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap));
       saveas(fig, sprintf('./../products/overlap_save.%d.png', forward_overlap));
     end
 
-    spectral_performance(inv, fft_length)
     overlaps = [overlaps forward_overlap];
-    spectral = [spectral; spectral_performance(inv, fft_length)];
-    temporal = [temporal; temporal_performance(sim, inv)];
+    spectral = [spectral; perf.spectral_performance(inv, fft_length)];
+    temporal = [temporal; perf.temporal_performance(inv)];
+
+    % calculate the number of computational blocks used in PFB inversion
+    size_chan_squeezed = size(res{2}{2});
+    n_dat_chan = size_chan_squeezed(2);
+    input_keep = config.input_fft_length - 2*forward_overlap;
+    n_block_pfb_inversion = floor((n_dat_chan - 2*forward_overlap) / input_keep);
+    inversion_blocks = [inversion_blocks; n_block_pfb_inversion];
 
   end
-
+  powan = PowerAnalysis;
   if length(factors) > 1
-    fig = figure('Position', [10, 10, 1200, 1500]);
-    prod_subplots = 3;
-    ax = subplot(prod_subplots, 1, 1);
-    plot(overlaps, squeeze(temporal(:, 1)), '-o', 'MarkerFaceColor', 'b');
-    title('Mean difference');
+    fig = figure('Position', [10, 10, 1400, 1600]);
+    prod_subplots = 4;
+
+    for idx=1:length(names)
+      ax = subplot(prod_subplots, 1, idx);
+      plot(overlaps, powan.dB(squeeze(temporal(:, idx)))./2, '-o', 'MarkerFaceColor', 'b');
+      % set(ax, 'YScale', 'log');
+      title(sprintf('%s Spurious Power of Inverted Time Series', names{idx}));
+      ylabel('Signal level');
+      grid(ax, 'on');
+    end
+
+    ax = subplot(prod_subplots, 1, prod_subplots);
+    plot(overlaps, inversion_blocks, '-o', 'MarkerFaceColor', 'b');
+    title('Number of Computational Blocks');
+
     xlabel('Forward Overlap Length');
-    ylabel('Signal level');
+    ylabel('# of Blocks');
     grid(ax, 'on');
 
-    ax = subplot(prod_subplots, 1, 2);
-    plot(overlaps, squeeze(temporal(:, 2)), '-o', 'MarkerFaceColor', 'b');
-    % set(ax, 'YScale', 'log')
-    title('Max difference');
-    xlabel('Forward Overlap Length');
-    ylabel('Signal level');
+
+    suptitle(sprintf('Temporal performance, block edge impulse', offsets(1)));
+    saveas(fig, sprintf('./../products/overlap_effect.temporal.%d.png', offsets(1)));
+
+    % suptitle(sprintf('Temporal performance, %.2f Hz signal', total_freq));
+    % saveas(fig, sprintf('./../products/overlap_effect.temporal.%.2f.png', total_freq));
+    fig = figure('Position', [10, 10, 1400, 1600]);
+    for idx=1:length(names)
+      ax = subplot(prod_subplots, 1, idx);
+      plot(overlaps, squeeze(spectral(:, idx)), '-o', 'MarkerFaceColor', 'b');
+      set(ax, 'YScale', 'log');
+      title(sprintf('%s Spurious Power of Inverted Spectrum', names{idx}));
+      ylabel('Signal level');
+      grid(ax, 'on');
+    end
+
+    ax = subplot(prod_subplots, 1, prod_subplots);
+    plot(overlaps, inversion_blocks, '-o', 'MarkerFaceColor', 'b');
+    title('Number of Computational Blocks');
+    ylabel('# of Blocks');
     grid(ax, 'on');
 
-    ax = subplot(prod_subplots, 1, 3);
-    plot(overlaps, squeeze(temporal(:, 3)), '-o', 'MarkerFaceColor', 'b');
-    title('Sum of difference');
     xlabel('Forward Overlap Length');
-    ylabel('Signal level');
-    grid(ax, 'on');
-    suptitle(sprintf('Temporal performance, %f Hz signal', frequencies(1) + bin_offset));
-    saveas(fig, './../products/overlap_effect.temporal.png');
 
-    fig = figure('Position', [10, 10, 1200, 1500]);
-    ax = subplot(prod_subplots, 1, 1);
-    plot(overlaps, squeeze(spectral(:, 1)), '-o', 'MarkerFaceColor', 'b');
-    title('Max spurious power');
-    xlabel('Forward Overlap Length');
-    ylabel('Power');
-    grid(ax, 'on');
+    suptitle(sprintf('Spectral performance, block edge impulse', offsets(1)));
+    saveas(fig, sprintf('./../products/overlap_effect.spectral.%d.png', offsets(1)));
 
-    ax = subplot(prod_subplots, 1, 2);
-    plot(overlaps, squeeze(spectral(:, 2)), '-o', 'MarkerFaceColor', 'b');
-    % set(ax, 'YScale', 'log')
-    title('Total spurious power');
-    xlabel('Forward Overlap Length');
-    ylabel('Power');
-    grid(ax, 'on');
-
-    ax = subplot(prod_subplots, 1, 3);
-    plot(overlaps, squeeze(spectral(:, 3)), '-o', 'MarkerFaceColor', 'b');
-    title('Mean spurious power');
-    xlabel('Forward Overlap Length');
-    ylabel('Power');
-    grid(ax, 'on');
-    suptitle(sprintf('Spectral performance, %f Hz signal', frequencies(1) + bin_offset));
-    saveas(fig, './../products/overlap_effect.spectral.png');
+    % suptitle(sprintf('Spectral performance, %.2f Hz signal', total_freq));
+    % saveas(fig, sprintf('./../products/overlap_effect.spectral.%.2f.png', total_freq));
   end
 end
 
@@ -145,36 +165,25 @@ end
 
 function fig = plot_performance(input, inv, fft_length)
   err = ErrorAnalysis;
+  powan = PowerAnalysis;
   n_subplots = 4;
   fig = figure('Position', [10, 10, 1200, 1500]);
-  ax = subplot(n_subplots, 2, 1);
-  hold on;
-  l1 = plot(real(input));
-  l2 = plot(imag(input));
-  grid(ax, 'on');
-  hold off;
-  legend([l1; l2], 'Real', 'Imaginary');
-  ylim([-1  1]);
-  xlabel('Time')
-  ylabel('Signal Level')
-  title('Input Time Series')
-
-  ax = subplot(n_subplots, 2, 2);
-  hold on;
-  l1 = plot(real(inv));
-  l2 = plot(imag(inv));
-  grid(ax, 'on');
-  % plot_block_boundaries(ax, n_blocks, block_size-2*backward_overlap);
-  hold off
-  legend([l1; l2], 'Real', 'Imaginary');
-  ylim([-1  1]);
-  xlabel('Time')
-  ylabel('Signal Level')
-  title('Inverted Time Series')
+  names = {'Input', 'Inverted'};
+  dat = {input, inv};
+  for idx = 1:length(names);
+    ax = subplot(n_subplots, 2, idx);
+    % plot(powan.dB(dat{idx}));
+    plot(abs(dat{idx}));
+    grid(ax, 'on');
+    xlabel('Time');
+    ylabel('Signal Level');
+    title(sprintf('%s Time Series', names{idx}));
+  end
 
   diff = input - inv;
   ax = subplot(n_subplots, 2, [3 4]);
-  plot(abs(diff))
+  % plot(powan.dB(diff));
+  plot(abs(diff));
   grid(ax, 'on');
   xlabel('Time')
   ylabel('Signal Level')
@@ -191,7 +200,7 @@ function fig = plot_performance(input, inv, fft_length)
   input_fft = fftshift(fft(input, fft_length)./fft_length);
 
   ax = subplot(n_subplots, 2, 5);
-  plot(20*log10(abs(input_fft) + 1e-13));
+  plot(powan.dB(input_fft));
   % plot(abs(input_fft));
   grid(ax, 'on');
   xlabel('Frequency bin')
@@ -199,7 +208,7 @@ function fig = plot_performance(input, inv, fft_length)
   title('Input Power Spectrum')
 
   ax = subplot(n_subplots, 2, 6);
-  plot(20*log10(abs(inv_fft) + 1e-13));
+  plot(powan.dB(inv_fft));
   % plot(abs(inv_fft));
   grid(ax, 'on');
   xlabel('Frequency bin')
@@ -207,27 +216,10 @@ function fig = plot_performance(input, inv, fft_length)
   title('Inverted Power Spectrum')
 
   ax = subplot(n_subplots, 2, [7 8]);
-  plot(10*log10(abs(abs(input_fft).^2 - abs(inv_fft).^2) + 1e-13));
+  plot(powan.dB(abs(input_fft).^2 - abs(inv_fft).^2));
   grid(ax, 'on');
   xlabel('Frequency bin')
   ylabel('Power (dB)')
   title('Difference between Input and Inverted Power Spectrum')
 
-end
-
-function res = temporal_performance(a, b)
-  diff = a - b;
-  mean_diff = mean(abs(diff));
-  max_diff = max(abs(diff));
-  sum_diff = sum(abs(diff));
-  res = [mean_diff, max_diff, sum_diff];
-end
-
-
-function res = spectral_performance(a, fft_length)
-  err = ErrorAnalysis;
-  a_fft = abs(fft(a, fft_length)./fft_length).^2;
-  res = [err.max_spurious_power(a_fft),...
-         err.total_spurious_power(a_fft),...
-         err.mean_spurious_power(a_fft)];
 end

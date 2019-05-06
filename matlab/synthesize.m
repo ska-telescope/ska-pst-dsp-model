@@ -16,6 +16,8 @@ function synthesize (varargin)
   addOptional(p, 'output_dir', './', @ischar);
   addOptional(p, 'verbose', '0', @ischar);
   addOptional(p, 'sample_offset', '1', @ischar);
+  addOptional(p, 'deripple', '1', @ischar);
+  addOptional(p, 'overlap', '0', @ischar);
 
   parse(p, varargin{:});
 
@@ -25,6 +27,13 @@ function synthesize (varargin)
   output_file_name = p.Results.output_file_name;
   verbose = str2num(p.Results.verbose);
   sample_offset = str2num(p.Results.sample_offset);
+  overlap = str2num(p.Results.overlap);
+  deripple = str2num(p.Results.deripple);
+  deripple_struct = struct('apply_deripple', deripple);
+
+  function o = calc_overlap(input_fft_length)
+    o = overlap;
+  end
 
   % load in input data
   if verbose
@@ -46,6 +55,9 @@ function synthesize (varargin)
   os_factor = struct('nu', str2num(os_factor_split{1}),...
                      'de', str2num(os_factor_split{2}));
 
+  filter_coeff_str = input_header('COEFF_0');
+  filter_coeff = str2double(strsplit(filter_coeff_str, ','));
+  deripple_struct.filter_coeff = filter_coeff;
 
   if verbose
     fprintf('synthesize: synthesizing input data\n')
@@ -55,7 +67,7 @@ function synthesize (varargin)
   input_tsamp = str2num(input_header('TSAMP'));
   synthesized_header('TSAMP') = num2str(input_tsamp / normalize(os_factor, 1) / channels);
   synthesized = polyphase_synthesis_alt(...
-    input_data, input_fft_length, os_factor, sample_offset);
+    input_data, input_fft_length, os_factor, deripple_struct, sample_offset, @calc_overlap);
 
   if verbose
     fprintf('synthesize: synthesis complete\n')

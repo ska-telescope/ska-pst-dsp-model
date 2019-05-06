@@ -29,7 +29,8 @@ def synthesize(backend: str = "matlab"):
     def _synthesize(input_data_file_path,
                     input_fft_length: int = None,
                     output_file_name: str = None,
-                    output_dir: str = "./",):
+                    output_dir: str = "./",
+                    deripple: bool = True):
         """
 
         """
@@ -49,11 +50,11 @@ def synthesize(backend: str = "matlab"):
             util.create_output_file_names(output_file_name, output_base)
 
         if backend == "matlab":
-
+            deripple_int = 1 if deripple else 0
             cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                        f"{input_data_file_path} "
                        f"{input_fft_length} "
-                       f"{output_file_name} {output_dir} 1")
+                       f"{output_file_name} {output_dir} 1 1 {deripple_int} 0")
 
             module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
 
