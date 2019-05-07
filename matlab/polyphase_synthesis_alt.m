@@ -183,6 +183,13 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
       %   out(i_pol, 1, 1:out_step_e+output_overlap) = iFFFF(1:output_fft_length-output_overlap);
       % else
       out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);
+
+      % if n == 1
+      %   out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);
+      % else
+      %   out(i_pol, 1, out_step_s-output_overlap:out_step_s-1) = squeeze(out(i_pol, 1, out_step_s-output_overlap:out_step_s-1)) + iFFFF(1:output_overlap);
+      %   out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);
+      % end
       % out(i_pol, 1, out_step_s:out_step_e) = iFFFF(1:output_keep);
       % end
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor

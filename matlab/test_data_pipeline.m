@@ -8,11 +8,16 @@ function res = test_data_pipeline(...
     analysis_handler_args,...
     synthesis_handler,...
     synthesis_handler_args,...
-    output_dir...
+    output_dir,...
+    n_pol_...
 )
   % test_vector_handler_args
   % analysis_handler_args
   % synthesis_handler_args
+  n_pol = 1;
+  if exist('n_pol_', 'var')
+    n_pol = n_pol_;
+  end
 
 
   dtype = config_struct.dtype;
@@ -29,9 +34,10 @@ function res = test_data_pipeline(...
   % generate some impulse, either in the time or spectral domain
 
   impulse_data = test_vector_handler(n_bins, test_vector_handler_args{:}, dtype);
-  input_data = complex(zeros(2, 1, n_bins, dtype));
-  input_data(1, 1, :) = impulse_data(:);
-  input_data(2, 1, :) = impulse_data(:);
+  input_data = complex(zeros(n_pol, 1, n_bins, dtype));
+  for i_pol=1:n_pol
+    input_data(i_pol, 1, :) = impulse_data(:);
+  end
   % input_data = input_data(:, :, 43:end);
   fprintf('test_data_pipeline: size(input_data)=');
   size(input_data)

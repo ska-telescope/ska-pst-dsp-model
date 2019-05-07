@@ -135,6 +135,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.__class__.report["test_time_domain_impulse"] = sub_report
 
+    @unittest.skip("")
     def test_complex_sinusoid(self):
         sub_report = []
         args = (self.freq_domain_args["phase"],
@@ -162,7 +163,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.__class__.report["test_complex_sinusoid"] = sub_report
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_simulated_pulsar(self):
         """
         Determine whether dspsr and matlab produce the same result when
@@ -198,5 +199,5 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main()

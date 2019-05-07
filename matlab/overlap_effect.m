@@ -6,7 +6,7 @@ function overlap_effect()
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
-  n_blocks = 5;
+  n_blocks = 2;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;  % this is also the output_fft_length
   n_bins = n_blocks*block_size;
 
@@ -36,22 +36,16 @@ function overlap_effect()
     overlap_handler = @calc_overlap;
   end
 
-  function windowed = window (in_dat, input_fft_length, input_discard)
-    % in_dat(:, 1:input_discard) = complex(0.0);
-    % in_dat(:, input_fft_length-input_discard+1:end) = complex(0.0);
-    windowed = in_dat;
-  end
-
-  % function windowed = window(in_dat, input_fft_length, input_discard)
-  %
-  % end
-
-
+  win = PFBWindow;
+  window_function = win.hann_factory(config.input_fft_length);
+  % window_function = @win.top_hat_window;
+  % window_function = @win.baseball_hat_window;
+  window_function = @win.no_window;
 
   % factors = 32;
   % factors = [0, 256, 128, 64, 32, 16, 8];
   % factors = 0:2:48;
-  factors = [16];
+  factors = [0];
   % factors = round(config.input_fft_length / 8);
   overlaps = [];
   temporal = [];
@@ -68,9 +62,12 @@ function overlap_effect()
     forward_overlap = calc_overlap_handler(config.input_fft_length);
     backward_overlap = normalize(config.os_factor, forward_overlap)*config.n_chan;
 
-    jump = block_size  - 2*backward_overlap;
+    jump = block_size - 2*backward_overlap;
+    offsets(1) = filt_offset;
+    % offsets(1) = 2*jump + filt_offset;
     % offsets(1) = jump + backward_overlap + filt_offset;
-    offsets(1) = jump + filt_offset;
+    % offsets(1) = (n_blocks-1)*block_size + filt_offset  + 12000;
+    % offsets(1) = jump + filt_offset;
     % offsets(1) = block_size + backward_overlap + filt_offset;
     % offsets(1) = block_size - backward_overlap + filt_offset;
     % offsets(1) = block_size - 2*backward_overlap + filt_offset;
@@ -86,7 +83,7 @@ function overlap_effect()
                                @complex_sinusoid,...
                                {frequencies, phases, bin_offset}, @polyphase_analysis, {1},...
                                @polyphase_synthesis_alt, ...
-                               {deripple, sample_offset, calc_overlap_handler, @window},...
+                               {deripple, sample_offset, calc_overlap_handler, window_function},...
                                config.data_dir);      % suptitle(sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap));
 
       single_plot_title = sprintf('%.2f Hz signal, input fft length: %d, overlap: %d', total_freq, config.input_fft_length, forward_overlap);
@@ -96,7 +93,7 @@ function overlap_effect()
                               @time_domain_impulse,...
                               {offsets, widths}, @polyphase_analysis, {1},...
                               @polyphase_synthesis_alt, ...
-                              {deripple, sample_offset, calc_overlap_handler, @window},...
+                              {deripple, sample_offset, calc_overlap_handler, window_function},...
                               config.data_dir);
       single_plot_title = sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap)
     end
@@ -205,6 +202,9 @@ function fig = plot_performance(input, inv, fft_length, domain_)
     ax = subplot(n_subplots, 2, idx);
     if strcmp(domain, 'time')
       l1 = plot(powan.dB(dat{idx}));
+      % [g, argmax] = max(dat{idx})
+      % argmax
+      % l1 = plot(abs(dat{idx}));
       ylabel('Signal Level (dB)');
     else
       hold on;

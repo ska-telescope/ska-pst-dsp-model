@@ -1,14 +1,15 @@
 function current_performance ()
   perf = DomainPerformance;
+  win = PFBWindow;
   config = default_config();
 
-  config.input_fft_length = 128;
+  config.input_fft_length = 1024;
 
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
 
-  n_blocks = 8;
+  n_blocks = 5;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;
   block_size % 24576
   n_bins = n_blocks*block_size;
@@ -27,54 +28,43 @@ function current_performance ()
   % npoints = 1;
 
   temporal_perf = []
-  % n_bins_offset = n_bins - output_offset;
-  % quarter_window = round(block_size / 4);
-  % offsets = filt_offset:block_size:n_bins;
-  % offsets = [offsets, (block_size:block_size:n_bins) - quarter_window + filt_offset];
-  % offsets = [offsets, (block_size:block_size:n_bins-block_size) + quarter_window + filt_offset];
-  % offsets = [offsets, (block_size:block_size:n_bins) - 2*quarter_window + filt_offset];
+
   jump = block_size - 2*output_offset;
-  % offsets = filt_offset:block_size:n_bins;
   offsets = [];
   spaced = filt_offset:jump:n_bins;
   offsets = [offsets, spaced];
   offsets = [offsets, spaced(2:end) - output_offset];
   offsets = [offsets, spaced(1:end-1) + output_offset];
-  % offsets = [offsets, (block_size:jump:n_bins-filt_offset) - output_offset + filt_offset];
-  % offsets = [offsets, (block_size:jump:n_bins-block_size-filt_offset) + output_offset + filt_offset];
-  % offsets = [offsets, (block_size:jump:n_bins) - 2*output_offset + filt_offset];
 
-  % offsets = [offsets, 1:round(n_bins/npoints):n_bins];
+  offsets = [offsets, 1:round(n_bins/npoints):n_bins];
   offsets = sort(offsets);
 
-  % offsets = (block_size - 3*filt_offset):100:(block_size + 3*filt_offset);
-  % offsets
-  % pause
-
-  % offsets = [50349]
-
+  % window_function = win.blackman_factory(config.input_fft_length);
+  % window_function = win.hann_factory(config.input_fft_length);
+  window_function = @win.no_window;
+  % window_function = @win.top_hat_window;
 
   spectral_perf = [];
   frequencies = (1:round(block_size/npoints):block_size).*n_blocks;
-  bin_offset = 0.1;
+  bin_offset = 0.0;
   names = {'Max', 'Total', 'Mean'};
 
-  % for offset=offsets
-  %   res = test_data_pipeline(config, config.n_chan, config.os_factor,...
-  %                            config.input_fft_length, n_bins,...
-  %                            @time_domain_impulse,...
-  %                            {[offset], [1]}, @polyphase_analysis, {1},...
-  %                            @polyphase_synthesis_alt, ...
-  %                            {deripple, sample_offset, @calc_overlap},...
-  %                            config.data_dir);
-  %
-  %   chopped = chop(res, output_offset);
-  %   if length(offsets) == 1
-  %     plot_temporal_performance(chopped{:});
-  %   end
-  %   p = perf.temporal_performance(chopped{2});
-  %   temporal_perf = [temporal_perf; p];
-  % end
+  for offset=offsets
+    res = test_data_pipeline(config, config.n_chan, config.os_factor,...
+                             config.input_fft_length, n_bins,...
+                             @time_domain_impulse,...
+                             {[offset], [1]}, @polyphase_analysis, {1},...
+                             @polyphase_synthesis_alt, ...
+                             {deripple, sample_offset, @calc_overlap, window_function},...
+                             config.data_dir);
+
+    chopped = chop(res, output_offset);
+    if length(offsets) == 1
+      plot_temporal_performance(chopped{:});
+    end
+    p = perf.temporal_performance(chopped{2});
+    temporal_perf = [temporal_perf; p];
+  end
 
   for freq=frequencies
     res = test_data_pipeline(config, config.n_chan, config.os_factor,...
@@ -82,7 +72,7 @@ function current_performance ()
                              @complex_sinusoid,...
                              {[freq], [pi/4], bin_offset}, @polyphase_analysis, {1},...
                              @polyphase_synthesis_alt, ...
-                             {deripple, sample_offset, @calc_overlap},...
+                             {deripple, sample_offset, @calc_overlap, window_function},...
                              config.data_dir);
 
     chopped = chop(res, output_offset);
@@ -95,13 +85,15 @@ function current_performance ()
   if npoints > 1
     fig = plot_performance_measures(offsets, temporal_perf, names);
     xlabel('Impulse position');
-    suptitle('Temporal performance');
+    h = suptitle(sprintf('Temporal performance, %s window function', func2str(window_function)));
+    h.Interpreter = 'none';
     saveas(fig, sprintf('./../products/performance.temporal.%d_offset.png', input_offset));
 
-    % fig = plot_performance_measures(frequencies, spectral_perf, names);
-    % xlabel('Frequency of complex sinusoid (Hz)');
-    % suptitle('Spectral performance');
-    % saveas(fig, sprintf('./../products/performance.spectral.%d_offset.%.2f_bin_offset.png', input_offset, bin_offset));
+    fig = plot_performance_measures(frequencies, spectral_perf, names);
+    xlabel('Frequency of complex sinusoid (Hz)');
+    h = suptitle(sprintf('Spectral performance, %s window function', func2str(window_function)));
+    h.Interpreter = 'none';
+    saveas(fig, sprintf('./../products/performance.spectral.%d_offset.%.2f_bin_offset.png', input_offset, bin_offset));
   end
 end
 
