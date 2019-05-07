@@ -1,4 +1,4 @@
-function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, deripple_, sample_offset_, calc_overlap_handler_)
+function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, deripple_, sample_offset_, calc_overlap_handler_, window_handler_)
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   %
@@ -26,6 +26,10 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
     overlap = round(input_fft_length*0.125);
   end
 
+  function windowed = default_window(input_chunk, input_fft_length, input_overlap)
+    windowed = input_chunk;
+  end
+
 
   sample_offset = 1;
   if exist('sample_offset_', 'var')
@@ -41,6 +45,12 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
     calc_overlap_handler = calc_overlap_handler_;
   else
     calc_overlap_handler = @default_calc_overlap;
+  end
+
+  if exist('window_handler_', 'var')
+    window_handler = window_handler_;
+  else
+    window_handler = @default_window;
   end
 
   in = in(:, :, sample_offset:end);
@@ -103,21 +113,24 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
     for n=1:n_blocks
       in_step_s = input_keep*(n-1) + 1;
       in_step_e = in_step_s + input_fft_length - 1;
+
       out_step_s = output_keep*(n-1) + 1;
       out_step_e = out_step_s + output_keep - 1;
+
       in_dat = squeeze(in(i_pol, :, in_step_s:in_step_e));
       % size(in_dat)
       % % zero first and last input_discard:
-      ax = subplot(2, 1, 1);
-      plot(abs(in_dat(:)));
+      % ax = subplot(2, 1, 1);
+      % plot(abs(in_dat(:)));
       % ax = subplot(2, 1, 2);
       % plot(imag(in_dat(:)));
       % pause;
-      in_dat(:, 1:input_overlap) = complex(0, 0);
-      in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
-      ax = subplot(2, 1, 2);
-      plot(abs(in_dat(:)));
-      pause
+      in_dat = window_handler(in_dat, input_fft_length, input_overlap);
+      % in_dat(:, 1:input_overlap) = complex(0, 0);
+      % in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
+      % ax = subplot(2, 1, 2);
+      % plot(abs(in_dat(:)));
+      % pause
 
       spectra = transpose(in_dat);
       spectra = fft(spectra, input_fft_length); % fft operates on each of the columns
@@ -169,7 +182,8 @@ function out = polyphase_synthesis_alt (in, input_fft_length, os_factor, derippl
       % if n == 1
       %   out(i_pol, 1, 1:out_step_e+output_overlap) = iFFFF(1:output_fft_length-output_overlap);
       % else
-      out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);  % re-scale by OS factor
+      out(i_pol, 1, out_step_s:out_step_e) = iFFFF(output_overlap + 1:output_fft_length-output_overlap);
+      % out(i_pol, 1, out_step_s:out_step_e) = iFFFF(1:output_keep);
       % end
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end

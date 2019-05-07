@@ -35,9 +35,23 @@ function overlap_effect()
     end
     overlap_handler = @calc_overlap;
   end
+
+  function windowed = window (in_dat, input_fft_length, input_discard)
+    % in_dat(:, 1:input_discard) = complex(0.0);
+    % in_dat(:, input_fft_length-input_discard+1:end) = complex(0.0);
+    windowed = in_dat;
+  end
+
+  % function windowed = window(in_dat, input_fft_length, input_discard)
+  %
+  % end
+
+
+
   % factors = 32;
   % factors = [0, 256, 128, 64, 32, 16, 8];
-  factors = 0:2:48;
+  % factors = 0:2:48;
+  factors = [16];
   % factors = round(config.input_fft_length / 8);
   overlaps = [];
   temporal = [];
@@ -46,33 +60,47 @@ function overlap_effect()
 
   perf = DomainPerformance;
   names = {'Max', 'Total', 'Mean'};
+  domain = 'time';
+  % domain = 'freq';
 
   for d = factors
     calc_overlap_handler = overlap_factory(d);
     forward_overlap = calc_overlap_handler(config.input_fft_length);
     backward_overlap = normalize(config.os_factor, forward_overlap)*config.n_chan;
+
+    jump = block_size  - 2*backward_overlap;
+    % offsets(1) = jump + backward_overlap + filt_offset;
+    offsets(1) = jump + filt_offset;
+    % offsets(1) = block_size + backward_overlap + filt_offset;
+    % offsets(1) = block_size - backward_overlap + filt_offset;
     % offsets(1) = block_size - 2*backward_overlap + filt_offset;
-    offsets(1) = block_size - backward_overlap + filt_offset
+    % offsets(1) = block_size + filt_offset;
     % offsets(1) = 23351;
     % offsets(1) = round(1.5*block_size) + filt_offset;
     % offsets(1) = filt_offset;
     % offsets(1)
     % pause
-    % res = test_data_pipeline(config, config.n_chan, config.os_factor,...
-    %                          config.input_fft_length, n_bins,...
-    %                          @complex_sinusoid,...
-    %                          {frequencies, phases, bin_offset}, @polyphase_analysis, {1},...
-    %                          @polyphase_synthesis_alt, ...
-    %                          {deripple, sample_offset, calc_overlap_handler},...
-    %                          config.data_dir);
+    if strcmp(domain, 'freq')
+      res = test_data_pipeline(config, config.n_chan, config.os_factor,...
+                               config.input_fft_length, n_bins,...
+                               @complex_sinusoid,...
+                               {frequencies, phases, bin_offset}, @polyphase_analysis, {1},...
+                               @polyphase_synthesis_alt, ...
+                               {deripple, sample_offset, calc_overlap_handler, @window},...
+                               config.data_dir);      % suptitle(sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap));
 
-    res = test_data_pipeline(config, config.n_chan, config.os_factor,...
-                            config.input_fft_length, n_bins,...
-                            @time_domain_impulse,...
-                            {offsets, widths}, @polyphase_analysis, {1},...
-                            @polyphase_synthesis_alt, ...
-                            {deripple, sample_offset, calc_overlap_handler},...
-                            config.data_dir);
+      single_plot_title = sprintf('%.2f Hz signal, input fft length: %d, overlap: %d', total_freq, config.input_fft_length, forward_overlap);
+    else
+      res = test_data_pipeline(config, config.n_chan, config.os_factor,...
+                              config.input_fft_length, n_bins,...
+                              @time_domain_impulse,...
+                              {offsets, widths}, @polyphase_analysis, {1},...
+                              @polyphase_synthesis_alt, ...
+                              {deripple, sample_offset, calc_overlap_handler, @window},...
+                              config.data_dir);
+      single_plot_title = sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap)
+    end
+
     fft_length = 2*block_size;
     chopped = chop(res, backward_overlap);
     sim = chopped{1};
@@ -80,14 +108,13 @@ function overlap_effect()
 
     diff = inv - sim;
     if length(factors) == 1
-      fig = plot_performance(sim, inv, fft_length);
+      fig = plot_performance(sim, inv, fft_length, domain);
       p = perf.temporal_performance(inv)
       for idx=1:length(p)
         fprintf('%s spurious power = %f\n', names{idx}, 10*log10(p(idx) + 1e-13));
       end
-      % suptitle(sprintf('%.2f Hz signal, input fft length: %d, overlap: %d', total_freq, config.input_fft_length, forward_overlap));
-      suptitle(sprintf('%d offset impulse, input fft length: %d, overlap: %d', offsets(1), config.input_fft_length, forward_overlap));
-      saveas(fig, sprintf('./../products/overlap_save.%d.png', forward_overlap));
+      suptitle(single_plot_title);
+      saveas(fig, sprintf('./../products/overlap_save.%d.%s.png', forward_overlap, domain));
     end
 
     overlaps = [overlaps forward_overlap];
@@ -163,30 +190,43 @@ function plot_block_boundaries(ax, n_blocks, block_size)
   end
 end
 
-function fig = plot_performance(input, inv, fft_length)
+function fig = plot_performance(input, inv, fft_length, domain_)
+  domain = 'time';
+  if exist('domain_', 'var')
+    domain = domain_
+  end
   err = ErrorAnalysis;
   powan = PowerAnalysis;
   n_subplots = 4;
-  fig = figure('Position', [10, 10, 1200, 1500]);
+  fig = figure('Position', [10, 10, 1200, 1400], 'Resize', 'off');
   names = {'Input', 'Inverted'};
   dat = {input, inv};
   for idx = 1:length(names);
     ax = subplot(n_subplots, 2, idx);
-    % plot(powan.dB(dat{idx}));
-    plot(abs(dat{idx}));
+    if strcmp(domain, 'time')
+      l1 = plot(powan.dB(dat{idx}));
+      ylabel('Signal Level (dB)');
+    else
+      hold on;
+      l1 = plot(real(dat{idx}));
+      l2 = plot(imag(dat{idx}));
+      hold off;
+      legend([l1; l2], 'Real', 'Imaginary');
+      ylim([-1, 1]);
+      ylabel('Signal Level');
+    end
     grid(ax, 'on');
     xlabel('Time');
-    ylabel('Signal Level');
     title(sprintf('%s Time Series', names{idx}));
   end
 
   diff = input - inv;
   ax = subplot(n_subplots, 2, [3 4]);
   % plot(powan.dB(diff));
-  plot(abs(diff));
+  plot(powan.dB(diff));
   grid(ax, 'on');
   xlabel('Time')
-  ylabel('Signal Level')
+  ylabel('Signal Level (dB)')
   title('Difference of Input and Inverted Time Series')
 
   % ax = subplot(n_subplots, 2, 4);

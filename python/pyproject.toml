@@ -14,6 +14,7 @@ numba = "^0.42.1"
 comparator = {git = "git@github.com:dean-shaff/comparator.git"}
 pfb = {git = "git@github.com:dean-shaff/pfb.git"}
 psr-formats = {git = "git@github.com:dean-shaff/psr-formats.git"}
+partialize = {git = "git@github.com:dean-shaff/partialize.git"}
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.4"
