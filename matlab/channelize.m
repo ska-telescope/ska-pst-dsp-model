@@ -70,7 +70,7 @@ function channelize (varargin)
   channelized_header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
   add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
 
-  channelized = polyphase_analysis_alt(input_data, fir_filter_coeff, channels, os_factor, verbose);
+  channelized = polyphase_analysis(input_data, fir_filter_coeff, channels, os_factor, verbose);
 
   if verbose
     fprintf('channelize: channelization complete\n')

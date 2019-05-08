@@ -10,7 +10,6 @@ python = "^3.6"
 matplotlib = "^3.0"
 numpy = "^1.16"
 scipy = "^1.2"
-numba = "^0.42.1"
 comparator = {git = "git@github.com:dean-shaff/comparator.git"}
 pfb = {git = "git@github.com:dean-shaff/pfb.git"}
 psr-formats = {git = "git@github.com:dean-shaff/psr-formats.git"}

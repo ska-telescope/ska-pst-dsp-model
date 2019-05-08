@@ -30,9 +30,10 @@ function data_header = read_dada_file (file_id)
     n_dat = data_size(end);
     dat_temp = complex(zeros(n_pol, n_chan, n_dat, dtype));
 
-    dat_temp(1, :, :) = squeeze(complex(data(1, :, :), data(2, :, :)));
-    dat_temp(2, :, :) = squeeze(complex(data(3, :, :), data(4, :, :)));
-
+    for i_pol=1:n_pol
+      idx = 2*i_pol - 1;
+      dat_temp(i_pol, :, :) = squeeze(complex(data(idx, :, :), data(idx+1, :, :)));
+    end
     data = dat_temp;
   else
     data = reshape(data, n_pol, n_chan, []);

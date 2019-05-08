@@ -3,7 +3,7 @@ function current_performance ()
   win = PFBWindow;
   config = default_config();
 
-  config.input_fft_length = 1024;
+  config.input_fft_length = 128;
 
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
@@ -14,7 +14,7 @@ function current_performance ()
   block_size % 24576
   n_bins = n_blocks*block_size;
   function overlap = calc_overlap (input_fft_length)
-    overlap = round(input_fft_length / 8);
+    overlap = round(input_fft_length / 4);
     % overlap = 0;
   end
 
@@ -40,8 +40,8 @@ function current_performance ()
   offsets = sort(offsets);
 
   % window_function = win.blackman_factory(config.input_fft_length);
-  % window_function = win.hann_factory(config.input_fft_length);
-  window_function = @win.no_window;
+  window_function = win.hann_factory(config.input_fft_length);
+  % window_function = @win.no_window;
   % window_function = @win.top_hat_window;
 
   spectral_perf = [];

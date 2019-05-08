@@ -6,7 +6,7 @@ function overlap_effect()
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
-  n_blocks = 2;
+  n_blocks = 4;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;  % this is also the output_fft_length
   n_bins = n_blocks*block_size;
 
@@ -37,7 +37,7 @@ function overlap_effect()
   end
 
   win = PFBWindow;
-  window_function = win.hann_factory(config.input_fft_length);
+  % window_function = win.hann_factory(config.input_fft_length);
   % window_function = @win.top_hat_window;
   % window_function = @win.baseball_hat_window;
   window_function = @win.no_window;
@@ -45,7 +45,7 @@ function overlap_effect()
   % factors = 32;
   % factors = [0, 256, 128, 64, 32, 16, 8];
   % factors = 0:2:48;
-  factors = [0];
+  factors = [32];
   % factors = round(config.input_fft_length / 8);
   overlaps = [];
   temporal = [];
@@ -55,7 +55,7 @@ function overlap_effect()
   perf = DomainPerformance;
   names = {'Max', 'Total', 'Mean'};
   domain = 'time';
-  % domain = 'freq';
+  domain = 'freq';
 
   for d = factors
     calc_overlap_handler = overlap_factory(d);
@@ -63,8 +63,8 @@ function overlap_effect()
     backward_overlap = normalize(config.os_factor, forward_overlap)*config.n_chan;
 
     jump = block_size - 2*backward_overlap;
-    offsets(1) = filt_offset;
-    % offsets(1) = 2*jump + filt_offset;
+    % offsets(1) = filt_offset;
+    offsets(1) = block_size + filt_offset;
     % offsets(1) = jump + backward_overlap + filt_offset;
     % offsets(1) = (n_blocks-1)*block_size + filt_offset  + 12000;
     % offsets(1) = jump + filt_offset;
@@ -194,8 +194,8 @@ function fig = plot_performance(input, inv, fft_length, domain_)
   end
   err = ErrorAnalysis;
   powan = PowerAnalysis;
-  n_subplots = 4;
-  fig = figure('Position', [10, 10, 1200, 1400], 'Resize', 'off');
+  n_subplots = 2;
+  fig = figure('Position', [10, 10, 1200, 800], 'Resize', 'off');
   names = {'Input', 'Inverted'};
   dat = {input, inv};
   for idx = 1:length(names);
@@ -236,30 +236,30 @@ function fig = plot_performance(input, inv, fft_length, domain_)
   % ylabel('Signal Level (dB)')
   % title('Power Difference between Input and Inverted Time Series')
 
-  inv_fft = fftshift(fft(inv, fft_length)./fft_length);
-  input_fft = fftshift(fft(input, fft_length)./fft_length);
-
-  ax = subplot(n_subplots, 2, 5);
-  plot(powan.dB(input_fft));
-  % plot(abs(input_fft));
-  grid(ax, 'on');
-  xlabel('Frequency bin')
-  ylabel('Power (dB)')
-  title('Input Power Spectrum')
-
-  ax = subplot(n_subplots, 2, 6);
-  plot(powan.dB(inv_fft));
-  % plot(abs(inv_fft));
-  grid(ax, 'on');
-  xlabel('Frequency bin')
-  ylabel('Power (dB)')
-  title('Inverted Power Spectrum')
-
-  ax = subplot(n_subplots, 2, [7 8]);
-  plot(powan.dB(abs(input_fft).^2 - abs(inv_fft).^2));
-  grid(ax, 'on');
-  xlabel('Frequency bin')
-  ylabel('Power (dB)')
-  title('Difference between Input and Inverted Power Spectrum')
+  % inv_fft = fftshift(fft(inv, fft_length)./fft_length);
+  % input_fft = fftshift(fft(input, fft_length)./fft_length);
+  %
+  % ax = subplot(n_subplots, 2, 5);
+  % plot(powan.dB(input_fft));
+  % % plot(abs(input_fft));
+  % grid(ax, 'on');
+  % xlabel('Frequency bin')
+  % ylabel('Power (dB)')
+  % title('Input Power Spectrum')
+  %
+  % ax = subplot(n_subplots, 2, 6);
+  % plot(powan.dB(inv_fft));
+  % % plot(abs(inv_fft));
+  % grid(ax, 'on');
+  % xlabel('Frequency bin')
+  % ylabel('Power (dB)')
+  % title('Inverted Power Spectrum')
+  %
+  % ax = subplot(n_subplots, 2, [7 8]);
+  % plot(powan.dB(abs(input_fft).^2 - abs(inv_fft).^2));
+  % grid(ax, 'on');
+  % xlabel('Frequency bin')
+  % ylabel('Power (dB)')
+  % title('Difference between Input and Inverted Power Spectrum')
 
 end

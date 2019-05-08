@@ -1,2 +1,2 @@
-set(0,'defaultAxesFontSize', 14);
-set(0,'DefaultFigureVisible','off')
+set(0,'defaultAxesFontSize', 18);
+% set(0,'DefaultFigureVisible','off')

@@ -2,7 +2,7 @@ import argparse
 import os
 import logging
 
-import pfb.pfb_channelizer
+import pfb.format_handler
 import psr_formats
 
 from . import util
@@ -74,19 +74,18 @@ def channelize(backend: str = "matlab"):
                 os.path.join(output_dir, output_file_name)).load_data()
 
         elif backend == "python":
-            input_data_file = psr_formats.DADAFile(
-                input_data_file_path).load_data()
-            channelizer = pfb.pfb_channelizer.PFBChannelizer.from_input_files(
+            input_data_file = psr_formats.DADAFile(input_data_file_path)
+            channelizer = pfb.format_handler.PSRFormatChannelizer(
+                os_factor=os_factor_str,
+                nchan=channels,
+                fir_filter_coeff=fir_filter_path
+            )
+            output_data_file = channelizer(
                 input_data_file,
-                fir_filter_path
+                output_dir=output_dir,
+                output_file_name=output_file_name
             )
-            channelizer.channelize(
-                channels, os_factor_str,
-                output_file_path=os.path.join(output_dir, output_file_name)
-            )
-            channelizer.dump_file(
-                header_kwargs={"UTC_START": input_data_file["UTC_START"]})
-            return channelizer.output_data_file
+            return output_data_file
 
     return _channelize
 
