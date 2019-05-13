@@ -16,9 +16,9 @@ config = load_config()
 
 
 class TestBackends(unittest.TestCase):
-
-    thresh = 1e-9
-
+    """
+    Test to ensure that backends are producing the same output.
+    """
     test_vectors = [os.path.join(test_data_dir, f) for f in [
         "complex_sinusoid.dump", "time_domain_impulse.dump"
     ]]
@@ -34,13 +34,9 @@ class TestBackends(unittest.TestCase):
         comp = comparator.SingleDomainComparator(name="time")
 
         comp.operators["isclose"] = lambda a, b: np.isclose(a, b, atol=1e-5)
-        comp.operators["this"] = lambda a: a
-
         comp.products["mean"] = np.mean
-        comp.products["sum"] = np.sum
 
         cls.comp = comp
-
         cls.channelizers = [channelize(backend=b) for b in cls.backends]
 
     def test_channelize(self):

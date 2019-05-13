@@ -2,29 +2,31 @@ function current_performance ()
   perf = DomainPerformance;
   win = PFBWindow;
   config = default_config();
+  config.n_chan = 16;
+  config.fir_filter_path = './../config/Prototype_FIR.4-3.16.160.mat';
 
-  config.input_fft_length = 128;
+  config.input_fft_length = 4096;
 
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
-
-  n_blocks = 5;
+  n_blocks = 4;
   block_size = normalize(config.os_factor, config.input_fft_length)*config.n_chan;
-  block_size % 24576
   n_bins = n_blocks*block_size;
   function overlap = calc_overlap (input_fft_length)
-    overlap = round(input_fft_length / 4);
+    % overlap = round(input_fft_length / 8);
+    % overlap = 32;
     % overlap = 0;
+    overlap = 64;
   end
 
-  output_offset = calc_overlap(block_size);
   input_offset = calc_overlap(config.input_fft_length);
-  fft_length = 3*block_size;  % can't be n_bins
+  output_offset = normalize(config.os_factor, input_offset)*config.n_chan;
+  fft_length = 2*block_size;  % can't be n_bins
   sample_offset = 1;
   deripple = struct('apply_deripple', 1);
 
-  npoints = 100;
+  npoints = 200;
   % npoints = 1;
 
   temporal_perf = []
@@ -35,14 +37,16 @@ function current_performance ()
   offsets = [offsets, spaced];
   offsets = [offsets, spaced(2:end) - output_offset];
   offsets = [offsets, spaced(1:end-1) + output_offset];
-
+  offsets = [offsets, filt_offset:block_size:n_bins];
   offsets = [offsets, 1:round(n_bins/npoints):n_bins];
   offsets = sort(offsets);
 
   % window_function = win.blackman_factory(config.input_fft_length);
-  window_function = win.hann_factory(config.input_fft_length);
+  % window_function = win.hann_factory(config.input_fft_length);
   % window_function = @win.no_window;
   % window_function = @win.top_hat_window;
+  % window_function = win.fedora_factory(2);
+  window_function = win.tukey_factory(config.input_fft_length, input_offset);
 
   spectral_perf = [];
   frequencies = (1:round(block_size/npoints):block_size).*n_blocks;
@@ -66,34 +70,46 @@ function current_performance ()
     temporal_perf = [temporal_perf; p];
   end
 
-  for freq=frequencies
-    res = test_data_pipeline(config, config.n_chan, config.os_factor,...
-                             config.input_fft_length, n_bins,...
-                             @complex_sinusoid,...
-                             {[freq], [pi/4], bin_offset}, @polyphase_analysis, {1},...
-                             @polyphase_synthesis_alt, ...
-                             {deripple, sample_offset, @calc_overlap, window_function},...
-                             config.data_dir);
+  % for freq=frequencies
+  %   res = test_data_pipeline(config, config.n_chan, config.os_factor,...
+  %                            config.input_fft_length, n_bins,...
+  %                            @complex_sinusoid,...
+  %                            {[freq], [pi/4], bin_offset}, @polyphase_analysis, {1},...
+  %                            @polyphase_synthesis_alt, ...
+  %                            {deripple, sample_offset, @calc_overlap, window_function},...
+  %                            config.data_dir);
+  %
+  %   chopped = chop(res, output_offset);
+  %   if length(frequencies) == 1
+  %     plot_spectral_performance(chopped{:}, fft_length);
+  %   end
+      p = perf.spectral_performance(chopped{2}, fft_length);
 
-    chopped = chop(res, output_offset);
-    if length(frequencies) == 1
-      plot_spectral_performance(chopped{:}, fft_length);
-    end
-    spectral_perf = [spectral_perf; perf.spectral_performance(chopped{2}, fft_length)];
-  end
+  %   spectral_perf = [spectral_perf; perf.spectral_performance(chopped{2}, fft_length)];
+  % end
 
   if npoints > 1
-    fig = plot_performance_measures(offsets, temporal_perf, names);
-    xlabel('Impulse position');
-    h = suptitle(sprintf('Temporal performance, %s window function', func2str(window_function)));
-    h.Interpreter = 'none';
-    saveas(fig, sprintf('./../products/performance.temporal.%d_offset.png', input_offset));
+    window_name = get_function_name(window_function);
+    title_template = sprintf('%%s performance, %s window function, %d channels, %d forward FFT, %d overlap', window_name, config.n_chan, config.input_fft_length, input_offset);
+    file_name_template = sprintf('./../products/performance.%%s.%s.%d_chan.%d_fft.%d_offset.png', window_name, config.n_chan, config.input_fft_length, input_offset);
 
-    fig = plot_performance_measures(frequencies, spectral_perf, names);
-    xlabel('Frequency of complex sinusoid (Hz)');
-    h = suptitle(sprintf('Spectral performance, %s window function', func2str(window_function)));
+
+    fig = plot_performance_measures(offsets, temporal_perf, names);
+    plot_vlines(fig, spaced, [0, 0.8, 0.5, 0.2]);
+    plot_vlines(fig, spaced(2:end) - output_offset, [0, 0.8, 0.5, 0.2]);
+    plot_vlines(fig, spaced(1:end-1) + output_offset, [0, 0.8, 0.5, 0.2]);
+    plot_vlines(fig, filt_offset:block_size:n_bins, [1, 0, 0, 0.2]);
+    xlabel('Impulse position');
+
+    h = suptitle(sprintf(title_template, 'Temporal'));
     h.Interpreter = 'none';
-    saveas(fig, sprintf('./../products/performance.spectral.%d_offset.%.2f_bin_offset.png', input_offset, bin_offset));
+    saveas(fig, sprintf(file_name_template, 'temporal'));
+
+    % fig = plot_performance_measures(frequencies, spectral_perf, names);
+    % xlabel('Frequency of complex sinusoid (Hz)');
+    % h = suptitle(sprintf(title_template, 'Spectral'));
+    % h.Interpreter = 'none';
+    % saveas(fig, sprintf(file_name_template, 'spectral'));
   end
 end
 
@@ -169,4 +185,20 @@ function fig = plot_temporal_performance (in, inv)
       grid(ax, 'on');
   end
   xlabel('Time');
+end
+
+
+function fig = plot_vlines (fig, points, color_)
+  color = [0 0 0 0.5];
+  if exist('color_', 'var')
+    color = color_;
+  end
+  allAxesInFigure = findall(fig, 'type', 'axes');
+  for idx=1:length(allAxesInFigure)
+    ax = allAxesInFigure(idx);
+    ylim = get(ax, 'YLim');
+    for p=points
+      l = line(ax, [p, p], ylim, 'Color', color, 'LineWidth', 1.5);
+    end
+  end
 end

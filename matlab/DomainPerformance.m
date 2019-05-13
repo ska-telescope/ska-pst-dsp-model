@@ -1,5 +1,12 @@
 classdef DomainPerformance
   methods
+
+    function res = temporal_difference(obj, a, b)
+      diff = abs(a - b).^2;
+      res = [max(diff), sum(diff), mean(diff)];
+    end
+
+
     function res = temporal_performance(obj, a)
       err = ErrorAnalysis;
       a = abs(a).^2;

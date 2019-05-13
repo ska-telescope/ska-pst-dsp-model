@@ -66,8 +66,6 @@ function derippling_effect ()
         comp_spectral{2}{1}{1}, comp_spectral{2}{1}{2}, comp_spectral{2}{2}{2}, block_size);
       suptitle(sprintf('Derippling Effect, %d Filter Taps', t));
       saveas(fig, sprintf('./../products/derippling_effect.spectral.%d.png', t));
-
-
     end
 
   end

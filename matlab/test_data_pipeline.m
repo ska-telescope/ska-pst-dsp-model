@@ -52,8 +52,9 @@ function res = test_data_pipeline(...
 
   % save data
   fprintf('test_data_pipeline: output_dir=%s\n', output_dir);
+  input_data_file_name = sprintf('%s.dump', get_function_name(test_vector_handler));
+  fprintf('test_data_pipeline: input_data_file_name=%s\n', input_data_file_name);
 
-  input_data_file_name = sprintf('%s.dump', func2str(test_vector_handler));
   input_data_file_path = fullfile(output_dir, input_data_file_name);
   save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
 
