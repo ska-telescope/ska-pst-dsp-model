@@ -2,6 +2,7 @@ import argparse
 import os
 import logging
 
+import partialize
 import pfb.format_handler
 import psr_formats
 
@@ -15,7 +16,14 @@ __all__ = [
 module_logger = logging.getLogger(__name__)
 
 
-def channelize(backend: str = "matlab"):
+@partialize.partialize
+def channelize(input_data_file_path: str,
+               channels: int = None,
+               os_factor_str: str = None,
+               fir_filter_path: str = None,
+               output_file_name: str = None,
+               output_dir: str = "./",
+               backend: str = "matlab"):
     """
     channelize data contained in some single channel input data file.
     Use either matlab or Python backends.
@@ -25,69 +33,61 @@ def channelize(backend: str = "matlab"):
         config/OS_Prototype_FIR_8.mat channelized_data.dump ./ 1
     """
 
-    def _channelize(input_data_file_path: str,
-                    channels: int = None,
-                    os_factor_str: str = None,
-                    fir_filter_path: str = None,
-                    output_file_name: str = None,
-                    output_dir: str = "./",):
+    if channels is None:
+        channels = config["channels"]
 
-        if channels is None:
-            channels = config["channels"]
+    if os_factor_str is None:
+        os_factor_str = config["os_factor"]
+    os_factor_str = str(os_factor_str)
 
-        if os_factor_str is None:
-            os_factor_str = config["os_factor"]
+    if fir_filter_path is None:
+        fir_filter_path = os.path.join(
+            config_dir, config["fir_filter_coeff_file_path"])
 
-        if fir_filter_path is None:
-            fir_filter_path = os.path.join(
-                config_dir, config["fir_filter_coeff_file_path"])
+    module_logger.debug((f"_channelize: "
+                         f"input_data_file_path={input_data_file_path}, "
+                         f"channels={channels}, "
+                         f"os_factor_str={os_factor_str}, "
+                         f"fir_filter_path={fir_filter_path}, "
+                         f"output_file_name={output_file_name}, "
+                         f"output_dir={output_dir}"))
 
-        module_logger.debug((f"_channelize: "
-                             f"input_data_file_path={input_data_file_path}, "
-                             f"channels={channels}, "
-                             f"os_factor_str={os_factor_str}, "
-                             f"fir_filter_path={fir_filter_path}, "
-                             f"output_file_name={output_file_name}, "
-                             f"output_dir={output_dir}"))
+    matlab_cmd_str = "channelize"
 
-        matlab_cmd_str = "channelize"
+    output_base = (f"{matlab_cmd_str}.{channels}."
+                   f"{'-'.join(os_factor_str.split('/'))}")
 
-        output_base = (f"{matlab_cmd_str}.{channels}."
-                       f"{'-'.join(os_factor_str.split('/'))}")
+    output_base, log_file_name, output_file_name = \
+        util.create_output_file_names(output_file_name, output_base)
 
-        output_base, log_file_name, output_file_name = \
-            util.create_output_file_names(output_file_name, output_base)
+    if backend == "matlab":
 
-        if backend == "matlab":
+        cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
+                   f"{input_data_file_path} "
+                   f"{channels} {os_factor_str} {fir_filter_path} "
+                   f"{output_file_name} {output_dir} 1")
 
-            cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
-                       f"{input_data_file_path} "
-                       f"{channels} {os_factor_str} {fir_filter_path} "
-                       f"{output_file_name} {output_dir} 1")
+        module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
 
-            module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
+        util.run_cmd(cmd_str, log_file_path=os.path.join(
+            output_dir, log_file_name))
 
-            util.run_cmd(cmd_str, log_file_path=os.path.join(
-                output_dir, log_file_name))
+        return psr_formats.DADAFile(
+            os.path.join(output_dir, output_file_name)).load_data()
 
-            return psr_formats.DADAFile(
-                os.path.join(output_dir, output_file_name)).load_data()
-
-        elif backend == "python":
-            input_data_file = psr_formats.DADAFile(input_data_file_path)
-            channelizer = pfb.format_handler.PSRFormatChannelizer(
-                os_factor=os_factor_str,
-                nchan=channels,
-                fir_filter_coeff=fir_filter_path
-            )
-            output_data_file = channelizer(
-                input_data_file,
-                output_dir=output_dir,
-                output_file_name=output_file_name
-            )
-            return output_data_file
-
-    return _channelize
+    elif backend == "python":
+        input_data_file = psr_formats.DADAFile(input_data_file_path)
+        channelizer = pfb.format_handler.PSRFormatChannelizer(
+            os_factor=os_factor_str,
+            nchan=channels,
+            fir_filter_coeff=fir_filter_path
+        )
+        output_data_file = channelizer(
+            input_data_file,
+            output_dir=output_dir,
+            output_file_name=output_file_name
+        )
+        return output_data_file
 
 
 def create_parser():

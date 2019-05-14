@@ -54,23 +54,24 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        os_factor = pfb.rational.Rational(
-            *data_gen.config["os_factor"].split("/"))
+        os_factor = pfb.rational.Rational.from_str(
+            data_gen.config["os_factor"])
         normalize = data_gen.config["input_fft_length"] *\
             data_gen.config["channels"]
         n_samples = os_factor.normalize(data_gen.config["input_fft_length"]) *\
             data_gen.config["channels"] * data_gen.config["blocks"]
         cls.normalize = normalize
         cls.n_samples = n_samples
-        cls.generator = data_gen.generate_test_vector(
+        cls.generator = functools.partial(
+            data_gen.generate_test_vector,
             backend=data_gen.config["backend"]["test_vectors"])
         cls.channelizer = data_gen.channelize(
             backend=data_gen.config["backend"]["channelize"])
-        synthesizer = data_gen.synthesize(
-            backend=data_gen.config["backend"]["synthesize"])
         cls.synthesizer = functools.partial(
-            synthesizer,
-            deripple=data_gen.config["deripple"])
+            data_gen.synthesize,
+            deripple=data_gen.config["deripple"],
+            backend=data_gen.config["backend"]["synthesize"],
+            fft_window_str=data_gen.config["fft_window"])
         cls.pipeline = data_gen.pipeline(
             cls.generator,
             cls.channelizer,
@@ -88,11 +89,14 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                         f"{deripple_str} -V")
         )
         comp = comparator.SingleDomainComparator(name="time")
-        comp.operators["diff"] = lambda a, b: a - b
-        comp.operators["this"] = lambda a: a
 
-        comp.products["sum"] = lambda a: np.sum(np.abs(a))
-        comp.products["mean"] = lambda a: np.mean(np.abs(a))
+        # isclose returns an array of booleans;
+        # the imaginary component is always zero.
+        comp.operators["isclose"] = lambda a, b: np.isclose(
+            a, b, atol=cls.thresh)
+
+        comp.products["sum"] = lambda a: np.sum(a)
+        comp.products["mean"] = lambda a: np.mean(a)
 
         cls.comp = comp
         cls.report = {}
@@ -103,9 +107,9 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             matlab_dump_file.data.flatten(),
             dspsr_dump_file.data.flatten() / self.normalize
         )
-        mean_diff = list(res_prod["diff"]["mean"])[0][1]
-        sum_diff = list(res_prod["diff"]["sum"])[0][1]
-        self.assertTrue(all([d < self.thresh for d in mean_diff]))
+        mean_diff = list(res_prod["isclose"]["mean"])[0][1][0]
+        sum_diff = list(res_prod["isclose"]["sum"])[0][1][0]
+        self.assertTrue(mean_diff == 1.0)
         return res_op, res_prod, mean_diff, sum_diff
 
     def test_time_domain_impulse(self):
@@ -120,7 +124,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
 
-            prod_str = f"{res_prod['diff']:.6e}"
+            prod_str = f"{res_prod['isclose']:.6e}"
 
             sub_report.append({
                 "offset": offset,
@@ -135,7 +139,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.__class__.report["test_time_domain_impulse"] = sub_report
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_complex_sinusoid(self):
         sub_report = []
         args = (self.freq_domain_args["phase"],
@@ -149,7 +153,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
 
-            prod_str = f"{res_prod['diff']:.6e}"
+            prod_str = f"{res_prod['isclose']:.6e}"
 
             sub_report.append({
                 "freq": freq,
@@ -182,7 +186,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
             dada_files[-1], dspsr_dump
         )
-        prod_str = f"{res_prod['diff']:.6e}"
+        prod_str = f"{res_prod['isclose']:.6e}"
         module_logger.info((f"test_simulated_pulsar: \n"
                             f"{prod_str}"))
         sub_report.append({
@@ -195,7 +199,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         with open(os.path.join(products_dir, "report.json"), "w") as f:
-            json.dump(cls.report, f)
+            json.dump(cls.report, f, cls=comparator.NumpyEncoder)
 
 
 if __name__ == "__main__":
