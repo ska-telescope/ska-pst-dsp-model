@@ -1,6 +1,7 @@
 import unittest
 import logging
 import os
+import sys
 
 import numpy as np
 import pfb.rational
@@ -26,8 +27,9 @@ def base_cls():
         @classmethod
         def setUpClass(cls):
             comp = comparator.SingleDomainComparator(name="time")
-
-            comp.operators["isclose"] = lambda a, b: np.isclose(a, b, atol=1e-5)
+            comp.operators["diff"] = lambda a, b: a - b
+            comp.operators["isclose"] = lambda a, b: np.isclose(
+                a, b, atol=cls.thresh)
             comp.products["mean"] = np.mean
 
             cls.comp = comp
@@ -41,7 +43,7 @@ def base_cls():
     return TestBackends
 
 
-@unittest.skip("")
+# @unittest.skip("")
 class TestSynthesizerBackends(base_cls()):
 
     @classmethod
@@ -59,11 +61,12 @@ class TestSynthesizerBackends(base_cls()):
                      f"{os.path.basename(input_file_path)}")
 
         channelized_file_path = channelize(
-            file_name,
+            input_file_path,
             config["channels"],
             cls.os_factor,
             fir_filter_path=cls.fir_filter_path,
             output_dir="./",
+            output_file_name=file_name,
             backend="python"
         ).file_path
 
@@ -88,13 +91,22 @@ class TestSynthesizerBackends(base_cls()):
                     output_dir="./",
                     output_file_name=file_name
                 ))
+                synthesized[-1].load_data()
 
             res_op, res_prod = self.comp.cartesian(
                 *[d.data.flatten() for d in synthesized])
+
             isclose = list(res_prod["isclose"]["mean"])[0][1][0]
+            if not isclose:
+                print(f"{res_prod:.6f}")
+                import matplotlib.pyplot as plt
+                comparator.plot_operator_result(res_op)
+                plt.show()
+
             self.assertTrue(isclose == 1.0)
 
 
+# @unittest.skip("")
 class TestChannelizerBackends(base_cls()):
     """
     Test to ensure that backends are producing the same output.
@@ -145,5 +157,5 @@ class TestChannelizerBackends(base_cls()):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main()
