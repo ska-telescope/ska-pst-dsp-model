@@ -18,6 +18,7 @@ function synthesize (varargin)
   addOptional(p, 'sample_offset', '1', @ischar);
   addOptional(p, 'deripple', '1', @ischar);
   addOptional(p, 'overlap', '0', @ischar);
+  addOptional(p, 'fft_window', 'tukey', @ischar);
 
   parse(p, varargin{:});
 
@@ -30,9 +31,17 @@ function synthesize (varargin)
   overlap = str2num(p.Results.overlap);
   deripple = str2num(p.Results.deripple);
   deripple_struct = struct('apply_deripple', deripple);
+  fft_window_str = str2num(p.Results.fft_window);
 
   function o = calc_overlap(input_fft_length)
     o = overlap;
+  end
+
+  win = PFBWindow;
+
+  fft_window = win.lookup(fft_window_str)(input_fft_length, overlap);
+  if verbose
+    fprintf('synthesize: using %s fft window function\n', get_function_name(fft_window));
   end
 
   % load in input data

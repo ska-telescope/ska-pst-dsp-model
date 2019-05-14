@@ -1,21 +1,33 @@
 classdef PFBWindow
 
+  properties
+    lookup;
+  end
+
+
   methods
 
-    function windowed = no_window (obj, in_dat, input_fft_length, input_discard)
-      windowed = in_dat;
+    function obj = PFBWindow ()
+      obj.lookup = containers.Map();
+      obj.lookup('no_window') =  @obj.no_window_factory;
+      obj.lookup('tukey') =  @obj.tukey_factory;
+      obj.lookup('hann') =  @obj.hann_factory;
+      obj.lookup('top_hat') =  @obj.top_hat_factory;
     end
+
+    function handle = no_window_factory (obj, varargin)
+      function windowed = no_window (in_dat, input_fft_length, input_discard)
+        windowed = in_dat;
+      end
+      handle = @no_window;
+    end
+
 
     function handle = tukey_factory (obj, input_fft_length, input_discard)
       window = ones(1, input_fft_length);
       h = transpose(hann(2*input_discard));
       window(1:input_discard) = h(1:input_discard);
       window(input_fft_length - input_discard+1:end) = h(input_discard+1:end);
-      % input_discard_2 = round(input_discard*0.75);
-      % h = transpose(hann(input_discard_2*2));
-      % window(1:input_discard_2) = h(1:input_discard_2);
-      % window(input_fft_length - input_discard_2+1:end) = h(input_discard_2+1:end);
-
 
       function windowed = tukey_window (in_dat, input_fft_length, input_discard)
         windowed = in_dat;
@@ -29,7 +41,7 @@ classdef PFBWindow
     end
 
 
-    function handle = fedora_factory (obj, fraction)
+    function handle = fedora_factory (obj, fraction, varargin)
       function windowed = fedora_window (in_dat, input_fft_length, input_discard)
         if fraction == 0
           windowed = in_dat;
@@ -43,21 +55,16 @@ classdef PFBWindow
       handle = @fedora_window;
     end
 
-    function windowed = baseball_hat_window (obj, in_dat, input_fft_length, input_discard)
-      in_dat(:, 1:input_discard) = complex(0.0);
-      % in_dat(:, input_fft_length-input_discard+1:end) = complex(0.0);
-      windowed = in_dat;
+    function handle = top_hat_factory (obj, varargin)
+      function windowed = top_hat_window (in_dat, input_fft_length, input_discard)
+        in_dat(:, 1:input_discard) = complex(0.0);
+        in_dat(:, input_fft_length-input_discard+1:end) = complex(0.0);
+        windowed = in_dat;
+      end
+      handle = @top_hat_window;
     end
 
-    function windowed = top_hat_window (obj, in_dat, input_fft_length, input_discard)
-      in_dat(:, 1:input_discard) = complex(0.0);
-      in_dat(:, input_fft_length-input_discard+1:end) = complex(0.0);
-      windowed = in_dat;
-    end
-
-    function handle = hann_factory (obj, input_fft_length)
-      % h = hann(input_fft_length + 2*input_discard);
-      % h = transpose(h(input_discard+1:input_fft_length+input_discard));
+    function handle = hann_factory (obj, input_fft_length, varargin)
       h = hann(input_fft_length);
       h = transpose(h);
       function windowed = hann_window (in_dat, input_fft_length, input_discard)
