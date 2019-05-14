@@ -5,8 +5,10 @@ function out = polyphase_synthesis (...
   deripple_,...
   sample_offset_,...
   calc_overlap_handler_,...
-  window_handler_...
+  window_handler_,...
+  verbose_...
 )
+
   % recombine channels that were created using polyphase filterbank.
   % Take into account any oversampling, and the number of received PFB channels
   %
@@ -29,7 +31,7 @@ function out = polyphase_synthesis (...
   % @return {double/single []} - Upsampled time domain output array. The
   %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %   return array and the input array will not be the same
-
+  tstart = tic;
   function overlap = default_calc_overlap(input_fft_length)
     overlap = round(input_fft_length*0.125);
   end
@@ -47,6 +49,11 @@ function out = polyphase_synthesis (...
   deripple = struct('apply_deripple', 0, 'filter_coeff', []);
   if exist('deripple_', 'var')
     deripple = deripple_;
+  end
+
+  verbose = 0;
+  if exist('verbose_', 'var')
+    verbose = verbose_;
   end
 
   if exist('calc_overlap_handler_', 'var')
@@ -68,8 +75,10 @@ function out = polyphase_synthesis (...
   n_chan = size_in(2);
   n_dat = size_in(3);
   dtype = class(in);
-  fprintf('polyphase_synthesis: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
-  fprintf('polyphase_synthesis: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
+  if verbose
+    fprintf('polyphase_synthesis: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
+    fprintf('polyphase_synthesis: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
+  end
 
   input_overlap = calc_overlap_handler(input_fft_length);
   input_keep = input_fft_length - 2*input_overlap;
@@ -80,22 +89,25 @@ function out = polyphase_synthesis (...
   output_overlap = normalize(os_factor, input_overlap) * n_chan;
   output_keep = output_fft_length - 2*output_overlap;
 
-  fprintf('polyphase_synthesis: input_fft_length=%d\n', input_fft_length);
-  fprintf('polyphase_synthesis: output_fft_length=%d\n', output_fft_length);
-  fprintf('polyphase_synthesis: input_overlap=%d\n', input_overlap);
-  fprintf('polyphase_synthesis: output_overlap=%d\n', output_overlap);
-  fprintf('polyphase_synthesis: input_keep=%d\n', input_keep);
-  fprintf('polyphase_synthesis: output_keep=%d\n', output_keep);
-  fprintf('polyphase_synthesis: sample_offset=%d\n', sample_offset);
-  fprintf('polyphase_synthesis: n_blocks=%d\n', n_blocks);
-
+  if verbose
+    fprintf('polyphase_synthesis: input_fft_length=%d\n', input_fft_length);
+    fprintf('polyphase_synthesis: output_fft_length=%d\n', output_fft_length);
+    fprintf('polyphase_synthesis: input_overlap=%d\n', input_overlap);
+    fprintf('polyphase_synthesis: output_overlap=%d\n', output_overlap);
+    fprintf('polyphase_synthesis: input_keep=%d\n', input_keep);
+    fprintf('polyphase_synthesis: output_keep=%d\n', output_keep);
+    fprintf('polyphase_synthesis: sample_offset=%d\n', sample_offset);
+    fprintf('polyphase_synthesis: n_blocks=%d\n', n_blocks);
+  end
   out = complex(zeros(n_pol, 1, n_blocks*output_keep, dtype));
 
 
   FN_width = input_fft_length*os_factor.de/os_factor.nu;
 
   if deripple.apply_deripple
-    fprintf('polyphase_synthesis: applying deripple\n');
+    if verbose
+      fprintf('polyphase_synthesis: applying deripple\n');
+    end
     passband_length = FN_width/2;
     [H0,W] = freqz(deripple.filter_coeff, 1, n_chan*passband_length);
     % figure; ax = gca;
@@ -208,5 +220,9 @@ function out = polyphase_synthesis (...
       % end
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end
+  end
+  if verbose
+    tdelta = toc(tstart);
+    fprintf('polyphase_synthesis: Elapsed time is %f seconds\n', tdelta);
   end
 end

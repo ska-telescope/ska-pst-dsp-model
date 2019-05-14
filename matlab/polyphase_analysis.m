@@ -1,4 +1,10 @@
-function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
+function out=polyphase_analysis(...
+    in,...
+    filt,...
+    block,...
+    os_factor,...
+    verbose_...
+  )
 
   % Polyphase analysis filterbank with cyclic shift of data into FFT
   % to remove spectrum rotation in output data
@@ -19,7 +25,7 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
   % @return {single/double []} - output data: two dimensional array.
   %   The first dimension is time, the second frequency. The number of frequency
   %   frequency channels is equal to `block`
-
+  tstart = tic;
   verbose = 0;
   if exist('verbose_', 'var')
     verbose = verbose_;
@@ -104,4 +110,9 @@ function out=polyphase_analysis(in, filt, block, os_factor, verbose_)
       out(i_pol, 1:block, k+1) = fft(temp2)*block; %temp2;%
     end
   end
+  if verbose
+    tdelta = toc(tstart);
+    fprintf('polyphase_analysis: Elapsed time is %f seconds\n', tdelta);
+  end
+
 end

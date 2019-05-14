@@ -8,7 +8,7 @@ function synthesize (varargin)
   %   dada file will be saved.
   % @param {string} output_file_name - The name of the output dada file.
   % @param {string} verbose -  Optional verbosity flag.
-
+  tstart = tic;
   p = inputParser;
   addRequired(p, 'input_file_path', @ischar);
   addRequired(p, 'input_fft_length', @ischar);
@@ -31,7 +31,7 @@ function synthesize (varargin)
   overlap = str2num(p.Results.overlap);
   deripple = str2num(p.Results.deripple);
   deripple_struct = struct('apply_deripple', deripple);
-  fft_window_str = str2num(p.Results.fft_window);
+  fft_window_str = p.Results.fft_window;
 
   function o = calc_overlap(input_fft_length)
     o = overlap;
@@ -39,7 +39,8 @@ function synthesize (varargin)
 
   win = PFBWindow;
 
-  fft_window = win.lookup(fft_window_str)(input_fft_length, overlap);
+  fft_window = win.lookup(fft_window_str);
+  fft_window = fft_window(input_fft_length, overlap);
   if verbose
     fprintf('synthesize: using %s fft window function\n', get_function_name(fft_window));
   end
@@ -47,9 +48,10 @@ function synthesize (varargin)
   % load in input data
   if verbose
     fprintf('synthesize: loading input data\n');
+    fprintf('synthesize: input_file_path=%s\n', input_file_path);
   end
   file_id = fopen(input_file_path);
-  data_header = read_dada_file(file_id);
+  data_header = read_dada_file(file_id, verbose);
   fclose(file_id);
   input_data = data_header{1};
   input_header = data_header{2};
@@ -75,24 +77,23 @@ function synthesize (varargin)
   synthesized_header = input_header;
   input_tsamp = str2num(input_header('TSAMP'));
   synthesized_header('TSAMP') = num2str(input_tsamp / normalize(os_factor, 1) / channels);
-  synthesized = polyphase_synthesis_alt(...
-    input_data, input_fft_length, os_factor, deripple_struct, sample_offset, @calc_overlap);
+  synthesized = polyphase_synthesis(...
+    input_data, input_fft_length, os_factor, deripple_struct,...
+    sample_offset, @calc_overlap, fft_window, verbose);
 
   if verbose
     fprintf('synthesize: synthesis complete\n')
   end
 
-  if verbose
-    fprintf('synthesize: saving synthesized data\n')
-  end
-
   % fullfile behaves the same as Python's os.path.join
   output_file_path = fullfile(output_dir, output_file_name);
   file_id = fopen(output_file_path, 'w');
-  write_dada_file(file_id, synthesized, synthesized_header);
+  write_dada_file(file_id, synthesized, synthesized_header, verbose);
   fclose(file_id);
 
   if verbose
-    fprintf('synthesize: saving synthesized data complete\n')
+    fprintf('synthesize: saving synthesized data complete\n');
+    tdelta = toc(tstart);
+    fprintf('synthesize: Elapsed time is %f seconds\n', tdelta);
   end
 end

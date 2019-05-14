@@ -11,7 +11,7 @@ function channelize (varargin)
   % @param {string} output_dir - The directory where the channelized output
   %   dada file will be saved.
   % @param {string} verbose_ -  Optional verbosity flag.
-
+  tstart = tic;
   p = inputParser;
   validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x > 0);
   addRequired(p,'input_file_path', @ischar);
@@ -39,7 +39,7 @@ function channelize (varargin)
 
   % load in input data
   if verbose
-    fprintf('channelize: loading input data\n');
+    fprintf('channelize: input_file_path=%s\n', input_file_path);
   end
   file_id = fopen(input_file_path);
   data_header = read_dada_file(file_id);
@@ -50,9 +50,6 @@ function channelize (varargin)
     fprintf('channelize: loading input data complete\n');
   end
 
-  if verbose
-    fprintf('channelize: loading in FIR filter coefficients\n');
-  end
   fir_filter_coeff = read_fir_filter_coeff(fir_filter_path);
   if verbose
     fprintf('channelize: loading in FIR filter coefficients complete\n');
@@ -83,10 +80,12 @@ function channelize (varargin)
 
   output_file_path = fullfile(output_dir, output_file_name);
   file_id = fopen(output_file_path, 'w');
-  write_dada_file(file_id, channelized, channelized_header);
+  write_dada_file(file_id, channelized, channelized_header, verbose);
   fclose(file_id);
 
   if verbose
-    fprintf('channelize: saving channelized data complete\n')
+    fprintf('channelize: saving channelized data complete\n');
+    tdelta = toc(tstart);
+    fprintf('channelize: Elapsed time is %f seconds\n', tdelta);
   end
 end
