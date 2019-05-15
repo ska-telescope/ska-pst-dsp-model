@@ -1,7 +1,10 @@
 import unittest
 import logging
 import os
+import functools
 import sys
+
+sys.path.insert(0, "/home/SWIN/dshaff/ska/pfb")
 
 import numpy as np
 import pfb.rational
@@ -16,12 +19,14 @@ base_dir = util.updir(test_dir, 2)
 config_dir = os.path.join(base_dir, "config")
 config = load_config()
 
+module_logger = logging.getLogger(__name__)
+
 
 def base_cls():
 
     class TestBackends(unittest.TestCase):
 
-        thresh = 1e-5
+        thresh = 1e-7
         backends = ["python", "matlab"]
 
         @classmethod
@@ -31,6 +36,8 @@ def base_cls():
             comp.operators["isclose"] = lambda a, b: np.isclose(
                 a, b, atol=cls.thresh)
             comp.products["mean"] = np.mean
+            comp.products["sum"] = np.sum
+            comp.products["max"] = np.amax
 
             cls.comp = comp
             cls.os_factor = pfb.rational.Rational.from_str(config["os_factor"])
@@ -53,26 +60,40 @@ class TestSynthesizerBackends(base_cls()):
         input_file_paths = []
         channelized_file_paths = []
 
-        input_file_path = generate_test_vector(
-            "time", cls.n_samples,
-            0.01, 1, backend="python").file_path
+        def t(offset):
+            return generate_test_vector(
+                "time", cls.n_samples,
+                offset, 1, backend="python").file_path
 
-        file_name = (f"channelized.python."
-                     f"{os.path.basename(input_file_path)}")
+        def f(freq):
+            return generate_test_vector(
+                "freq", cls.n_samples,
+                freq, np.pi, 0.1, backend="python").file_path
 
-        channelized_file_path = channelize(
-            input_file_path,
-            config["channels"],
-            cls.os_factor,
-            fir_filter_path=cls.fir_filter_path,
-            output_dir="./",
-            output_file_name=file_name,
-            backend="python"
-        ).file_path
+        channelizer = functools.partial(channelize,
+                                        fir_filter_path=cls.fir_filter_path,
+                                        output_dir="./",
+                                        backend="python")
+        params_funcs = [[0.1, t], [0.001, f]]
+        # params_funcs = [[0.1, t]]
 
-        input_file_paths.append(input_file_path)
-        channelized_file_paths.append(channelized_file_path)
+        for param, func in params_funcs:
+            input_file_path = func(param)
+            file_name = (f"channelized.python."
+                         f"{os.path.basename(input_file_path)}")
 
+            channelized_file_path = channelizer(
+                input_file_path,
+                config["channels"],
+                cls.os_factor,
+                output_file_name=file_name
+            ).file_path
+
+            input_file_paths.append(input_file_path)
+            channelized_file_paths.append(channelized_file_path)
+
+        module_logger.debug(f"setUpClass: input_file_paths={input_file_paths}")
+        module_logger.debug(f"setUpClass: channelized_file_paths={channelized_file_paths}")
         cls.input_file_paths = input_file_paths
         cls.channelized_file_paths = channelized_file_paths
         cls.synthesizers = [synthesize(backend=b) for b in cls.backends]
@@ -96,17 +117,18 @@ class TestSynthesizerBackends(base_cls()):
             res_op, res_prod = self.comp.cartesian(
                 *[d.data.flatten() for d in synthesized])
 
-            isclose = list(res_prod["isclose"]["mean"])[0][1][0]
-            if not isclose:
-                print(f"{res_prod:.6f}")
-                import matplotlib.pyplot as plt
-                comparator.plot_operator_result(res_op)
-                plt.show()
+            isclose_mean = list(res_prod["isclose"]["mean"])[0][1][0]
+            if not isclose_mean == 1.0:
+                print(f"{res_prod['isclose']:.6f}")
+                print(f"{res_prod['diff']:.6e}")
+                # import matplotlib.pyplot as plt
+                # comparator.plot_operator_result(res_op)
+                # plt.show()
 
-            self.assertTrue(isclose == 1.0)
+            self.assertTrue(isclose_mean == 1.0)
 
 
-# @unittest.skip("")
+@unittest.skip("")
 class TestChannelizerBackends(base_cls()):
     """
     Test to ensure that backends are producing the same output.

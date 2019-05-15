@@ -32,7 +32,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     Note that offsets and frequencies are expressed as fractions of total
     size of input array.
     """
-    thresh = 1e-5
+    thresh = 1e-7
     output_dir = data_dir
 
     simulated_pulsar_file_path = os.path.join(
@@ -102,13 +102,17 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         cls.report = {}
 
     def compare_dump_files(self, matlab_dump_file, dspsr_dump_file):
+        matlab_dat = matlab_dump_file.data.flatten()
+        dspsr_dat = dspsr_dump_file.data.flatten() / self.normalize
 
-        res_op, res_prod = self.comp.cartesian(
-            matlab_dump_file.data.flatten(),
-            dspsr_dump_file.data.flatten() / self.normalize
-        )
+        self.assertTrue(matlab_dat.shape[0] == dspsr_dat.shape[0])
+
+        res_op, res_prod = self.comp.cartesian(matlab_dat, dspsr_dat)
         mean_diff = list(res_prod["isclose"]["mean"])[0][1][0]
         sum_diff = list(res_prod["isclose"]["sum"])[0][1][0]
+        if mean_diff != 1.0:
+            module_logger.debug(
+                f"compare_dump_files: {res_prod['isclose']:.6e}")
         self.assertTrue(mean_diff == 1.0)
         return res_op, res_prod, mean_diff, sum_diff
 
@@ -119,7 +123,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             dada_files = self.__class__.pipeline(
                 "time", self.n_samples, offset, *args)
             dspsr_dump = self.__class__.dspsr_dumper(
-                dada_files[1].file_path)[0]
+                dada_files[1].file_path)
+            dspsr_dump = dspsr_dump[0]
 
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
@@ -139,7 +144,6 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.__class__.report["test_time_domain_impulse"] = sub_report
 
-    # @unittest.skip("")
     def test_complex_sinusoid(self):
         sub_report = []
         args = (self.freq_domain_args["phase"],
