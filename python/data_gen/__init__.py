@@ -16,7 +16,7 @@ from .pipeline import pipeline
 from .dispose import dispose
 from .config import config, config_dir
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "run_dspsr",

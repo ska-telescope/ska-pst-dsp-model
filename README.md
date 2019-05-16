@@ -19,30 +19,57 @@ cd python
 poetry install
 ```
 
+In order to run tests with the Matlab backend, the [Matlab runtime environment](https://au.mathworks.com/products/compiler/matlab-runtime.html)
+must be installed.
+
+### Building
+
+With matlab installed, run `make` to create stand alone executables from
+Matlab code.
+
 ### Usage
 
-Normal usage would consist of creating test vectors, and then processing them
-with dspsr before comparing the results of dspsr's PFB inversion with that
-of the model. In Matlab:
+The goal of the Python code in this repo is to implement a test harness to
+test different PFB inversion implementations against each other, and to the
+test the temporal and spectral purity of the PFB inversion algorithm.
 
-```matlab
->>> pipeline  % wait a while
+Testing Python and Matlab "backends" against each other:
+
+```
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_backends
 ```
 
-From the command line:
+Testing dspsr against some PFB inversion backend:
 
-```bash
-me@local:/path/to/repo$ cd python
-me@local:/path/to/repo/python$ poetry run python process_test_vectors.py -bd ./../data/test_vectors
-me@local:/path/to/repo/python$ poetry run python compare_dump_files.py -i ./../data/test_vectors/freq/f-0.100_b-0.100_p-0.785/complex_sinusoid.dump ./../data/test_vectors/freq/f-0.100_b-0.100_p-0.785/pre_Detection.polyphase_analysis_alt.complex_sinusoid.dump ./../data/test_vectors/freq/f-0.100_b-0.100_p-0.785/polyphase_synthesis.complex_sinusoid.dump -fft 4096 -t 0,1000 -p 0 -n
+```
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_matlab_dspsr_pfb_inversion
 ```
 
-The last command will compare the the original complex sinusoid, the result
-from dspsr's inversion, and the result from the Matlab inversion implementation.
+If these tests pass, the program will exit successfully. Moreover, it means
+that the implementations being tested produce the same result to one part
+in 1e-7.
 
-Alternative usage consists of using matlab executables to generate test vectors,
-channelize data, or synthesize data on the fly.
+We can configure these tests with the `config/test.config.json` file. For example,
+if we want to turn derippling off in our tests, we change the `"deripple"`
+key from `true` to `false`. See [this](#validation-configuration) for more
+information on the meaning of all the fields in the `test.config.json` file.
 
+Testing spectral and temporal purity (not currently fully implemented):
+
+```
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_purity
+```
+
+Testing whether PFB inversion works with dedispersion turned on:
+
+```
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+[me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_dedispersion
+```
+<!--
 Generating a dual polarization complex sinuosoid:
 
 ```bash
@@ -138,8 +165,35 @@ multiple impulses of varying widths.
 also generate a linear combination of sinusoids at any number of specified
 frequencies.
 - `pipeline.m`: Run the test vector generation, analysis and synthesis pipeline.
-This will create a directory structure in the `data` subdirectory.
+This will create a directory structure in the `data` subdirectory. -->
 
-### Testing
+<!-- ### Unittesting
 
-Run `test.m` to run a basic suite of unit-like tests.
+Run `test.m` to run a basic suite of unit-like tests. -->
+
+### Validation Configuration
+
+`config/test.config.json` determines what parameters are to run different
+implementations of PFB inversion.
+
+- fir_filter_coeff_file_path (str)*: Relative (to config directory) path to FIR filter coefficients, in .mat format.
+- header_file_path (str): Relative (to config directory) path to default header file.
+- os_factor (str): Oversampling factor, expressed as "{nu}/{de}"
+- channels (int): The number of channels to generate in PFB inversion.
+- input_fft_length (int): The size of the forward FFT used in PFB inversion.
+- input_overlap (int): The input overlap size used in PFB inversion.
+- blocks (int): Number of processing blocks to generate.
+- backend: Each of the child fields can either be "python" or "matlab", indicating which implementation to use. Python is (significantly) faster, as there is no call overhead, but Matlab is the prototype "gold standard".
+   - test_vectors (str): backend for generating test vectors
+   - channelize (str): PFB channelizer backend
+   - synthesize (str): PFB inversion backend
+- n_pol (int): Number of polarizations to generate
+- dm (float): Dispersion measure. Set to zero to disable dedispersion.
+- period (float): pulsar period.
+- dump_stage (str): Tells dspsr after which stage to dump the results of PFB inversion.
+- deripple (bool): Boolean value indicating whether or not to perform derippling.
+- fft_window (str): the FFT window to use in PFB inversion. Can be "no_window"
+or "tukey"
+
+*In order to get sensible results, the FIR filter coefficients must be tuned
+to the oversampling factor and the number of PFB channels.
