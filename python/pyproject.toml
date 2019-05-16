@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PST_Matlab_dspsr_PFB_inversion_comparison"
-version = "0.6.0"
+version = "0.6.1"
 description = ""
 authors = ["Dean Shaff <dshaff@swin.edu.au>"]
 license = "MIT"
