@@ -30,7 +30,7 @@ description = ""
 name = "comparator"
 optional = false
 python-versions = "^3.6"
-version = "0.9.0"
+version = "0.9.1"
 
 [package.dependencies]
 mypy = "^0.670.0"
@@ -38,7 +38,7 @@ numpy = "^1.16"
 scipy = "^1.2"
 
 [package.source]
-reference = "c9e25a63066ea8a6c934f564b353f07ab7781f50"
+reference = "a8cebeebbe2160601493c7b533d1085b393edc99"
 type = "git"
 url = "git@github.com:dean-shaff/comparator.git"
 [[package]]
@@ -234,7 +234,7 @@ description = ""
 name = "pfb"
 optional = false
 python-versions = "^3.6"
-version = "0.6.0"
+version = "0.7.0"
 
 [package.dependencies]
 comparator = "branch master"
@@ -245,7 +245,7 @@ psr-formats = "branch master"
 scipy = "^1.2"
 
 [package.source]
-reference = "705e0fb0f8040271e2ea6369a84310346bfe097d"
+reference = "130543e5eb6b7017ed3f9518bffd556ace900037"
 type = "git"
 url = "git@github.com:dean-shaff/pfb.git"
 [[package]]

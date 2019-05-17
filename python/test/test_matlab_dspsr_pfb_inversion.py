@@ -3,9 +3,9 @@ import logging
 import os
 import functools
 import json
-import sys
-
-sys.path.insert(0, "/home/SWIN/dshaff/ska/comparator")
+import random
+# import sys
+# sys.path.insert(0, "/home/SWIN/dshaff/ska/comparator")
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,12 +44,14 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
     time_domain_args = {
         "offset": [0.11],
+        # "offset": [random.random()],
         # "offset": np.arange(1, 20)/20,
         "width": 1
     }
 
     freq_domain_args = {
-        "frequency": [0.11],
+        "frequency": [0.0005],
+        # "frequency": [random.random()],
         # "frequency": np.arange(1, 20)/20,
         "phase": np.pi/4,
         "bin_offset": 0.1
@@ -88,10 +90,13 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             period=data_gen.config["period"],
             output_dir=cls.output_dir,
             dump_stage=data_gen.config["dump_stage"],
-            extra_args=(f"-IF 1:{data_gen.config['input_fft_length']} "
-                        f"{deripple_str} -V")
+            extra_args=(f"-IF 1:{data_gen.config['input_fft_length']}:"
+                        f"{data_gen.config['input_overlap']} "
+                        f"{deripple_str} "
+                        f"-fft-window {data_gen.config['fft_window']} -V")
         )
         comp = comparator.SingleDomainComparator(name="time")
+        comp.operators["this"] = lambda a: a
         comp.operators["diff"] = lambda a, b: a - b
         # isclose returns an array of booleans;
         # the imaginary component is always zero.
@@ -113,12 +118,9 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         res_op, res_prod = self.comp.cartesian(matlab_dat, dspsr_dat)
         mean_diff = list(res_prod["isclose"]["mean"])[0][1][0]
         sum_diff = list(res_prod["isclose"]["sum"])[0][1][0]
-        if mean_diff != 1.0:
-            module_logger.debug(
-                f"compare_dump_files: {res_prod['isclose']:.6e}")
-        # self.assertTrue(mean_diff == 1.0)
         return res_op, res_prod, mean_diff, sum_diff
 
+    @unittest.skip("")
     def test_time_domain_impulse(self):
         sub_report = []
         args = (self.time_domain_args["width"], )
@@ -133,10 +135,11 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                 dada_files[-1], dspsr_dump)
 
             figs, axes = comparator.plot_operator_result(res_op)
-            figs["diff"].suptitle(
-                f"Diff: Time offset {int(self.n_samples*offset)}")
-            figs["diff"].savefig(
-                os.path.join(products_dir, f"time.diff.{offset}.png"))
+            for op in ["this", "diff"]:
+                figs[op].suptitle(
+                    f"{op}: Time offset {int(self.n_samples*offset)}")
+                figs[op].savefig(
+                    os.path.join(products_dir, f"time.{op}.{offset:.2f}.png"))
 
             prod_str = f"{res_prod['isclose']:.6e}"
 
@@ -151,6 +154,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                                 f"offset={offset}\n"
                                 f"{prod_str}"))
 
+            self.assertTrue(mean_diff == 1.0)
         self.__class__.report["test_time_domain_impulse"] = sub_report
 
     def test_complex_sinusoid(self):
@@ -167,10 +171,11 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
                 dada_files[-1], dspsr_dump)
 
             figs, axes = comparator.plot_operator_result(res_op)
-            figs["diff"].suptitle(
-                f"Diff: Frequency {int(self.n_samples*freq)} Hz")
-            figs["diff"].savefig(
-                os.path.join(products_dir, f"freq.diff.{freq}.png"))
+            for op in ["this", "diff"]:
+                figs[op].suptitle(
+                    f"{op}: Frequency {int(self.n_samples*freq)} Hz")
+                figs[op].savefig(
+                    os.path.join(products_dir, f"freq.{op}.{freq:.2f}.png"))
 
             prod_str = f"{res_prod['isclose']:.6e}"
 
@@ -183,6 +188,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             module_logger.info((f"test_complex_sinusoid: "
                                 f"freq={freq}\n"
                                 f"{prod_str}"))
+            self.assertTrue(mean_diff == 1.0)
 
         self.__class__.report["test_complex_sinusoid"] = sub_report
 
@@ -222,6 +228,6 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     unittest.main()

@@ -18,7 +18,9 @@ module_logger = logging.getLogger(__name__)
 
 fft_window_lookup = {
     "no_window": lambda a, *args: pfb.fft_windows.no_window(a),
-    "tukey": pfb.fft_windows.tukey_window
+    "tukey": pfb.fft_windows.tukey_window,
+    "top_hat": pfb.fft_windows.top_hat_window,
+    "hann": lambda a, *args: pfb.fft_windows.hann_window(a),
 }
 
 

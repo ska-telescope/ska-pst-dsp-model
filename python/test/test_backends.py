@@ -3,7 +3,6 @@ import logging
 import os
 import functools
 import sys
-
 sys.path.insert(0, "/home/SWIN/dshaff/ska/pfb")
 
 import numpy as np
@@ -32,6 +31,7 @@ def base_cls():
         @classmethod
         def setUpClass(cls):
             comp = comparator.SingleDomainComparator(name="time")
+            comp.operators["this"] = lambda a: a
             comp.operators["diff"] = lambda a, b: a - b
             comp.operators["isclose"] = lambda a, b: np.isclose(
                 a, b, atol=cls.thresh)
@@ -75,7 +75,7 @@ class TestSynthesizerBackends(base_cls()):
                                         output_dir="./",
                                         backend="python")
         params_funcs = [[0.1, t], [0.001, f]]
-        # params_funcs = [[0.1, t]]
+        # params_funcs = [[0.001, f]]
 
         for param, func in params_funcs:
             input_file_path = func(param)
@@ -92,8 +92,10 @@ class TestSynthesizerBackends(base_cls()):
             input_file_paths.append(input_file_path)
             channelized_file_paths.append(channelized_file_path)
 
-        module_logger.debug(f"setUpClass: input_file_paths={input_file_paths}")
-        module_logger.debug(f"setUpClass: channelized_file_paths={channelized_file_paths}")
+        module_logger.debug(
+            f"setUpClass: input_file_paths={input_file_paths}")
+        module_logger.debug(
+            f"setUpClass: channelized_file_paths={channelized_file_paths}")
         cls.input_file_paths = input_file_paths
         cls.channelized_file_paths = channelized_file_paths
         cls.synthesizers = [synthesize(backend=b) for b in cls.backends]
@@ -116,6 +118,10 @@ class TestSynthesizerBackends(base_cls()):
 
             res_op, res_prod = self.comp.cartesian(
                 *[d.data.flatten() for d in synthesized])
+
+            # import matplotlib.pyplot as plt
+            # figs, axes = comparator.plot_operator_result(res_op)
+            # plt.show()
 
             isclose_mean = list(res_prod["isclose"]["mean"])[0][1][0]
             if not isclose_mean == 1.0:
