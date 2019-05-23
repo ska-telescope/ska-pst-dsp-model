@@ -53,11 +53,14 @@ def dispose(*callbacks: tuple, dispose=True):
             object with a "file_path" attribute, or a string representing
             a path to a file
     """
+    module_logger.debug(f"dispose")
     files = []
     for res in callbacks:
         if hasattr(res, "__call__"):
+            module_logger.debug(f"dispose: calling {res}")
             res = res()
         files.append(res)
+    module_logger.debug(f"dispose: files: {files}")
 
     if len(files) == 1:
         yield files[0]

@@ -18,8 +18,6 @@ import data_gen.util
 
 module_logger = logging.getLogger(__name__)
 
-plt.ion()
-
 test_dir = data_gen.util.curdir(__file__)
 base_dir = data_gen.util.updir(test_dir, 2)
 data_dir = os.path.join(base_dir, "data")
@@ -50,7 +48,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     }
 
     freq_domain_args = {
-        "frequency": [0.0005],
+        "frequency": [0.53],
         # "frequency": [random.random()],
         # "frequency": np.arange(1, 20)/20,
         "phase": np.pi/4,
@@ -120,7 +118,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         sum_diff = list(res_prod["isclose"]["sum"])[0][1][0]
         return res_op, res_prod, mean_diff, sum_diff
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_time_domain_impulse(self):
         sub_report = []
         args = (self.time_domain_args["width"], )
@@ -192,7 +190,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.__class__.report["test_complex_sinusoid"] = sub_report
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_simulated_pulsar(self):
         """
         Determine whether dspsr and matlab produce the same result when
