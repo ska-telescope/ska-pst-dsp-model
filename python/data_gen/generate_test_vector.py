@@ -36,8 +36,11 @@ def complex_sinusoid(n: int,
     t = np.arange(n)
     sig = np.zeros(n, dtype=dtype)
     for i in range(len(freqs)):
+        freq = freqs[i]
+        if freq < 1.0:
+            freq = int(n*freqs[i])
         sig += np.exp(
-            1j*(2*np.pi*(int(n*freqs[i]) + bin_offset)/n*t + phases[i]))
+            1j*(2*np.pi*(freq + bin_offset)/n*t + phases[i]))
     return sig
 
 
@@ -54,7 +57,9 @@ def time_domain_impulse(n: int,
 
     sig = np.zeros(n, dtype=dtype)
     for i in range(len(offsets)):
-        offset = int(offsets[i]*n)
+        offset = offsets[i]
+        if offset < 1.0:
+            offset = int(offsets[i]*n)
         width = widths[i]
         sig[offset: offset+width] = 1.0
     return sig

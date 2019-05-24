@@ -31,14 +31,15 @@ def correlate(a, b):
     return np.abs(np.fft.ifft(f_a*np.conj(f_b)))
 
 
-def add_offset(file_path, offset):
+def add_offset(file_path, offset, end=None):
     dada_file = psr_formats.DADAFile(file_path).load_data()
     header = dada_file.header
     data = dada_file.data
-    #
+    data_slice = slice(offset, end)
     dada_file.file_path = dada_file.file_path + ".shifted"
-    dada_file.data = data[offset:, :, :]
+    dada_file.data = data[data_slice, :, :]
     dada_file.header = header
+    dada_file["OBS_OFFSET"] = str(4 * 4 * offset)
     dada_file.dump_data()
     return dada_file.file_path
 
@@ -53,13 +54,14 @@ class TestDedispersion(unittest.TestCase):
     simulated_pulsar_file_path = os.path.join(
         data_dir, "simulated_pulsar.noise_0.0.nseries_3.ndim_2.dump"
     )
+    kernel_size = 131072
     kernel_size = 16384
 
     @classmethod
     def setUpClass(cls):
         comp = comparator.SingleDomainComparator(name="time")
         comp.operators["this"] = lambda a: a
-        comp.operators["diff"] = lambda a, b: abs(a - b)
+        comp.operators["diff"] = lambda a, b: a - b
         # comp.operators["xcorr"] = correlate
 
         comp.products["mean"] = np.mean
@@ -67,28 +69,32 @@ class TestDedispersion(unittest.TestCase):
         comp.products["max"] = np.amax
 
         cls.comp = comp
-        channelizer = data_gen.channelize(backend="python")
+        channelizer = data_gen.channelize(
+            backend="python",
+            output_dir=data_dir)
         cls.channelized_dump_file = channelizer(
             cls.simulated_pulsar_file_path)
+
         deripple_str = "-dr" if data_gen.config["deripple"] else ""
         cls.inversion_extra_args = (
             f"-IF 1:{data_gen.config['input_fft_length']}"
             f":{data_gen.config['input_overlap']} "
             f"{deripple_str} "
             f"-fft-window {data_gen.config['fft_window']} -V")
+        cls.os_factor = pfb.rational.Rational.from_str(
+            data_gen.config["os_factor"])
 
+        channelized_samples = int(cls.os_factor.normalize(functools.reduce(
+            lambda x, y: x * y, cls.channelized_dump_file.data.shape[:-1])))
         # cls.inversion_extra_args = (
         #     f"-IF 1:D:{data_gen.config['input_overlap']} "
         #     f"{deripple_str} "
         #     f"-fft-window {data_gen.config['fft_window']} -V")
 
-        cls.os_factor = pfb.rational.Rational.from_str(
-            data_gen.config["os_factor"])
         sample_shift = int((int(cls.channelized_dump_file["NTAP_0"]) - 1) / 2)
         sample_shift += (cls.os_factor.normalize(
                             data_gen.config["input_overlap"])
                          * data_gen.config["channels"])
-        print(sample_shift)
         cls.simulated_pulsar_file_path_shifted = add_offset(
             cls.simulated_pulsar_file_path, sample_shift)
 
@@ -112,27 +118,29 @@ class TestDedispersion(unittest.TestCase):
             data_gen.run_dspsr,
             self.simulated_pulsar_file_path_shifted,
             extra_args=f"-x {self.kernel_size} -V",
-            output_dir=test_dir
+            output_dir=data_dir
         )
 
         f_inv = functools.partial(
             data_gen.run_dspsr,
             self.channelized_dump_file.file_path,
             extra_args=self.inversion_extra_args + f" -x {self.kernel_size}",
-            output_dir=test_dir
+            output_dir=data_dir
         )
 
         with data_gen.dispose(f_sim, f_inv, dispose=False) as res:
             sim_ar = res[0][0]
             inv_ar = res[1][0]
+            print(sim_ar, inv_ar)
 
             diff_chain = data_gen.BaseRunner.chain(
-                data_gen.run_psrdiff,
-                data_gen.run_psrtxt,
+                functools.partial(data_gen.run_psrdiff, output_dir=test_dir),
+                functools.partial(data_gen.run_psrtxt, output_dir=test_dir),
                 data_gen.load_psrtxt_data
             )
             txt_chain = data_gen.BaseRunner.chain(
-                data_gen.run_psrtxt,
+                functools.partial(
+                    data_gen.run_psrtxt, output_dir=test_dir),
                 data_gen.load_psrtxt_data
             )
             data_diff = diff_chain(sim_ar, inv_ar)[-1][2:, :]
@@ -153,6 +161,7 @@ class TestDedispersion(unittest.TestCase):
                     datum_inv /= max_val(datum_inv)
 
                     offset = np.argmax(correlate(datum_sim, datum_inv))
+                    print(offset)
                     datum_sim = np.roll(datum_sim, -offset)
                     diff = datum_sim - datum_inv
                     abs_diff = np.abs(diff)
@@ -161,15 +170,17 @@ class TestDedispersion(unittest.TestCase):
                         "total": np.sum(abs_diff),
                         "max": np.amax(abs_diff)
                     })
-                    axes[i, j].plot(x, diff, alpha=0.8)
+                    axes[i, j].plot(x, abs_diff, alpha=0.8)
                     axes[i, j].set_title((f"mean diff: {np.mean(abs_diff):.4e} "
                                           f"sum diff: {np.sum(abs_diff):.4e}"))
                     # axes[i, j].plot(x, data_sim[j+2*i + 1, :])
                     # axes[i, j].plot(x, data_inv[j+2*i + 1, :])
-                    # axes[i, j].plot(x, datum_sim, alpha=0.8)
-                    # axes[i, j].plot(x, datum_inv, alpha=0.8)
+                    axes[i, j].plot(x, datum_sim, alpha=0.8)
+                    axes[i, j].plot(x, datum_inv, alpha=0.8)
+
             fig.suptitle("test_simulated_pulsar_folded")
             fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+            plt.show()
             fig.savefig(os.path.join(
                 products_dir, "test_simulated_pulsar_folded.png"))
 
@@ -201,41 +212,46 @@ class TestDedispersion(unittest.TestCase):
         sample_shift = 0
         stokes_param = 0
 
-        report = {}
+        report = []
 
         with data_gen.dispose(f_sim, f_inv, dispose=False) as res:
+
             output_fft_length = int(data_gen.find_in_log(
                 res[1][-1], "output_fft_length"))
-            print(res[0][0].data.shape)
-            if dump_stage == "Fold":
-                sim_dump_data = (res[0][0].data[
-                    sample_shift:, 0, 0, stokes_param])
-                inv_dump_data = res[1][0].data[:, 0, 0, stokes_param]
-            else:
-                sim_dump_data = res[0][0].data[sample_shift:, 0, 0]
-                inv_dump_data = res[1][0].data[:, 0, 0]
-            inv_dump_data /= (output_fft_length * float(os_factor))**2
+            sim_dump_data = res[0][0].data[sample_shift:, -1]
+            inv_dump_data = res[1][0].data[:, -1]
+            print(sim_dump_data.shape)
+            print(inv_dump_data.shape)
 
-            sim_dump_data /= np.amax(sim_dump_data)
-            inv_dump_data /= np.amax(inv_dump_data)
+
+        for stokes_param in range(sim_dump_data.shape[-1]):
+            sim_dump_datum = sim_dump_data[:, 0, stokes_param]
+            inv_dump_datum = inv_dump_data[:, 0, stokes_param]
+
+            inv_dump_data /= (output_fft_length * float(os_factor))**2
+            sim_dump_datum /= np.amax(sim_dump_datum)
+            inv_dump_datum /= np.amax(inv_dump_datum)
 
             res_op, res_prod = self.comp.cartesian(
-                sim_dump_data, inv_dump_data)
+                sim_dump_datum, inv_dump_datum)
 
-        print(f"{res_prod['diff']:.6e}")
-        report["mean"] = list(res_prod["diff"]["mean"])[1][0]
-        report["max"] = list(res_prod["diff"]["max"])[1][0]
-        report["total"] = list(res_prod["diff"]["sum"])[1][0]
-
-        fig, axes = test_util.plot_time_domain_comparison(
-            res_op,
-            subplots_kwargs=dict(figsize=(14, 10)),
-            labels=["Vanilla DSPSR", "InverseFilterbank"])
-        fig.suptitle(f"test_simulated_pulsar_no_fold: dump stage {dump_stage}")
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-        fig.savefig(os.path.join(
+            print(f"{res_prod['diff']:.6e}")
+            report.append({
+                "mean": list(res_prod["diff"]["mean"])[1][0],
+                "max": list(res_prod["diff"]["max"])[1][0],
+                "total": list(res_prod["diff"]["sum"])[1][0]
+            })
+            fig, axes = test_util.plot_time_domain_comparison(
+                res_op,
+                subplots_kwargs=dict(figsize=(14, 10)),
+                labels=["Vanilla DSPSR", "InverseFilterbank"])
+            fig.suptitle((f"test_simulated_pulsar_no_fold: dump stage "
+                          f"{dump_stage}, coherence stage {stokes_param}"))
+            fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+            fig.savefig(os.path.join(
                 products_dir,
-                f"test_simulated_pulsar_no_fold.{dump_stage}.png"))
+                (f"test_simulated_pulsar_no_fold."
+                 f"{stokes_param}.{dump_stage}.png")))
 
         self.report["no_fold"] = report
 
@@ -248,6 +264,6 @@ class TestDedispersion(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     unittest.main()

@@ -4,14 +4,16 @@ import os
 import functools
 import json
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pfb.rational
 import psr_formats
 import comparator
 
 import data_gen
 import data_gen.util
+
+from . import util as test_util
 
 module_logger = logging.getLogger(__name__)
 
@@ -20,24 +22,28 @@ base_dir = data_gen.util.updir(test_dir, 2)
 data_dir = os.path.join(base_dir, "data")
 products_dir = os.path.join(base_dir, "products")
 
-# plt.ion()
-
-# fig, axes = plt.subplots(2, 1)
-
 
 def spurious(a):
     b = a.copy()
-    b[np.argmax(np.abs(b))] = 0.0
-    # axes[0].plot(a)
-    # axes[1].plot(b)
-    # input(">>> ")
-    # axes[0].cla()
-    # axes[1].cla()
+    b[np.argmax(b)] = 0.0
     return b
 
 
 def dB(a):
-    return 10*np.log10(np.abs(a.copy()) + 1e-12)
+    return 10.0*np.log10(np.abs(a.copy()) + 1e-13)
+
+
+# plt.ion()
+# fig, axes = plt.subplots(2, 1)
+
+
+def total_spurious(a):
+    # axes[0].plot(np.abs(a))
+    ret = spurious(np.abs(a)**2)
+    # axes[1].plot(ret)
+    val = dB(np.sum(ret))
+    # input(f"{val} >>>")
+    return val
 
 
 class TestPurity(unittest.TestCase):
@@ -57,16 +63,16 @@ class TestPurity(unittest.TestCase):
     )
 
     time_domain_args = {
-        # "offset": [0.11],
+        "offset": [10],
         # "offset": [random.random()],
-        "offset": np.arange(1, 200)/200,
+        # "offset": np.arange(1, 200)/200,
         "width": 1
     }
 
     freq_domain_args = {
-        # "frequency": [0.4],
+        "frequency": [4],
         # "frequency": [random.random()],
-        "frequency": np.arange(1, 200)/200,
+        # "frequency": np.arange(1, 200)/200,
         "phase": np.pi/4,
         "bin_offset": 0.0
     }
@@ -123,37 +129,31 @@ class TestPurity(unittest.TestCase):
             "freq": comparator.FrequencyDomainComparator("freq")
         })
         comp.freq.domain = [0, cls.fft_size]
-
+        comp.freq._representations["complex"] = (lambda a: a, lambda a: a)
         comp.operators["this"] = lambda a: a
+        comp.operators["mag"] = lambda a: np.abs(a)
+        comp.operators["diff"] = lambda a, b: a - b
         comp.operators["abs_diff"] = lambda a, b: np.abs(a - b)
-        # comp.operators["mag"] = lambda a: np.abs(a)
-        comp.operators["power"] = lambda a: np.abs(a)**2
-        # comp.operators["diff"] = lambda a, b: a - b
-        # comp.operators["power_diff"] = lambda a, b: dB(a - b)
-        # isclose returns an array of booleans;
-        # the imaginary component is always zero.
-        # comp.operators["isclose"] = lambda a, b: np.isclose(
-        #     a, b, atol=cls.thresh)
 
         comp.products["mean"] = np.mean
         comp.products["sum"] = np.sum
+        comp.products["max"] = np.amax
 
-        comp.products["mean_spurious"] = lambda a: dB(np.mean(spurious(a)))
-        comp.products["max_spurious"] = lambda a: dB(np.amax(spurious(a)))
-        comp.products["total_spurious"] = lambda a: dB(np.sum(spurious(a)))
+        comp.products["total_spurious"] = total_spurious
+        comp.products["mean_spurious"] = lambda a: dB(np.mean(spurious(np.abs(a)**2)))
+        comp.products["max_spurious"] = lambda a: dB(np.amax(spurious(np.abs(a)**2)))
 
         cls.comp = comp
         cls.report = {}
 
     def chop(self, input_dump_file, inverted_dump_file):
-
         input_dat = input_dump_file.data.flatten()
         inverted_dat = inverted_dump_file.data.flatten()
         inverted_dat /= self.normalize
 
         return input_dat, inverted_dat
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_time_domain_impulse(self):
         sub_report = []
         args = (self.time_domain_args["width"], )
@@ -172,16 +172,26 @@ class TestPurity(unittest.TestCase):
             res_op, res_prod = self.comp.time.cartesian(
                 input_dat, inverted_dat
             )
+            fig, axes = test_util.plot_time_domain_comparison(
+                res_op,
+                subplots_kwargs=dict(figsize=(14, 14)),
+                labels=["Input data", "InverseFilterbank"])
+            pos = int(offset*self.n_samples)
+            fig.suptitle(f"Time domain impulse at {pos}")
+            fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+            fig.savefig(os.path.join(products_dir, f"time_domain_impulse.{pos}.png"))
 
             sub_report.append({
                 "offset": offset,
-                "mean_diff": list(res_prod["abs_diff"]["mean"])[1][0],
-                "total_diff": list(res_prod["abs_diff"]["sum"])[1][0],
-                "max_spurious_power": list(res_prod["power"]["max_spurious"])[1][0],
-                "total_spurious_power": list(res_prod["power"]["total_spurious"])[1][0],
-                "mean_spurious_power": list(res_prod["power"]["mean_spurious"])[1][0]
+                "mean_diff": list(res_prod["abs_diff"]["mean"])[1][0][0],
+                "total_diff": list(res_prod["abs_diff"]["sum"])[1][0][0],
+                "max_spurious_power": list(res_prod["mag"]["max_spurious"])[1][0],
+                "total_spurious_power": list(res_prod["mag"]["total_spurious"])[1][0],
+                "mean_spurious_power": list(res_prod["mag"]["mean_spurious"])[1][0]
             })
 
+            print(res_prod["mag"])
+            print(sub_report[-1])
             # figs, axes = comparator.plot_operator_result(res_op,
             #                                              figsize=(10, 10))
             # for op in ["this", "diff", "power"]:
@@ -215,20 +225,41 @@ class TestPurity(unittest.TestCase):
                 dump_files[0], inverted_dump)
             input_dat = input_dat[sample_shift:]
 
-            res_op, res_prod = self.comp.freq.cartesian(
+            res_op_time, res_prod_time = self.comp.time.cartesian(
+                input_dat, inverted_dat
+            )
+
+            res_op_freq, res_prod_freq = self.comp.freq.complex(
                 input_dat/self.fft_size, inverted_dat/self.fft_size
             )
 
+            fig, axes = test_util.plot_freq_domain_comparison(
+                res_op_time, res_op_freq,
+                subplots_kwargs=dict(figsize=(14, 14)),
+                labels=["Input data", "InverseFilterbank"])
+            hz = int(freq)
+            fig.suptitle(f"Complex Sinusoid {hz} Hz")
+            fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+            fig.savefig(os.path.join(products_dir, f"complex_sinuoid.{hz}.png"))
+
             sub_report.append({
                 "freq": freq,
-                "mean_diff": list(res_prod["abs_diff"]["mean"])[1][0],
-                "total_diff": list(res_prod["abs_diff"]["sum"])[1][0],
-                "max_spurious_power": list(res_prod["power"]["max_spurious"])[1][0],
-                "total_spurious_power": list(res_prod["power"]["total_spurious"])[1][0],
-                "mean_spurious_power": list(res_prod["power"]["mean_spurious"])[1][0]
+                "mean_diff": list(res_prod_time["abs_diff"]["mean"])[1][0][0],
+                "total_diff": list(res_prod_time["abs_diff"]["sum"])[1][0][0],
+                "max_spurious_power": list(res_prod_freq["mag"]["max_spurious"])[1][0],
+                "total_spurious_power": list(res_prod_freq["mag"]["total_spurious"])[1][0],
+                "mean_spurious_power": list(res_prod_freq["mag"]["mean_spurious"])[1][0]
             })
-
-
+            print(res_prod_freq["this"])
+            print(sub_report[-1])
+            # sub_report.append({
+            #     "freq": freq,
+            #     "mean_diff": list(res_prod["abs_diff"]["mean"])[1][0],
+            #     "total_diff": list(res_prod["abs_diff"]["sum"])[1][0],
+            #     "max_spurious_power": list(res_prod["power"]["max_spurious"])[1][0],
+            #     "total_spurious_power": list(res_prod["power"]["total_spurious"])[1][0],
+            #     "mean_spurious_power": list(res_prod["power"]["mean_spurious"])[1][0]
+            # })
 
         self.__class__.report["test_complex_sinusoid"] = sub_report
 

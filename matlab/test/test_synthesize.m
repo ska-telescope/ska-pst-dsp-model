@@ -10,7 +10,7 @@ function test_synthesize ()
     '1',... % verbose
     '1',... % sample_offset
     '1',... % deripple
-    '32',... % overlap
+    '128',... % overlap
     'tukey'...
   )
   output_file_path = fullfile(output_dir, output_file_name);

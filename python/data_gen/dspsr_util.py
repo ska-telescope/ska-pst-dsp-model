@@ -155,7 +155,7 @@ class DspsrRunner(BaseRunner):
         dspsr_cmd_str = (f"dspsr -c {period} -D {dm} {file_path} "
                          f"-O {output_ar} {self.extra_args}")
 
-        module_logger.debug(f"run_dspsr: dspsr command: {dspsr_cmd_str}")
+        module_logger.info(f"run_dspsr: dspsr command: {dspsr_cmd_str}")
 
         try:
             with open(output_log, "w") as log_file:
@@ -174,8 +174,11 @@ class DspsrRunner(BaseRunner):
             if len(dat_files) > 0:
                 for dat_file in dat_files:
                     os.remove(dat_file)
+        ar = f"{output_ar}.ar"
+        # if not os.path.exists(os.path.join(self.output_dir, ar)):
+        #     ar = f"{output_ar}_0002.ar"
 
-        yield (f"{output_ar}.ar", output_log)
+        yield (ar, output_log)
 
     def call(self, *args, **kwargs):
         coro = self._call(*args, **kwargs)

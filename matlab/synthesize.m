@@ -44,6 +44,8 @@ function synthesize (varargin)
   if verbose
     fprintf('synthesize: using %s fft window function\n', get_function_name(fft_window));
   end
+  x = fft_window(ones(1, input_fft_length), overlap)
+  plot(squeeze(x))
 
   % load in input data
   if verbose

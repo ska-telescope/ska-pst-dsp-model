@@ -28,6 +28,7 @@ classdef PFBWindow
       h = transpose(hann(2*input_discard));
       window(1:input_discard) = h(1:input_discard);
       window(input_fft_length - input_discard+1:end) = h(input_discard+1:end);
+      
 
       function windowed = tukey_window (in_dat, input_fft_length, input_discard)
         windowed = in_dat;
