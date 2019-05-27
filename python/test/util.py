@@ -6,13 +6,6 @@ def dB(a):
     return 20.0*np.log10(np.abs(a) + 1e-12)
 
 
-def recombine(r, i=None):
-    if i is None:
-        return r
-    else:
-        return r + 1j*i
-
-
 def default_labels(labels):
     if labels is None:
         labels = [f"array {i+1}" for i in range(2)]
@@ -38,8 +31,8 @@ def plot_freq_domain_comparison(time_operator_result,
         fig_axes=(fig, axes), time_series_plotter=time_series_plotter)
 
     idx = 2
-    a, b = [recombine(*a) for a in freq_operator_result["this"]]
-    diff = recombine(*freq_operator_result["diff"][1, 0])
+    a, b = freq_operator_result["this"]
+    diff = freq_operator_result["diff"][1, 0]
 
     arr = [a, b]
     for i in range(2):
@@ -90,25 +83,20 @@ def plot_time_domain_comparison(operator_result,
         fig, axes = fig_axes
     if time_series_plotter is None:
         def time_series_plotter(ax, a):
-            ax.plot(np.abs(a))
-
+            ax.plot(dB(np.abs(a)))
 
     for ax in axes.flatten():
         ax.grid(True)
         ax.set_xlabel("Time Samples")
 
-
-
-
-    a, b = [recombine(*a) for a in operator_result["this"]]
-    diff = recombine(*operator_result["diff"][1, 0])
+    a, b = operator_result["this"]
+    diff = operator_result["diff"][1, 0]
 
     arr = [a, b]
     for i in range(len(arr)):
         time_series_plotter(axes[0, i], arr[i])
         axes[0, i].set_title(labels[i])
-        axes[0, i].set_ylabel("Signal level (Arbitrary Units)")
-
+        axes[0, i].set_ylabel("Power level (dB)")
 
     # axes[1, 0].plot(np.abs(diff))
     # # axes[1, 0].plot(np.imag(diff))

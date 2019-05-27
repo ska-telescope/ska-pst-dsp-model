@@ -2,6 +2,7 @@
   "fir_filter_coeff_file_path_": "Prototype_FIR.4-3.8.48.mat",
   "fir_filter_coeff_file_path__": "Prototype_FIR.4-3.8.80.mat",
   "fir_filter_coeff_file_path": "Prototype_FIR.4-3.256.2560.mat",
+  "fir_filter_taps": 2561,
   "header_file_path": "default_header.json",
   "os_factor": "4/3",
   "channels": 256,

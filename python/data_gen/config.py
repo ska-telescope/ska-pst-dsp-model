@@ -8,7 +8,8 @@ __all__ = [
     "save_config",
     "config",
     "config_dir",
-    "build_dir"
+    "build_dir",
+    "matplotlib_config"
 ]
 
 _required_fields = {
@@ -53,6 +54,18 @@ def save_config(new_config):
         raise RuntimeError(
             ("New configuration does not have all "
              "required configuration fields"))
+
+
+def matplotlib_config():
+    import matplotlib as mpl
+    params = {
+        'figure.titlesize': 'xx-large',
+        'axes.labelsize': 'xx-large',
+        'axes.titlesize': 'xx-large',
+        'xtick.labelsize': 'medium',
+        'ytick.labelsize': 'large'
+    }
+    mpl.rcParams.update(params)
 
 
 config = load_config()

@@ -26,9 +26,10 @@ def complex_sinusoid(n: int,
     """
     Generate a complex sinusoid of length n.
     The sinusoid will be comprised of len(freq) frequencies. Each composite
-    sinusoid will have a corresponding phase shift from phasesself.
-    Frequencies should be expressed as a fraction of `n`
+    sinusoid will have a corresponding phase shift from phases.
     """
+    module_logger.debug((f"complex_sinusoid: n={n}, freqs={freqs}, "
+                         f"phases={phases}, bin_offset={bin_offset}"))
     if not hasattr(freqs, "__iter__"):
         freqs = [freqs]
         phases = [phases]
@@ -49,8 +50,10 @@ def time_domain_impulse(n: int,
                         widths: typing.List[int],
                         dtype: np.dtype = np.complex64):
     """
-    Offsets should be expressed as a fraction of `n`
     """
+    module_logger.debug((f"time_domain_impulse: n={n}, offsets={offsets}, "
+                         f"widths={widths}"))
+
     if not hasattr(offsets, "__iter__"):
         offsets = [offsets]
         widths = [widths]
