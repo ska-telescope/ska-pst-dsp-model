@@ -3,7 +3,9 @@ import logging
 import os
 import functools
 import json
+import glob
 
+from tqdm import tqdm
 import numpy as np
 import pfb.rational
 import psr_formats
@@ -25,7 +27,7 @@ data_dir = os.path.join(base_dir, "data")
 products_dir = os.path.join(base_dir, "products")
 
 make_plots = False
-n_test = 10
+n_test = 100
 
 
 def spurious(a):
@@ -171,11 +173,69 @@ class TestPurity(unittest.TestCase):
 
         return input_dat, inverted_dat
 
+    # class TestVectorGenerator:
+    #
+    #     def __call__(self,
+    #                  method_name,
+    #                  test_data_func,
+    #                  test_args,
+    #                  plot_func):
+    #
+    #         sub_report = []
+    #
+    #         for arg in tqdm(test_args, desc=method_name):
+    #             dump_files = test_data_func(arg)
+    #             dump_files = self.__class__.pipeline(
+    #                 "freq", self.n_samples, freq, *args)
+    #             inverted_dump = self.__class__.synthesizer(dump_files[1].file_path)
+    #             inverted_dump = inverted_dump[0]
+    #
+    #             input_dat, inverted_dat = self.chop(
+    #                 dump_files[0], inverted_dump)
+    #             input_dat = input_dat[self.total_sample_shift:]
+    #             res_op_time, res_prod_time = self.comp.time(
+    #                 input_dat, inverted_dat
+    #             )
+    #
+    #             res_op_freq, res_prod_freq = self.comp.freq(
+    #                 input_dat/self.fft_size, inverted_dat/self.fft_size
+    #             )
+    #             if make_plots:
+    #                 fig, axes = plot_func(res_op_time, res_op_freq)
+    #                 yield (fig, axes)
+    #                 # fig, axes = test_util.plot_freq_domain_comparison(
+    #                 #     res_op_time, res_op_freq,
+    #                 #     subplots_kwargs=dict(figsize=(10, 14)),
+    #                 #     labels=["Input data", "InverseFilterbank"])
+    #                 # hz = int(freq)
+    #                 # fig.suptitle(f"Complex Sinusoid {hz} Hz")
+    #                 # fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    #                 # fig.savefig(os.path.join(products_dir, f"complex_sinuoid.{hz}.png"))
+    #
+    #             prod_diff = res_prod_time["diff"][1, 0]
+    #             prod_this = res_prod_freq["this"][1]
+    #
+    #             sub_report.append({
+    #                 "freq": freq,
+    #                 "mean_diff": prod_diff["mean"],
+    #                 "total_diff": prod_diff["sum"],
+    #                 "max_spurious_power": prod_this["max_spurious"],
+    #                 "total_spurious_power": prod_this["total_spurious"],
+    #                 "mean_spurious_power": prod_this["mean_spurious"]
+    #             })
+    #             self.__class__.files.extend(dump_files)
+    #             self.__class__.files.append(inverted_dump)
+    #
+    #             # print(res_prod_freq["this"])
+    #             # print(sub_report[-1])
+    #
+    #         self.__class__.report[method_name] = sub_report
+
     # @unittest.skip("")
     def test_time_domain_impulse(self):
         sub_report = []
         args = (self.time_domain_args["width"], )
-        for offset in self.time_domain_args["offset"]:
+        for offset in tqdm(self.time_domain_args["offset"], desc="test_time_domain_impulse"):
             dump_files = self.__class__.pipeline(
                 "time", self.n_samples, offset, *args)
             inverted_dump = self.__class__.synthesizer(dump_files[1].file_path)
@@ -195,8 +255,8 @@ class TestPurity(unittest.TestCase):
                 pos = int(offset)
                 fig.suptitle(f"Time domain impulse at {pos}")
                 fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-                fig.savefig(
-                    os.path.join(products_dir, f"time_domain_impulse.{pos}.png"))
+                fig.savefig(os.path.join(products_dir,
+                                         f"time_domain_impulse.{pos}.png"))
 
             prod_diff = res_prod["diff"][1, 0]
             prod_this = res_prod["this"][1]
@@ -210,10 +270,8 @@ class TestPurity(unittest.TestCase):
                 "mean_spurious_power": prod_this["mean_spurious"]
             })
             self.__class__.files.extend(dump_files)
-            self.__class__.files.extend(inverted_dump)
+            self.__class__.files.append(inverted_dump)
 
-            print(res_prod["this"])
-            print(sub_report[-1])
 
         self.__class__.report["test_time_domain_impulse"] = sub_report
 
@@ -224,7 +282,7 @@ class TestPurity(unittest.TestCase):
         args = (self.freq_domain_args["phase"],
                 self.freq_domain_args["bin_offset"])
 
-        for freq in self.freq_domain_args["frequency"]:
+        for freq in tqdm(self.freq_domain_args["frequency"], desc="test_complex_sinusoid"):
             dump_files = self.__class__.pipeline(
                 "freq", self.n_samples, freq, *args)
             inverted_dump = self.__class__.synthesizer(dump_files[1].file_path)
@@ -233,7 +291,6 @@ class TestPurity(unittest.TestCase):
             input_dat, inverted_dat = self.chop(
                 dump_files[0], inverted_dump)
             input_dat = input_dat[self.total_sample_shift:]
-
             res_op_time, res_prod_time = self.comp.time(
                 input_dat, inverted_dat
             )
@@ -263,9 +320,10 @@ class TestPurity(unittest.TestCase):
                 "mean_spurious_power": prod_this["mean_spurious"]
             })
             self.__class__.files.extend(dump_files)
-            self.__class__.files.extend(inverted_dump)
-            print(res_prod_freq["this"])
-            print(sub_report[-1])
+            self.__class__.files.append(inverted_dump)
+
+            # print(res_prod_freq["this"])
+            # print(sub_report[-1])
 
         self.__class__.report["test_complex_sinusoid"] = sub_report
 
@@ -304,11 +362,15 @@ class TestPurity(unittest.TestCase):
             json.dump(cls.report, f, cls=comparator.NumpyEncoder)
 
         for file_path in cls.files:
+            if hasattr(file_path, "file_path"):
+                file_path = file_path.file_path
             if os.path.exists(file_path):
                 os.remove(file_path)
+        for file_path in glob.glob(os.path.join(data_dir, "channelized.*")):
+            os.remove(file_path)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.ERROR)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     unittest.main()
