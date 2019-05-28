@@ -58,6 +58,66 @@ def max_spurious(a):
     return val
 
 
+# class TestVectorCoroutine:
+#
+#     def __init__(self):
+#
+#         self.arg = None
+#         self.res_prod_time = None
+#         self.res_prod_freq = None
+#
+#     @data_gen.util.coro
+#     def __call__(self,
+#                  cls,
+#                  obj,
+#                  method_name,
+#                  test_data_func,
+#                  test_args,
+#                  plot_func):
+#
+#         sub_report = []
+#
+#         for arg in tqdm(test_args, desc=method_name):
+#             self.arg = arg
+#             dump_files = test_data_func(arg)
+#             inverted_dump = cls.synthesizer(dump_files[1].file_path)
+#             inverted_dump = inverted_dump[0]
+#
+#             input_dat, inverted_dat = obj.chop(
+#                 dump_files[0], inverted_dump)
+#             input_dat = input_dat[obj.total_sample_shift:]
+#             res_op_time, res_prod_time = obj.comp.time(
+#                 input_dat, inverted_dat
+#             )
+#             res_op_freq, res_prod_freq = obj.comp.freq(
+#                 input_dat/obj.fft_size, inverted_dat/obj.fft_size
+#             )
+#             self.res_prod_time = res_prod_time
+#             self.res_prod_freq = res_prod_freq
+#
+#             if make_plots:
+#                 fig, axes = plot_func(res_op_time, res_op_freq)
+#                 suptitle, fig_filepath = (yield)
+#                 fig.suptitle(suptitle)
+#                 fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+#                 fig.savefig(fig_filepath)
+#
+#             prod_diff, prod_this = (yield)
+#
+#             sub_report.append({
+#                 "arg": arg,
+#                 "mean_diff": prod_diff["mean"],
+#                 "total_diff": prod_diff["sum"],
+#                 "max_spurious_power": prod_this["max_spurious"],
+#                 "total_spurious_power": prod_this["total_spurious"],
+#                 "mean_spurious_power": prod_this["mean_spurious"]
+#             })
+#             cls.files.extend(dump_files)
+#             cls.files.append(inverted_dump)
+#
+#         cls.report[method_name] = sub_report
+
+
 class TestPurity(unittest.TestCase):
     """
     These tests attempt to determine whether the PFB inversion algorithm
@@ -92,6 +152,7 @@ class TestPurity(unittest.TestCase):
         block_size = (
             os_factor.normalize(data_gen.config["input_fft_length"]) *
             data_gen.config["channels"])
+        fft_size = 2*block_size
         n_samples = block_size * data_gen.config["blocks"]
         output_sample_shift = (
             os_factor.normalize(data_gen.config["input_overlap"]) *
@@ -102,16 +163,21 @@ class TestPurity(unittest.TestCase):
 
         if n_test == 1:
             cls.time_domain_args["offset"] = [10 + total_sample_shift]
-            cls.freq_domain_args["frequency"] = [1*data_gen.config["blocks"]]
+            # cls.freq_domain_args["frequency"] = [1*data_gen.config["blocks"]]
+            cls.freq_domain_args["frequency"] = [377475]
         else:
             cls.time_domain_args["offset"] = (
                 np.linspace(1, n_samples, n_test).astype(int))
+            # cls.freq_domain_args["frequency"] = (
+            #     np.arange(1, block_size, int(block_size/n_test)) *
+            #     data_gen.config["blocks"]).astype(int)
             cls.freq_domain_args["frequency"] = (
-                np.linspace(1, block_size, n_test).astype(int)
-            ) * data_gen.config["blocks"]
+                np.linspace(1, block_size, n_test).astype(int) *
+                data_gen.config["blocks"]
+            )
 
         cls.block_size = block_size
-        cls.fft_size = 2*block_size
+        cls.fft_size = fft_size
         cls.os_factor = os_factor
         cls.normalize = normalize
         cls.n_samples = n_samples
@@ -150,6 +216,7 @@ class TestPurity(unittest.TestCase):
             "time": comparator.SingleDomainComparator("time"),
             "freq": comparator.FrequencyDomainComparator("freq")
         })
+        # comp.time.domain = [0, 0.00005]
         comp.freq.domain = [0, cls.fft_size]
         comp.operators["this"] = lambda a: a
         comp.operators["diff"] = lambda a, b: a - b
@@ -172,64 +239,6 @@ class TestPurity(unittest.TestCase):
         inverted_dat /= self.normalize
 
         return input_dat, inverted_dat
-
-    # class TestVectorGenerator:
-    #
-    #     def __call__(self,
-    #                  method_name,
-    #                  test_data_func,
-    #                  test_args,
-    #                  plot_func):
-    #
-    #         sub_report = []
-    #
-    #         for arg in tqdm(test_args, desc=method_name):
-    #             dump_files = test_data_func(arg)
-    #             dump_files = self.__class__.pipeline(
-    #                 "freq", self.n_samples, freq, *args)
-    #             inverted_dump = self.__class__.synthesizer(dump_files[1].file_path)
-    #             inverted_dump = inverted_dump[0]
-    #
-    #             input_dat, inverted_dat = self.chop(
-    #                 dump_files[0], inverted_dump)
-    #             input_dat = input_dat[self.total_sample_shift:]
-    #             res_op_time, res_prod_time = self.comp.time(
-    #                 input_dat, inverted_dat
-    #             )
-    #
-    #             res_op_freq, res_prod_freq = self.comp.freq(
-    #                 input_dat/self.fft_size, inverted_dat/self.fft_size
-    #             )
-    #             if make_plots:
-    #                 fig, axes = plot_func(res_op_time, res_op_freq)
-    #                 yield (fig, axes)
-    #                 # fig, axes = test_util.plot_freq_domain_comparison(
-    #                 #     res_op_time, res_op_freq,
-    #                 #     subplots_kwargs=dict(figsize=(10, 14)),
-    #                 #     labels=["Input data", "InverseFilterbank"])
-    #                 # hz = int(freq)
-    #                 # fig.suptitle(f"Complex Sinusoid {hz} Hz")
-    #                 # fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-    #                 # fig.savefig(os.path.join(products_dir, f"complex_sinuoid.{hz}.png"))
-    #
-    #             prod_diff = res_prod_time["diff"][1, 0]
-    #             prod_this = res_prod_freq["this"][1]
-    #
-    #             sub_report.append({
-    #                 "freq": freq,
-    #                 "mean_diff": prod_diff["mean"],
-    #                 "total_diff": prod_diff["sum"],
-    #                 "max_spurious_power": prod_this["max_spurious"],
-    #                 "total_spurious_power": prod_this["total_spurious"],
-    #                 "mean_spurious_power": prod_this["mean_spurious"]
-    #             })
-    #             self.__class__.files.extend(dump_files)
-    #             self.__class__.files.append(inverted_dump)
-    #
-    #             # print(res_prod_freq["this"])
-    #             # print(sub_report[-1])
-    #
-    #         self.__class__.report[method_name] = sub_report
 
     # @unittest.skip("")
     def test_time_domain_impulse(self):

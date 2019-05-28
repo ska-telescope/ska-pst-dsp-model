@@ -18,6 +18,11 @@ def plot_purity_results(results_path):
         "test_time_domain_impulse": "offset"
     }
 
+    key_map_names = {
+        "test_complex_sinusoid": "Complex Sinusoid",
+        "test_time_domain_impulse": "Time Domain Impulse"
+    }
+
     purity_measures = [
         "max_spurious_power",
         "total_spurious_power",
@@ -40,6 +45,7 @@ def plot_purity_results(results_path):
 
         for i, label, d in zip(range(len(dat)), dat_labels, dat):
             axes[i].scatter(x, d)
+            label = " ".join([s.capitalize() for s in label.split("_")])
             axes[i].set_title(label)
             axes[i].set_ylabel("Power (dB)")
             axes[i].set_xlabel(x_label)
@@ -63,12 +69,13 @@ def plot_purity_results(results_path):
         diff = list(zip(*diff))
 
         fig, axes = plot_results(domain, domain_key, purity, purity_measures)
-        fig.suptitle(f"{key} Purity")
+
+        fig.suptitle(f"{key_map_names[key]} Purity")
         fig.savefig(
             os.path.join(products_dir, f"purity.{key}.png"))
 
         fig, axes = plot_results(domain, domain_key, diff, diff_measures)
-        fig.suptitle(f"{key} Difference")
+        fig.suptitle(f"{key_map_names[key]} Difference")
         fig.savefig(
             os.path.join(products_dir, f"diff.{key}.png"))
 

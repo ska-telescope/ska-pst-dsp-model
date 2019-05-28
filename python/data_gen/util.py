@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import shlex
 import json
+import functools
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +14,8 @@ __all__ = [
     "run_cmd",
     "find_existing_test_data",
     "create_output_file_names",
-    "matlab_dtype_lookup"
+    "matlab_dtype_lookup",
+    "coro"
 ]
 
 
@@ -166,6 +168,17 @@ def curdir(file_path):
     Get the current directory where a given file resides
     """
     return os.path.dirname(os.path.abspath(file_path))
+
+
+def coro(func):
+
+    @functools.wraps(func)
+    def _inner(*args, **kwargs):
+        f = func(*args, **kwargs)
+        next(f)
+        return f
+
+    return _inner
 
 
 def create_parser():

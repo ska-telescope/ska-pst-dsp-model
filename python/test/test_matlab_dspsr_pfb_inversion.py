@@ -3,18 +3,18 @@ import logging
 import os
 import functools
 import json
-import random
 # import sys
+#
 # sys.path.insert(0, "/home/SWIN/dshaff/ska/comparator")
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pfb.rational
 import psr_formats
 import comparator
 
 import data_gen
 import data_gen.util
+from data_gen.config import matplotlib_config
 
 module_logger = logging.getLogger(__name__)
 
@@ -23,15 +23,14 @@ base_dir = data_gen.util.updir(test_dir, 2)
 data_dir = os.path.join(base_dir, "data")
 products_dir = os.path.join(base_dir, "products")
 
+matplotlib_config()
+
 
 class TestMatlabDspsrPfbInversion(unittest.TestCase):
     """
     These tests attempt to determine whether the PFB inversion algorithm
     as implemented in the PST Matlab model and dspsr do the same thing,
     within the limits of 32-bit float point accuracy.
-
-    Note that offsets and frequencies are expressed as fractions of total
-    size of input array.
     """
     thresh = 1e-7
     output_dir = data_dir
@@ -41,18 +40,12 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
     )
 
     time_domain_args = {
-        "offset": [0.11],
-        # "offset": [random.random()],
-        # "offset": np.arange(1, 20)/20,
         "width": 1
     }
 
     freq_domain_args = {
-        "frequency": [0.53],
-        # "frequency": [random.random()],
-        # "frequency": np.arange(1, 20)/20,
         "phase": np.pi/4,
-        "bin_offset": 0.1
+        "bin_offset": 0.0
     }
 
     @classmethod
@@ -63,6 +56,17 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             data_gen.config["channels"]
         n_samples = os_factor.normalize(data_gen.config["input_fft_length"]) *\
             data_gen.config["channels"] * data_gen.config["blocks"]
+
+        output_sample_shift = (
+            os_factor.normalize(data_gen.config["input_overlap"]) *
+            data_gen.config["channels"])
+        total_sample_shift = (
+            output_sample_shift +
+            (data_gen.config["fir_filter_taps"] - 1) // 2)
+
+        cls.time_domain_args["offset"] = [total_sample_shift + 100]
+        cls.freq_domain_args["frequency"] = [377475]
+
         cls.normalize = normalize
         cls.n_samples = n_samples
         cls.generator = functools.partial(
@@ -113,9 +117,10 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
         self.assertTrue(matlab_dat.shape[0] == dspsr_dat.shape[0])
 
-        res_op, res_prod = self.comp.cartesian(matlab_dat, dspsr_dat)
-        mean_diff = list(res_prod["isclose"]["mean"])[0][1][0]
-        sum_diff = list(res_prod["isclose"]["sum"])[0][1][0]
+        res_op, res_prod = self.comp(matlab_dat, dspsr_dat)
+        isclose_prod = res_prod["isclose"][0][1]
+        mean_diff = isclose_prod["mean"]
+        sum_diff = isclose_prod["sum"]
         return res_op, res_prod, mean_diff, sum_diff
 
     # @unittest.skip("")
@@ -132,12 +137,13 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
 
-            figs, axes = comparator.plot_operator_result(res_op)
+            figs, axes = comparator.plot_operator_result(
+                res_op, figsize=(10, 10), corner_plot=True)
             for op in ["this", "diff"]:
                 figs[op].suptitle(
-                    f"{op}: Time offset {int(self.n_samples*offset)}")
+                    f"{op}: Time offset {int(offset)}")
                 figs[op].savefig(
-                    os.path.join(products_dir, f"time.{op}.{offset:.2f}.png"))
+                    os.path.join(products_dir, f"matlab_dspsr.time.{op}.{offset}.png"))
 
             prod_str = f"{res_prod['isclose']:.6e}"
 
@@ -168,12 +174,13 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
                 dada_files[-1], dspsr_dump)
 
-            figs, axes = comparator.plot_operator_result(res_op)
+            figs, axes = comparator.plot_operator_result(
+                res_op, figsize=(10, 10), corner_plot=True)
             for op in ["this", "diff"]:
                 figs[op].suptitle(
-                    f"{op}: Frequency {int(self.n_samples*freq)} Hz")
+                    f"{op}: Frequency {int(freq)} Hz")
                 figs[op].savefig(
-                    os.path.join(products_dir, f"freq.{op}.{freq:.2f}.png"))
+                    os.path.join(products_dir, f"matlab_dspsr.freq.{op}.{freq}.png"))
 
             prod_str = f"{res_prod['isclose']:.6e}"
 
@@ -209,6 +216,16 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
         res_op, res_prod, mean_diff, sum_diff = self.compare_dump_files(
             dada_files[-1], dspsr_dump
         )
+
+        figs, axes = comparator.plot_operator_result(
+            res_op, figsize=(10, 10), corner_plot=True)
+
+        for op in ["this", "diff"]:
+            figs[op].suptitle(
+                f"{op}: Simulated Pulsar")
+            figs[op].savefig(
+                os.path.join(products_dir, f"matlab_dspsr.simulated_pulsar.{op}.png"))
+
         prod_str = f"{res_prod['isclose']:.6e}"
         module_logger.info((f"test_simulated_pulsar: \n"
                             f"{prod_str}"))
@@ -221,7 +238,8 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        with open(os.path.join(products_dir, "report.json"), "w") as f:
+        with open(os.path.join(products_dir, "report.matlab_dspsr.json"),
+                  "w") as f:
             json.dump(cls.report, f, cls=comparator.NumpyEncoder)
 
 
