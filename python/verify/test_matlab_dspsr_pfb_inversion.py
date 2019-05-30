@@ -65,7 +65,7 @@ class TestMatlabDspsrPfbInversion(unittest.TestCase):
             (data_gen.config["fir_filter_taps"] - 1) // 2)
 
         cls.time_domain_args["offset"] = [total_sample_shift + 100]
-        cls.freq_domain_args["frequency"] = [377475]
+        cls.freq_domain_args["frequency"] = [25194]
 
         cls.normalize = normalize
         cls.n_samples = n_samples

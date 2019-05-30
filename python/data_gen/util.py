@@ -15,7 +15,8 @@ __all__ = [
     "find_existing_test_data",
     "create_output_file_names",
     "matlab_dtype_lookup",
-    "coro"
+    "coro",
+    "rpartial"
 ]
 
 
@@ -179,6 +180,10 @@ def coro(func):
         return f
 
     return _inner
+
+
+def rpartial(func, *args, **kwargs):
+    return lambda *a: func(*(a + args), **kwargs)
 
 
 def create_parser():

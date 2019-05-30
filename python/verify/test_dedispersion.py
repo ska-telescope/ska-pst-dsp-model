@@ -2,9 +2,11 @@
 import json
 import unittest
 import logging
+import itertools
 import functools
 import os
 
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 import comparator
@@ -73,6 +75,10 @@ class TestDedispersion(unittest.TestCase):
         comp.products["sum"] = np.sum
         comp.products["max"] = np.amax
 
+        comp.products["mean_dB"] = lambda a: test_util.dB(np.mean(np.abs(a)))
+        comp.products["sum_dB"] = lambda a: test_util.dB(np.sum(np.abs(a)))
+        comp.products["max_dB"] = lambda a: test_util.dB(np.amax(np.abs(a)))
+
         cls.comp = comp
         channelizer = data_gen.channelize(
             backend="python",
@@ -100,7 +106,7 @@ class TestDedispersion(unittest.TestCase):
         sample_shift += (cls.os_factor.normalize(
                             data_gen.config["input_overlap"]) *
                          data_gen.config["channels"])
-        print(f"sample_shift={sample_shift}")
+        # print(f"sample_shift={sample_shift}")
         cls.simulated_pulsar_file_path_shifted = add_offset(
             cls.simulated_pulsar_file_path, sample_shift)
 
@@ -108,6 +114,7 @@ class TestDedispersion(unittest.TestCase):
 
     @unittest.skip("")
     def test_simulated_pulsar_folded(self):
+        print("test_simulated_pulsar_folded")
 
         def max_val(a):
             """
@@ -138,8 +145,8 @@ class TestDedispersion(unittest.TestCase):
         with data_gen.dispose(f_sim, f_inv, dispose=False) as res:
             sim_ar = res[0][0]
             inv_ar = res[1][0]
-            print(f"simulated archive path: {sim_ar}")
-            print(f"inverted archive path: {inv_ar}")
+            # print(f"simulated archive path: {sim_ar}")
+            # print(f"inverted archive path: {inv_ar}")
             # print(sim_ar, inv_ar)
 
             # diff_chain = data_gen.BaseRunner.chain(
@@ -170,27 +177,34 @@ class TestDedispersion(unittest.TestCase):
                     datum_inv = data_inv[j+2*i + 1, :].copy()
                     datum_inv /= max_val(datum_inv)
 
+
                     offset = np.argmax(correlate(datum_sim, datum_inv))
-                    print(f"offset={offset}")
-                    # datum_sim = np.roll(datum_sim, -offset)
-                    diff = datum_sim - datum_inv
-                    abs_diff = np.abs(diff)
+                    # print(f"offset={offset}")
+                    datum_sim = np.roll(datum_sim, -offset)
+
+                    res_op, res_prod = self.comp(datum_sim, datum_inv)
+                    diff = res_op["diff"][1, 0]
+                    diff_prod = res_prod["diff"][1][0]
+
                     report.append({
-                        "mean": np.mean(abs_diff),
-                        "total": np.sum(abs_diff),
-                        "max": np.amax(abs_diff)
+                        "mean": diff_prod["mean"],
+                        "max": diff_prod["max"],
+                        "total": diff_prod["sum"],
+                        "mean_dB": diff_prod["mean_dB"],
+                        "max_dB": diff_prod["max_dB"],
+                        "total_dB": diff_prod["sum_dB"]
                     })
-                    axes[i, j].plot(x, abs_diff, alpha=0.8)
-                    axes[i, j].set_title((f"mean diff: {np.mean(abs_diff):.4e}\n"
-                                          f"sum diff: {np.sum(abs_diff):.4e}"))
+                    axes[i, j].plot(x, test_util.dB(diff), alpha=0.8)
+                    axes[i, j].set_title(
+                        (f"mean difference: {diff_prod['mean_dB']:.2f}\n"
+                         f"max difference: {diff_prod['max_dB']:.2f}"))
                     # axes[i, j].plot(x, data_sim[j+2*i + 1, :])
                     # axes[i, j].plot(x, data_inv[j+2*i + 1, :])
-                    axes[i, j].plot(x, datum_sim, alpha=0.8)
-                    axes[i, j].plot(x, datum_inv, alpha=0.8)
+                    # axes[i, j].plot(x, datum_sim, alpha=0.8)
+                    # axes[i, j].plot(x, datum_inv, alpha=0.8)
 
             fig.suptitle("test_simulated_pulsar_folded")
             fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-            plt.show()
             fig.savefig(os.path.join(
                 products_dir, "test_simulated_pulsar_folded.png"))
 
@@ -230,38 +244,66 @@ class TestDedispersion(unittest.TestCase):
                 res[1][-1], "output_fft_length"))
             sim_dump_data = res[0][0].data[sample_shift:, -1]
             inv_dump_data = res[1][0].data[:, -1]
-            print(sim_dump_data.shape)
-            print(inv_dump_data.shape)
+            # print(sim_dump_data.shape)
+            # print(inv_dump_data.shape)
 
-        for stokes_param in range(sim_dump_data.shape[-1]):
-            sim_dump_datum = sim_dump_data[:, 0, stokes_param]
-            inv_dump_datum = inv_dump_data[:, 0, stokes_param]
+        def rescale_data(sim_dump_data, inv_dump_data, param):
+            if param is None:
+                min_dat = min(sim_dump_data.shape[0], inv_dump_data.shape[0])
+                sim_dump_datum = (sim_dump_data[:min_dat, 0, :]
+                                  .transpose().flatten())
+                inv_dump_datum = (inv_dump_data[:min_dat, 0, :]
+                                  .transpose().flatten())
+            else:
+                sim_dump_datum = sim_dump_data[:, 0, stokes_param].copy()
+                inv_dump_datum = inv_dump_data[:, 0, stokes_param].copy()
 
             inv_dump_data /= (output_fft_length * float(os_factor))**2
             sim_dump_datum /= np.amax(sim_dump_datum)
             inv_dump_datum /= np.amax(inv_dump_datum)
+            return sim_dump_datum, inv_dump_datum
+
+        stokes_params = list(range(sim_dump_data.shape[-1])) + [None]
+        # stokes_params = [None]
+
+        for stokes_param in tqdm(stokes_params,
+                                 desc="test_simulated_pulsar_no_fold"):
+            if stokes_param is None:
+                stokes_param_name = "all"
+            else:
+                stokes_param_name = str(stokes_param)
+
+            sim_dump_datum, inv_dump_datum = rescale_data(
+                sim_dump_data, inv_dump_data, stokes_param)
 
             res_op, res_prod = self.comp(
                 sim_dump_datum, inv_dump_datum)
 
-            print(f"{res_prod['diff']:.6e}")
+            # print(f"{res_prod['diff']:.6e}")
             diff_prod = res_prod["diff"][1][0]
+
             report.append({
                 "mean": diff_prod["mean"],
                 "max": diff_prod["max"],
-                "total": diff_prod["sum"]
+                "total": diff_prod["sum"],
+                "mean_dB": diff_prod["mean_dB"],
+                "max_dB": diff_prod["max_dB"],
+                "total_dB": diff_prod["sum_dB"]
             })
             fig, axes = test_util.plot_time_domain_comparison(
                 res_op,
                 subplots_kwargs=dict(figsize=(14, 10)),
                 labels=["Vanilla DSPSR", "InverseFilterbank"])
             fig.suptitle((f"test_simulated_pulsar_no_fold: dump stage "
-                          f"{dump_stage}, coherence stage {stokes_param}"))
-            fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+                          f"{dump_stage}, "
+                          f"coherence stage {stokes_param_name}\n"
+                          f"mean difference: {diff_prod['mean_dB']:.2f}\n"
+                          f"max difference: {diff_prod['max_dB']:.2f}"))
+            fig.tight_layout(rect=[0, 0.03, 1, 0.90])
             fig.savefig(os.path.join(
                 products_dir,
                 (f"test_simulated_pulsar_no_fold."
-                 f"{stokes_param}.{dump_stage}.png")))
+                 f"{stokes_param_name}.{dump_stage}.png")))
 
         self.report["no_fold"] = report
 
@@ -274,6 +316,6 @@ class TestDedispersion(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.ERROR)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     unittest.main()

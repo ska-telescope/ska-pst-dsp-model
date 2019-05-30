@@ -1,6 +1,9 @@
 import typing
 import logging
 import os
+import sys
+
+sys.path.insert(0, "/home/SWIN/dshaff/personal/partialize")
 
 import partialize
 import numpy as np
@@ -68,9 +71,10 @@ def time_domain_impulse(n: int,
     return sig
 
 
-def generate_test_vector(domain_name,
-                         n_bins,
-                         *args,
+@partialize.partialize
+def generate_test_vector(*args,
+                         n_bins: int,
+                         domain_name: str,
                          header_template: str = None,
                          output_file_name: str = None,
                          output_dir: str = "./",
@@ -90,14 +94,15 @@ def generate_test_vector(domain_name,
 
     .. code-block:: python
 
-        generator = generate_test_vector("matlab")
-        dada_file = generator("freq", 1000, [10], [np.pi/4], 0.1, n_pol=2,
+        generator = generate_test_vector("matlab", domain_name="freq")
+        dada_file = generator(1000, [10], [np.pi/4], 0.1,
+                              n_pol=2,
                               output_dir="./",
                               output_file_name="complex_sinusoid.dump",
                               dtype=np.complex64)
 
-        generator = generate_test_vector("python")
-        dada_file = generator("freq", 1000, [10], [np.pi/4], 0.1, n_pol=2,
+        generator = generate_test_vector("python", domain_name="time")
+        dada_file = generator(1000, [10], [1], n_pol=2,
                               output_dir="./",
                               output_file_name="complex_sinusoid.dump",
                               dtype=np.complex64)

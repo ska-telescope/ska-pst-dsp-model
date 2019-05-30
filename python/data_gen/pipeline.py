@@ -1,6 +1,8 @@
 import os
 import logging
 
+import partialize
+
 __all__ = [
     "pipeline"
 ]
@@ -57,10 +59,10 @@ def pipeline(
 
 
     """
-
-    def _pipeline(*args):
+    def _pipeline(*args, **kwargs):
+        module_logger.debug(f"_pipeline: args={args}, kwargs={kwargs}")
         test_vector_dada_file = test_vector_callback(
-            *args, output_dir=output_dir)
+            *args, **kwargs, output_dir=output_dir)
         channelized_file_name = "channelized." + \
             os.path.basename(test_vector_dada_file.file_path)
         synthesized_file_name = "synthesized." + \

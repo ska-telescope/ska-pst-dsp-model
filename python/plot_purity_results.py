@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 
 import matplotlib.pyplot as plt
 
@@ -56,12 +57,14 @@ def plot_purity_results(results_path):
         return fig, axes
 
     for key in key_map:
+        if key not in results:
+            continue
         domain_key = key_map[key]
         domain = []
         purity = []
         diff = []
         for val in results[key]:
-            domain.append(val[domain_key])
+            domain.append(val["arg"])
             purity.append([val[k] for k in purity_measures])
             diff.append(val[k] for k in diff_measures)
 
@@ -80,6 +83,20 @@ def plot_purity_results(results_path):
             os.path.join(products_dir, f"diff.{key}.png"))
 
 
+def create_parser():
+
+    parser = argparse.ArgumentParser(
+        description="plot purity results")
+
+    parser.add_argument("-i", "--input-file",
+                        dest="input_file_path",
+                        required=True)
+
+    return parser
+
+
 if __name__ == "__main__":
-    results_path = os.path.join(products_dir, "report.purity.json")
+    parsed = create_parser().parse_args()
+    results_path = parsed.input_file_path
+    # results_path = os.path.join(products_dir, "report.purity.json")
     plot_purity_results(results_path)

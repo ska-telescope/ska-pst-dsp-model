@@ -1,12 +1,49 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+__all__ = [
+    "spurious",
+    "total_spurious",
+    "mean_spurious",
+    "max_spurious",
+    "dB",
+    "plot_time_domain_comparison",
+    "plot_freq_domain_comparison"
+]
+
+
+def spurious(a):
+    b = a.copy()
+    b[np.argmax(b)] = 0.0
+    return b
+
+
+def total_spurious(a):
+    ret = spurious(np.abs(a)**2)
+    val = dB(np.sum(ret))
+    return val
+
+
+def mean_spurious(a):
+    ret = spurious(np.abs(a)**2)
+    val = dB(np.mean(ret))
+    return val
+
+
+def max_spurious(a):
+    ret = spurious(np.abs(a)**2)
+    val = dB(np.amax(ret))
+    return val
+
 
 def dB(a):
-    return 20.0*np.log10(np.abs(a) + 1e-12)
+    """
+    Assumes a is already in "power" space
+    """
+    return 10.0*np.log10(np.abs(a.copy()) + 1e-13)
 
 
-def default_labels(labels):
+def _default_labels(labels):
     if labels is None:
         labels = [f"array {i+1}" for i in range(2)]
     return labels
@@ -22,7 +59,7 @@ def plot_freq_domain_comparison(time_operator_result,
         ax.plot(np.real(a))
         ax.plot(np.imag(a))
 
-    labels = default_labels(labels)
+    labels = _default_labels(labels)
     if subplots_kwargs is None:
         subplots_kwargs = {}
     fig, axes = plt.subplots(4, 2, **subplots_kwargs)
@@ -76,7 +113,7 @@ def plot_time_domain_comparison(operator_result,
     """
     if subplots_kwargs is None:
         subplots_kwargs = {}
-    labels = default_labels(labels)
+    labels = _default_labels(labels)
     if fig_axes is None:
         fig, axes = plt.subplots(2, 2, **subplots_kwargs)
     else:
@@ -97,11 +134,6 @@ def plot_time_domain_comparison(operator_result,
         time_series_plotter(axes[0, i], arr[i])
         axes[0, i].set_title(labels[i])
         axes[0, i].set_ylabel("Power level (dB)")
-
-    # axes[1, 0].plot(np.abs(diff))
-    # # axes[1, 0].plot(np.imag(diff))
-    # axes[1, 0].set_title("Signal difference")
-    # axes[1, 0].set_ylabel("Signal level (Arbitrary Units)")
 
     axes[1, 0].plot(dB(diff))
     axes[1, 0].set_title("Power of Difference")
