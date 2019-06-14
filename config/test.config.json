@@ -7,17 +7,19 @@
   "os_factor": "4/3",
   "channels": 256,
   "input_fft_length": 1024,
-  "input_overlap": 128,
-  "blocks": 4,
+  "input_overlap": 256,
+  "blocks": 3,
   "backend": {
     "test_vectors": "python",
     "channelize": "python",
     "synthesize": "python"
   },
   "n_pol": 2,
-  "dm": 2.64476,
+  "dm_": 2.64476,
+  "dm": 0.0,
   "period": 0.00575745,
-  "dump_stage": "Convolution",
-  "deripple": true,
-  "fft_window": "tukey"
+  "dump_stage": "Detection",
+  "dump_stage_": "Convolution",
+  "deripple": false,
+  "fft_window": "no_window"
 }

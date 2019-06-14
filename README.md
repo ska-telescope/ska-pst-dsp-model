@@ -1,5 +1,7 @@
 ## PST_Matlab_dspsr_PFB_inversion_comparison
 
+This project has moved [here](https://gitlab.com/dean-shaff/PST_PFB_inversion_verification)
+
 Compare the results of dspsr's PFB inversion implementation to the PST Signal model,
 implemented in Matlab. The goal of this comparison is to assess whether the two
 implementations produce the same results, within numerical precision.

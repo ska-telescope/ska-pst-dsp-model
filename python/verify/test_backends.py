@@ -2,8 +2,6 @@ import unittest
 import logging
 import os
 import functools
-import sys
-sys.path.insert(0, "/home/SWIN/dshaff/ska/pfb")
 
 import numpy as np
 import pfb.rational
@@ -21,7 +19,7 @@ config = load_config()
 module_logger = logging.getLogger(__name__)
 
 
-def base_cls():
+def test_backend_factory():
 
     class TestBackends(unittest.TestCase):
 
@@ -51,7 +49,7 @@ def base_cls():
 
 
 # @unittest.skip("")
-class TestSynthesizerBackends(base_cls()):
+class TestSynthesizerBackends(test_backend_factory()):
 
     @classmethod
     def setUpClass(cls):
@@ -135,7 +133,7 @@ class TestSynthesizerBackends(base_cls()):
 
 
 @unittest.skip("")
-class TestChannelizerBackends(base_cls()):
+class TestChannelizerBackends(test_backend_factory()):
     """
     Test to ensure that backends are producing the same output.
     """
