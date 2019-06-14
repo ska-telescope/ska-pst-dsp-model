@@ -40,6 +40,15 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
             period=data_gen.config["period"]
         )
 
+    def test_vanilla(self):
+
+        data_gen.run_dspsr(
+            self.simulated_pulsar_file_path,
+            output_dir=products_dir,
+            output_file_name="test_vanilla",
+            **self.dspsr_kwargs
+        )
+
     @classmethod
     def build_test_cases(cls, skips=None):
         if skips is None:
@@ -53,9 +62,9 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
 
         test_method_args = [
             ("1", cls.input_fft_length),
-            ("8", cls.input_fft_length),
+            ("16", cls.input_fft_length),
             ("1", "D"),
-            ("8", "D")
+            ("16", "D")
         ]
 
         def test_method_factory(method_name, args):
@@ -87,9 +96,10 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
 if __name__ == "__main__":
     VerifyDSPSRPFBInversion.init()
     VerifyDSPSRPFBInversion.build_test_cases(skips=[
-        "test_single_channel_after_dedispersion",
-        "test_single_channel_during_dedispersion",
-        "test_multi_channel_during_dedispersion"
+        # "test_single_channel_after_dedispersion",
+        # "test_multi_channel_after_dedispersion",
+        # "test_single_channel_during_dedispersion"
+        # "test_multi_channel_during_dedispersion"
     ])
     logging.basicConfig(level=logging.ERROR)
     unittest.main()
