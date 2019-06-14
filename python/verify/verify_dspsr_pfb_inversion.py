@@ -28,13 +28,12 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
             output_dir=data_dir)
         cls.channelized_file_path = channelizer(
             cls.simulated_pulsar_file_path)
-        deripple_str = "-dr" if data_gen.config["deripple"] else ""
-        cls.input_fft_length = data_gen.config['input_fft_length']
+        cls.after_dedisp_arg = (f"{data_gen.config['input_fft_length']}:"
+                                f"{data_gen.config['input_overlap']}")
         cls.inversion_extra_args = (
-            f"-IF {{}}:{{}}"
-            f":{data_gen.config['input_overlap']} "
-            f"{deripple_str} "
-            f"-fft-window {data_gen.config['fft_window']} -V")
+            f"-IF {{}}:{{}} "
+            f"{{}} "
+            f"-fft-window {{}} -V")
         cls.dspsr_kwargs = dict(
             dm=data_gen.config["dm"],
             period=data_gen.config["period"]
@@ -54,24 +53,42 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
         if skips is None:
             skips = []
         test_method_names = [
-            "test_single_channel_after_dedispersion",
-            "test_multi_channel_after_dedispersion",
-            "test_single_channel_during_dedispersion",
-            "test_multi_channel_during_dedispersion"
+            "test_single_channel_after_dedispersion_deripple_tukey",
+            "test_multi_channel_after_dedispersion_deripple_tukey",
+            "test_single_channel_during_dedispersion_deripple_tukey",
+            "test_multi_channel_during_dedispersion_deripple_tukey",
+            "test_single_channel_after_dedispersion_no_deripple_tukey",
+            "test_multi_channel_after_dedispersion_no_deripple_tukey",
+            "test_single_channel_during_dedispersion_no_deripple_tukey",
+            "test_multi_channel_during_dedispersion_no_deripple_tukey",
+            "test_single_channel_after_dedispersion_no_deripple_no_window",
+            "test_multi_channel_after_dedispersion_no_deripple_no_window",
+            "test_single_channel_during_dedispersion_no_deripple_no_window",
+            "test_multi_channel_during_dedispersion_no_deripple_no_window"
         ]
 
         test_method_args = [
-            ("1", cls.input_fft_length),
-            ("16", cls.input_fft_length),
-            ("1", "D"),
-            ("16", "D")
+            ("1", cls.after_dedisp_arg, "-dr", "tukey"),
+            ("16", cls.after_dedisp_arg, "-dr", "tukey"),
+            ("1", "D", "-dr", "tukey"),
+            ("16", "D", "-dr", "tukey"),
+            ("1", cls.after_dedisp_arg, "", "tukey"),
+            ("16", cls.after_dedisp_arg, "", "tukey"),
+            ("1", "D", "", "tukey"),
+            ("16", "D", "", "tukey"),
+            ("1", cls.after_dedisp_arg, "", "no_window"),
+            ("16", cls.after_dedisp_arg, "", "no_window"),
+            ("1", "D", "", "no_window"),
+            ("16", "D", "", "no_window")
         ]
 
         def test_method_factory(method_name, args):
             def test_method(self):
+                extra_args = self.inversion_extra_args.format(*args)
+                print(extra_args)
                 data_gen.run_dspsr(
                     self.channelized_file_path.file_path,
-                    extra_args=self.inversion_extra_args.format(*args),
+                    extra_args=extra_args,
                     output_dir=products_dir,
                     output_file_name=method_name,
                     **self.dspsr_kwargs
@@ -96,10 +113,7 @@ class VerifyDSPSRPFBInversion(unittest.TestCase):
 if __name__ == "__main__":
     VerifyDSPSRPFBInversion.init()
     VerifyDSPSRPFBInversion.build_test_cases(skips=[
-        # "test_single_channel_after_dedispersion",
-        # "test_multi_channel_after_dedispersion",
-        # "test_single_channel_during_dedispersion"
-        # "test_multi_channel_during_dedispersion"
+
     ])
     logging.basicConfig(level=logging.ERROR)
     unittest.main()
