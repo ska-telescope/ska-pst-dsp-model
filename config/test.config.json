@@ -15,11 +15,11 @@
     "synthesize": "python"
   },
   "n_pol": 2,
-  "dm_": 2.64476,
-  "dm": 0.0,
+  "dm": 2.64476,
+  "dm_": 0.0,
   "period": 0.00575745,
   "dump_stage": "Detection",
   "dump_stage_": "Convolution",
-  "deripple": false,
-  "fft_window": "no_window"
+  "deripple": true,
+  "fft_window": "tukey"
 }
