@@ -1,0 +1,7 @@
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - matlab -nodesktop -nosplash -minimize -wait -logfile log.txt -r 'disp(1); exit;'
