@@ -4,11 +4,7 @@ stages:
 test:
   stage: test
   tags: 
-    - psrchive
+    - dspsr 
   script:
-    - psrchive --version
+    - dspsr --version
 
-# test:
-#   stage: test
-#   script:
-#     - matlab -nodesktop -nosplash -minimize -wait -logfile log.txt -r 'disp(1); exit;'
