@@ -1,10 +1,24 @@
+image: python:3.6
+
 stages:
-  - test
+  - build
+  - deploy
 
-test:
-  stage: test
-  tags: 
-    - dspsr 
+before_script:
+  - pip install sphinx
+# test:
+#   stage: test
+#   tags:
+#     - dspsr
+#   script:
+#     - dspsr --version
+
+pages:
+  stage: deploy
   script:
-    - dspsr --version
+    - echo "hello"
 
+build_pages:
+  stage: build
+  script:
+    - echo "hello"
