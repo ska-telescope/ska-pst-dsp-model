@@ -12,6 +12,8 @@ module_logger = logging.getLogger(__name__)
 
 def plot_binary_files(*file_paths: str, dtype=None, offset=0):
 
+    module_logger.debug(f"Plotting {len(file_paths)} files")
+
     if dtype is None:
         raise RuntimeError("Have to specify a data type")
     data = []
@@ -30,6 +32,7 @@ def plot_binary_files(*file_paths: str, dtype=None, offset=0):
         axes = [[axes]]
     if not hasattr(axes[0], "__getitem__"):
         axes = [axes]
+
 
     for i in range(len(file_paths)):
         for z in range(n_z):
