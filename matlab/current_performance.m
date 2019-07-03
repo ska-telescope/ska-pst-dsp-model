@@ -1,7 +1,17 @@
-function current_performance ()
-  config = default_config;
-  % config.n_chan = 16;
-  % config.fir_filter_path = './../config/Prototype_FIR.4-3.16.160.mat';
+function current_performance (tele_, domain_)
+
+  tele = 'test';
+  if exist('tele_', 'var')
+    tele = tele_;
+  end
+
+  domain = 'time';
+  if exist('domain_', 'var')
+    domain = domain_;
+  end
+
+
+  config = default_config(tele);
 
   function signal = complex_sinusoid_handle (nbins, frequency, dtype_)
     signal = complex_sinusoid(nbins, [frequency], [pi/4], 0.0, dtype_);
@@ -47,10 +57,7 @@ function current_performance ()
     perf = DomainPerformance().temporal_performance(inv);
   end
 
-  npoints = 200;
-  nblocks = 3;
-  input_fft_length = 1024;
-  overlap_size = 128;
+  npoints = 300;
 
   names_temporal = {'Max Spurious Power of Inverted Signal',...
                     'Total Spurious Power of Inverted Signal',...
@@ -64,67 +71,67 @@ function current_performance ()
                     'Mean Spurious Power of Spectrum'};
 
 
-  win = PFBWindow()
-  window_function = PFBWindow().tukey_factory(...
-    input_fft_length, overlap_size);
-  % window_function = PFBWindow().fedora_factory(2);
-  % window_function = @win.no_window;
-
-  window_name = get_function_name(window_function);
+  win = PFBWindow();
+  factory = win.lookup(config.fft_window);
+  window_function = factory(config.input_fft_length, config.input_overlap);
+  window_name = config.fft_window;
 
   title_template = sprintf('%%s performance, %s window function\n%d channels, %d forward FFT, %d overlap',...
-    window_name, config.n_chan, input_fft_length, overlap_size);
+    window_name, config.n_chan, config.input_fft_length, config.input_overlap);
   file_name_template = sprintf('./../products/performance.%%s.%s.%d_chan.%d_fft.%d_overlap.png',...
-    window_name, config.n_chan, input_fft_length, overlap_size);
+    window_name, config.n_chan, config.input_fft_length, config.input_overlap);
+
+  if strcmp(domain, 'time')
+    test_overlap = verify_test_vector_params_factory(...
+      config,....
+      window_function,....
+      @time_domain_impulse_handle,....
+      @time_domain_performance,....
+      time_domain_offsets_factory(npoints),....
+      config.nblocks);
 
 
-  test_overlap = verify_test_vector_params_factory(...
-    config,....
-    window_function,....
-    @time_domain_impulse_handle,....
-    @time_domain_performance,....
-    time_domain_offsets_factory(npoints),....
-    nblocks);
+    res = test_overlap(config.input_fft_length, config.input_overlap);
 
+    fig = plot_performance_measures(res{:}, names_temporal);
 
-  res = test_overlap(input_fft_length, overlap_size);
+    xlabel('Impulse position');
+    h = suptitle(sprintf(title_template, 'Temporal'));
+    h.Interpreter = 'none';
+    set(fig, 'visible', 'off');
+    saveas(fig, sprintf(file_name_template, 'temporal'));
+  end
 
-  fig = plot_performance_measures(res{:}, names_temporal);
+  if strcmp(domain, 'freq')
+    fft_length = 2*normalize(config.os_factor, config.input_fft_length)*config.n_chan;
 
-  xlabel('Impulse position');
-  h = suptitle(sprintf(title_template, 'Temporal'));
-  h.Interpreter = 'none';
-  set(fig, 'visible', 'off');
-  saveas(fig, sprintf(file_name_template, 'temporal'));
+    test_overlap = verify_test_vector_params_factory(...
+      config,....
+      window_function,....
+      @complex_sinusoid_handle,....
+      freq_domain_performance_factory(fft_length),...
+      freq_domain_offsets_factory(npoints),....
+      config.nblocks);
 
-  fft_length = 2*normalize(config.os_factor, input_fft_length)*config.n_chan;
+    res = test_overlap(config.input_fft_length, config.input_overlap);
+    freqs = res{1};
+    perf = res{2};
+    fig = plot_performance_measures(freqs, perf(:, 1:3), {names_spectral{1:3}});
 
-  test_overlap = verify_test_vector_params_factory(...
-    config,....
-    window_function,....
-    @complex_sinusoid_handle,....
-    freq_domain_performance_factory(fft_length),...
-    freq_domain_offsets_factory(npoints),....
-    nblocks);
+    xlabel('Frequency (Hz)');
+    h = suptitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
+    h.Interpreter = 'none';
+    set(fig, 'visible', 'off');
+    saveas(fig, sprintf(file_name_template, 'complex_sinusoid_time_series'));
 
-  res = test_overlap(input_fft_length, overlap_size);
-  freqs = res{1};
-  perf = res{2};
-  fig = plot_performance_measures(freqs, perf(:, 1:3), {names_spectral{1:3}});
+    fig = plot_performance_measures(freqs, perf(:, 4:6), {names_spectral{4:6}});
 
-  xlabel('Frequency (Hz)');
-  h = suptitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
-  h.Interpreter = 'none';
-  set(fig, 'visible', 'off');
-  saveas(fig, sprintf(file_name_template, 'complex_sinusoid_time_series'));
-
-  fig = plot_performance_measures(freqs, perf(:, 4:6), {names_spectral{4:6}});
-
-  xlabel('Frequency (Hz)');
-  h = suptitle(sprintf(title_template, 'Spectral'));
-  h.Interpreter = 'none';
-  set(fig, 'visible', 'off');
-  saveas(fig, sprintf(file_name_template, 'spectral'));
+    xlabel('Frequency (Hz)');
+    h = suptitle(sprintf(title_template, 'Spectral'));
+    h.Interpreter = 'none';
+    set(fig, 'visible', 'off');
+    saveas(fig, sprintf(file_name_template, 'spectral'));
+  end
 end
 
 
@@ -139,9 +146,9 @@ function handle = verify_test_vector_params_factory (config,...
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
-  function param_res = verify_test_vector_params (input_fft_length, overlap_size)
+  function param_res = verify_test_vector_params (input_fft_length, input_overlap)
     function overlap = calc_overlap (input_fft_length)
-      overlap = overlap_size;
+      overlap = input_overlap;
     end
 
     input_overlap = calc_overlap(input_fft_length);

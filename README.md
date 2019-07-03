@@ -69,6 +69,23 @@ Testing whether PFB inversion works with dedispersion turned on:
 [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
 [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_dedispersion
 ```
+
+#### Matlab
+
+The Matlab code in this repo serves as a "golden" implementation of the PFB
+inversion algorithm used by the PST. This is the reference against which
+all other code is compared.
+
+The program `current_performance.m` is used to assess the performance of the
+PST PFB inversion algorithm. This is configured with the `test.config.json`
+file, like the Python tests. It also takes two parameters:
+
+- `tele`: the key name of the configuration to use in `test.config.json`. Defaults to `'test'`.
+- `domain`: Whether to do time domain impulse tests (`'time'`) or tone tests (`'freq'`). Defaults to `'time'`.
+
+See [here](#detailed-description-of-matlab-code) for more information on all
+the files in the Matlab section of the repo.
+
 <!--
 Generating a dual polarization complex sinuosoid:
 

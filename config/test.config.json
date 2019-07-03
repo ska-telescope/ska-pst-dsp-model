@@ -1,25 +1,65 @@
 {
-  "fir_filter_coeff_file_path_": "Prototype_FIR.4-3.8.48.mat",
-  "fir_filter_coeff_file_path__": "Prototype_FIR.4-3.8.80.mat",
-  "fir_filter_coeff_file_path": "Prototype_FIR.4-3.256.2560.mat",
-  "fir_filter_taps": 2561,
-  "header_file_path": "default_header.json",
-  "os_factor": "4/3",
-  "channels": 256,
-  "input_fft_length": 1024,
-  "input_overlap": 256,
-  "blocks": 3,
-  "backend": {
-    "test_vectors": "python",
-    "channelize": "python",
-    "synthesize": "python"
+  "test": {
+    "fir_filter_coeff_file_path": "Prototype_FIR.4-3.256.2560.mat",
+    "fir_filter_taps": 2561,
+    "header_file_path": "default_header.json",
+    "os_factor": "4/3",
+    "channels": 256,
+    "input_fft_length": 1024,
+    "input_overlap": 256,
+    "blocks": 3,
+    "backend": {
+      "test_vectors": "python",
+      "channelize": "python",
+      "synthesize": "python"
+    },
+    "n_pol": 2,
+    "dm": 2.64476,
+    "period": 0.00575745,
+    "dump_stage": "Detection",
+    "deripple": true,
+    "fft_window": "tukey"
   },
-  "n_pol": 2,
-  "dm": 2.64476,
-  "dm_": 0.0,
-  "period": 0.00575745,
-  "dump_stage": "Detection",
-  "dump_stage_": "Convolution",
-  "deripple": true,
-  "fft_window": "tukey"
+  "low": {
+    "fir_filter_coeff_file_path": "PST_2561_LowFilterCoefficients.mat",
+    "fir_filter_taps": 2561,
+    "header_file_path": "default_header.json",
+    "os_factor": "4/3",
+    "channels": 256,
+    "input_fft_length": 1024,
+    "input_overlap": 256,
+    "blocks": 3,
+    "backend": {
+      "test_vectors": "python",
+      "channelize": "python",
+      "synthesize": "python"
+    },
+    "n_pol": 2,
+    "dm": 2.64476,
+    "period": 0.00575745,
+    "dump_stage": "Detection",
+    "deripple": true,
+    "fft_window": "tukey"
+  },
+  "mid": {
+    "fir_filter_coeff_file_path": "NRC_100353_MidFilterCoefficients.mat",
+    "fir_filter_taps": 100353,
+    "header_file_path": "default_header.json",
+    "os_factor": "8/7",
+    "channels": 4096,
+    "input_fft_length": 256,
+    "input_overlap": 32,
+    "blocks": 3,
+    "backend": {
+      "test_vectors": "python",
+      "channelize": "python",
+      "synthesize": "python"
+    },
+    "n_pol": 2,
+    "dm": 2.64476,
+    "period": 0.00575745,
+    "dump_stage": "Detection",
+    "deripple": true,
+    "fft_window": "tukey"
+  }
 }
