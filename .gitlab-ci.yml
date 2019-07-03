@@ -5,20 +5,27 @@ stages:
   - deploy
 
 before_script:
-  - pip install sphinx
-# test:
-#   stage: test
-#   tags:
-#     - dspsr
-#   script:
-#     - dspsr --version
+  - pip install -r doc/requirements.txt
+
+build:pages:
+  stage: build
+  script:
+    - export base_dir=${PWD}
+    - cd docs
+    - make html
+    - cp -r build/html ${base_dir}/public
+  artifacts:
+    paths:
+      - public
 
 pages:
   stage: deploy
   script:
-    - echo "hello"
-
-build_pages:
-  stage: build
-  script:
-    - echo "hello"
+    - echo "deploying pages"
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+  dependencies:
+    - build:pages
