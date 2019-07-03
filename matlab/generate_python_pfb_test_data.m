@@ -1,4 +1,4 @@
-function generate_python_pfb_test_data ()
+function generate_python_pfb_test_data()
   % Quantify the effect introducing overlap save has on processing blocks of data.
   config = default_config()
   config.n_chan = 8;

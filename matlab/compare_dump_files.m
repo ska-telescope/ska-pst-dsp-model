@@ -1,4 +1,4 @@
-function same = compare_dump_files (file_path1, file_path2)
+function same = compare_dump_files(file_path1, file_path2)
   % Determine if two dump files contain the same data
   % @method compare_dump_files
   % @param {string} file_path1 - The path to first dump file

@@ -1,4 +1,4 @@
-function generate_test_vector (varargin)
+function generate_test_vector(varargin)
   % This function is meant to be used as a stand alone executable.
   % It creates a DADA dump file of
   % @method generate_test_vector

@@ -1,4 +1,4 @@
-function header = add_fir_filter_to_header (header, fir_filter_coeff, os_factors)
+function header = add_fir_filter_to_header(header, fir_filter_coeff, os_factors)
 
   function arr_str = arr2str (arr)
     arr_str = "";

@@ -1,18 +1,18 @@
-function overlap_parameter_search ()
+function overlap_parameter_search()
   config = default_config;
   % config.n_chan = 16;
   % config.fir_filter_path = './../config/Prototype_FIR.4-3.16.160.mat';
 
-  function signal = complex_sinusoid_handle (nbins, frequency, dtype_)
+  function signal = complex_sinusoid_handle(nbins, frequency, dtype_)
     signal = complex_sinusoid(nbins, [frequency], [pi/4], 0.0, dtype_);
   end
 
-  function signal = time_domain_impulse_handle (nbins, offset, dtype_)
+  function signal = time_domain_impulse_handle(nbins, offset, dtype_)
     signal = time_domain_impulse(nbins, [offset], [1], dtype_);
   end
 
-  function handle = time_domain_offsets_factory (npoints)
-    function test_params = time_domain_offsets (block_size, nblocks, input_overlap, output_overlap, filt_offset)
+  function handle = time_domain_offsets_factory(npoints)
+    function test_params = time_domain_offsets(block_size, nblocks, input_overlap, output_overlap, filt_offset)
       nbins = block_size*nblocks;
       jump = block_size - 2*output_overlap;
       test_params = [];
@@ -27,15 +27,15 @@ function overlap_parameter_search ()
     handle = @time_domain_offsets;
   end
 
-  function handle = freq_domain_offsets_factory (npoints)
-    function test_params = freq_domain_offsets (block_size, nblocks, varargin)
+  function handle = freq_domain_offsets_factory(npoints)
+    function test_params = freq_domain_offsets(block_size, nblocks, varargin)
       test_params = (1:round(block_size/npoints):block_size).*nblocks;
     end
     handle = @freq_domain_offsets;
   end
 
-  function handle = freq_domain_performance_factory (fft_length);
-    function perf = freq_domain_performance (input, inv)
+  function handle = freq_domain_performance_factory(fft_length);
+    function perf = freq_domain_performance(input, inv)
       p = DomainPerformance();
       perf = p.temporal_difference(input, inv);
       perf = [perf, p.spectral_performance(inv, fft_length)];
@@ -43,7 +43,7 @@ function overlap_parameter_search ()
     handle = @freq_domain_performance;
   end
 
-  function perf = time_domain_performance (input, inv)
+  function perf = time_domain_performance(input, inv)
     perf = DomainPerformance().temporal_performance(inv);
   end
 
@@ -138,7 +138,7 @@ function overlap_parameter_search ()
 end
 
 
-function handle = test_overlap_factory (config,...
+function handle = test_overlap_factory(config,...
                                         window_function_handle,...
                                         signal_generator_handle,...
                                         performance_handle,...
@@ -149,8 +149,8 @@ function handle = test_overlap_factory (config,...
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
 
-  function param_res = test_overlap (input_fft_length, overlap_size)
-    function overlap = calc_overlap (input_fft_length)
+  function param_res = test_overlap(input_fft_length, overlap_size)
+    function overlap = calc_overlap(input_fft_length)
       overlap = overlap_size;
     end
 

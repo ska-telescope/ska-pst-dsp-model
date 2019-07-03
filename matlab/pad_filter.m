@@ -1,4 +1,4 @@
-function padded = pad_filter (filter_coeff, n_chan)
+function padded = pad_filter(filter_coeff, n_chan)
   % ensure that the number of elements in filter_coeff is equal to an integer
   % number times `n_chan`.
   % @method pad_filter

@@ -1,4 +1,4 @@
-function pipeline ()
+function pipeline()
   config = default_config();
   config.dtype = 'single';
   config.header_file_path = './../config/default_header.json';

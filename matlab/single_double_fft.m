@@ -1,4 +1,4 @@
-function single_double_fft ()
+function single_double_fft()
   % Determine whether Matlab's FFT implementation computes a true single precision
   % FFT, or if it returns a double precision array even when computing the FFT
   % of a single precision array.

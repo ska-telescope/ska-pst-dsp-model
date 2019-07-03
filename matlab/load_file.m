@@ -1,4 +1,4 @@
-function ret = load_file (file_path, handler, args)
+function ret = load_file(file_path, handler, args)
   if ~exist('args', 'var')
     args = {};
   end

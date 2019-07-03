@@ -1,4 +1,4 @@
-function phase_offset_effect ()
+function phase_offset_effect()
   config = default_config();
 
   config.input_fft_length = 1024;

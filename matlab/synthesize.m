@@ -1,4 +1,4 @@
-function synthesize (varargin)
+function synthesize(varargin)
   % This function is meant to be used as a stand alone executable.
   % It takes as input a DADA dump file, and synthesizes it.
   % @method synthesize

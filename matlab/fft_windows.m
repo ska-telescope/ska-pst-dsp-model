@@ -1,4 +1,4 @@
-function fft_windows ()
+function fft_windows()
   fig = figure('Position', [10, 10, 1000, 1000]);
   ax = subplot(1, 1, 1);
   npoints = 1024;

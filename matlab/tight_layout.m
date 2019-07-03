@@ -1,4 +1,4 @@
-function fig = tight_layout (fig)
+function fig = tight_layout(fig)
   allAxesInFigure = findall(fig,'type','axes');
   factory_font_size = get(groot, 'factoryAxesFontSize');
   for idx=1:length(allAxesInFigure)

@@ -1,4 +1,4 @@
-function map = struct2map (s)
+function map = struct2map(s)
   map = containers.Map();
 
   fields = fieldnames(s);

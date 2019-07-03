@@ -1,4 +1,4 @@
-function channelize (varargin)
+function channelize(varargin)
   % This function is meant to be used as a stand alone executable.
   % It takes as input a DADA dump file, and channelizes it.
   % @method channelize

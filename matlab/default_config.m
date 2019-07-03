@@ -1,4 +1,4 @@
-function config_struct = default_config (tele)
+function config_struct = default_config(tele)
   file_path = mfilename('fullpath');
   [file_dir, name, ext] = fileparts(file_path);
   [base_dir, name, ext] = fileparts(file_dir);

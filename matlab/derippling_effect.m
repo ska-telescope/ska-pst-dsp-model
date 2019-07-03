@@ -1,4 +1,4 @@
-function derippling_effect ()
+function derippling_effect()
   % Attempt to quantify the effect derippling has on PFB inversion performance.
   % Generate a plot of the difference between input time domain impulse and
   % the result of PFB inversion, with and without derippling enabled, for a

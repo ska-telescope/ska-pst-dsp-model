@@ -1,4 +1,4 @@
-function signal = complex_sinusoid (n_bins, frequencies, phases, bin_offset, dtype_)
+function signal = complex_sinusoid(n_bins, frequencies, phases, bin_offset, dtype_)
   % generate a complex sinusoid that is the linear combination of sinusoids
   % with specified frequencies and phases.
   % @method complex_sinusoid

@@ -1,4 +1,4 @@
-function current_performance (tele_, domain_)
+function current_performance(tele_, domain_)
 
   tele = 'test';
   if exist('tele_', 'var')

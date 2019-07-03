@@ -1,4 +1,4 @@
-function signal = time_domain_impulse (n_bins, offsets, widths, dtype_)
+function signal = time_domain_impulse(n_bins, offsets, widths, dtype_)
   % generate a time domain impulse. The location and width of each impulse
   % is specified in `offsets` and `widths`
   % @method time_domain_impulse
