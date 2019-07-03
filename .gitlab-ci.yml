@@ -5,7 +5,7 @@ stages:
   - deploy
 
 before_script:
-  - pip install -r doc/requirements.txt
+  - pip install -r docs/requirements.txt
 
 build:pages:
   stage: build
