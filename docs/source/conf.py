@@ -31,7 +31,7 @@ release = '0.6.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinxcontrib.matlab'
+    'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinxcontrib.matlab'
 ]
 
 # matlab stuff

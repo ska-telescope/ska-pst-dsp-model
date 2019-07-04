@@ -1,13 +1,26 @@
 function synthesize(varargin)
   % This function is meant to be used as a stand alone executable.
   % It takes as input a DADA dump file, and synthesizes it.
-  % @method synthesize
-  % @param {string} input_file_path - The path to the input data.
-  % @param {number} input_fft_length - The path to the input data.
-  % @param {string} output_dir - The directory where the synthesized output
-  %   dada file will be saved.
-  % @param {string} output_file_name - The name of the output dada file.
-  % @param {string} verbose -  Optional verbosity flag.
+  %
+  % Uses ``inputParser`` to parse ``varargin``
+  %
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   ./synthesize path/to/dada.dump 1024 ./ synthesized.dump
+  %
+  % varargin:
+  %   - input_file_path: The path to the input data.
+  %   - input_fft_length: The path to the input data.
+  %   - output_dir: The directory where the synthesized output
+  %       dada file will be saved.
+  %   - output_file_name: The name of the output dada file.
+  %   - verbose:  Optional verbosity flag.
+  %
+  % Args:
+  %   varargin (cell): Inputs to be parsed
+
   tstart = tic;
   p = inputParser;
   addRequired(p, 'input_file_path', @ischar);

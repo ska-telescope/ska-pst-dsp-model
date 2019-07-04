@@ -1,13 +1,20 @@
 function signal = complex_sinusoid(n_bins, frequencies, phases, bin_offset, dtype_)
   % generate a complex sinusoid that is the linear combination of sinusoids
   % with specified frequencies and phases.
-  % @method complex_sinusoid
-  % @param {double} n_bins - The length of the output array
-  % @param {double []} frequencies - frequency components of resulting sinuosoid
-  % @param {double []} phases - phase components corresponding to each frequency
-  %   component
-  % @param {double} bin_offset - Fractional offset from bin center
-  % @return {double []} - complex sinusoid
+  %
+  % Example:
+  %
+  %   >> complex_sinusoid(100, [1, 10], [pi/4, pi/4], 0.1, 'single');
+  %
+  % Args:
+  %   n_bins ([double]): The length of the output array
+  %   frequencies ([double]): frequency components of resulting sinuosoid
+  %   phases ([double]): phase components corresponding to each frequency
+  %     component
+  %   bin_offset (double): Fractional offset from bin center
+  %   dtype_ (string): Data type of return array.
+  % Returns:
+  %  [dtype]: array containing complex sinusoid
 
   dtype = 'single';
   if exist('dtype_', 'var')

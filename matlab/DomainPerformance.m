@@ -1,4 +1,6 @@
 classdef DomainPerformance
+  % Defines methods that determine the numerical performance of the PFB inversion
+  % algorithm
   methods
 
     function res = temporal_difference(obj, a, b)

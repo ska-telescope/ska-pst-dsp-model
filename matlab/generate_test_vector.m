@@ -1,16 +1,30 @@
 function generate_test_vector(varargin)
   % This function is meant to be used as a stand alone executable.
-  % It creates a DADA dump file of
-  % @method generate_test_vector
-  % @param {string} handler_name - name of handler to use to create function
-  % @param {string} params - comma separate list of inputs
-  % @param {number} n_bins - number of bins per polarization
-  % @param {string} dtype - type of data to generate
-  % @param {number} n_pol - number of polarizations to generate
-  % @param {string} output_dir - The directory where the synthesized output
-  %   dada file will be saved.
-  % @param {string} output_file_name - The name of the output dada file.
-  % @param {string} verbose -  Optional verbosity flag.
+  % It creates a DADA dump file
+  %
+  % Uses ``inputParser``
+  %
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   ./generate_test_vector complex_sinusoid 1,0.25,0.1 1000 single 1 ./ complex_sinusoid.dump 1
+  %
+  %
+  % varargin:
+  %   - handler_name: name of handler to use to create function
+  %   - params: comma separate list of inputs
+  %   - n_bins: number of bins per polarization
+  %   - dtype: type of data to generate
+  %   - n_pol: number of polarizations to generate
+  %   - output_dir: The directory where the synthesized output
+  %     dada file will be saved.
+  %   - output_file_name: The name of the output dada file.
+  %   - verbose:  Optional verbosity flag.
+  %
+  % Args:
+  %   varargin (cell): Inputs to parsed.
+
 
   handler_map = containers.Map();
   handler_map('complex_sinusoid') = @complex_sinusoid;

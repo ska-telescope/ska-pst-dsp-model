@@ -1,14 +1,15 @@
 function signal = time_domain_impulse(n_bins, offsets, widths, dtype_)
   % generate a time domain impulse. The location and width of each impulse
-  % is specified in `offsets` and `widths`
-  % @method time_domain_impulse
-  % @param {double} n_bins - The length of the output array
-  % @param {double []} offsets - The location of each impulse in the output
-  %   array
-  % @param {double []} widths - The width of the impulse whose location is
-  %    specified in offsets
-  % @param {double} bin_offset - Fractional offset from bin center
-  % @return {double []} - time domain impulses
+  % is specified in ``offsets`` and ``widths``
+  %
+  % Args:
+  %   n_bins (numeric): The length of the output array
+  %   offsets ([numeric]): The location of each impulse in the output array
+  %   widths ([numeric]): The width of the impulse whose location is specified in offsets
+  %   bin_offset (numeric): Fractional offset from bin center
+  %   dtype_ (string): Optional. data type of returned array.
+  % Returns:
+  %   [numeric]: time domain impulses
   dtype = 'single';
   if exist('dtype_', 'var')
     dtype = dtype_;

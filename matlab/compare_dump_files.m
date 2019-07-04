@@ -1,10 +1,21 @@
 function same = compare_dump_files(file_path1, file_path2)
-  % Determine if two dump files contain the same data
-  % @method compare_dump_files
-  % @param {string} file_path1 - The path to first dump file
-  % @param {string} file_path2 - The path to second dump file
-  % @return {bool} - Return true if the dump files contain the same data,
-  %   false otherwise
+  % Determine if two dump files contain the same data.
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   >> compare_dump_files('path/to/dump1', '/path/to/dump2')
+  %   ans =
+  %
+  %     logical
+  %
+  %      1
+  %
+  % Args:
+  %   file_path1 (string): The path to first dump file
+  %   file_path2 (string): The path to second dump file
+  % Returns:
+  %   bool: true if the dump files contain the same data, false otherwise
 
   file_paths = {file_path1, file_path2};
   data = {};

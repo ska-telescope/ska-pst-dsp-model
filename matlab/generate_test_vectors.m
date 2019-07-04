@@ -1,4 +1,5 @@
 function generate_test_vectors()
+  % Deprecated
   config_struct = struct();
   config_struct.dtype = 'single';
   config_struct.header_file_path = './../config/default_header.json';

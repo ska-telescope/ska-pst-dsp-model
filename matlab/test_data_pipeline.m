@@ -13,6 +13,43 @@ function res = test_data_pipeline(...
     n_pol_,...
     output_file_name_...
 )
+  % Generate single channel test vectors, channelize it, and then synthesize
+  % fine channels. This function is a utility function used in :func:`current_performance`.
+  %
+  % Args:
+  %   config_struct (struct): configuration struct, as returned from a function
+  %     like :func:`default_config`
+  %   n_chan (int): number of fine channels to create from single channel input
+  %   os_factor (struct): rational number struct representing oversampling factor.
+  %   input_fft_length (int): fft length to use on fine channels in synthesis
+  %   n_bins (int): number of data points to generate
+  %   test_vector_handler (handle): function handle for generating test vectors.
+  %     Expects ``{n_bins}`` input parameters.
+  %   test_vector_handler_args (cell): Any additional arguments for ``test_vector_handler``
+  %   analysis_handler (handle): function handle for channelizing data/performing
+  %     polyhase analysis. Expects ``{in, fir_filter_coeff, n_chan, os_factor}``
+  %     input parameters.
+  %   analysis_handler_args (cell): Any additional arguments for ``analysis_handler``
+  %   synthesis_handler (handle): function handle for synthesizing channelized data.
+  %     Expects ``{in, input_fft_length, os_factor}`` input parameters.
+  %   synthesis_handler_args (cell): Any additional arguments for ``synthesis_handler``
+  %   output_dir (string): directory in which to dump output data files
+  %   n_pol_ (int): Optional. Number of polarization copies to generate. Defaults to 1
+  %   output_file_name_ (string): Name of output file. Defaults to the name of the
+  %     ``test_vector_handler`` function
+  % Returns:
+  %   cell:
+  %     cell array containing the following elements:
+  %
+  %     - **file_info**: cell array of file names corresponding to files generated
+  %       in this function
+  %     - **data**: cell array of arrays containing input data, channelized data,
+  %       and synthesized data.
+  %     - **meta**: Any relevant meta data that may be useful for later stages of
+  %       processing. This function populates the ``fir_offset`` field, which
+  %       indicates the number of samples by which the inverted data has
+  %       been shifted relative to input data due to the FIR filter.
+
   % test_vector_handler_args
   % analysis_handler_args
   % synthesis_handler_args

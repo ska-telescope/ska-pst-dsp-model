@@ -1,9 +1,19 @@
 function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, display_)
   % Design a FIR appropriate for polyphase filterbank.
-  % @method design_PFB
-  % @param {single/double} n_chan - number of PFB output channels
-  % @param {struct} os_factor - oversampling factor struct
-  % @param {single} n_taps - Number of filter taps
+  %
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   >> design_PFB_FIR_filter(256, {'nu': 4, 'de': 3}, 256*10 + 1, 0);
+  %
+  % Args:
+  %   n_chan (numeric): number of PFB output channels
+  %   os_factor (struct): oversampling factor struct
+  %   n_taps (single): Number of filter taps
+  %   display (bool): Optional. Whether or not to generate plots to Defaults to false.
+  % Returns:
+  %   string: Path to newly created ``.mat`` file contaning FIR filter coefficents.
 
   display = 0;
   if exist('display_', 'var')

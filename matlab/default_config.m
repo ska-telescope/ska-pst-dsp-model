@@ -1,4 +1,14 @@
 function config_struct = default_config(tele)
+  % Load in the configuration data from the ``test.config.json`` file in the
+  % ``config`` directory.
+  %
+  % Args:
+  %   tele (string): The name of the field in JSON configuration file to return.
+  %     Can be one of  ``'test'``, ``'mid'``, or ``'low'``.
+  % Returns:
+  %   struct: struct containing JSON decoded parameters from ``test.config.json``
+  %     file.
+
   file_path = mfilename('fullpath');
   [file_dir, name, ext] = fileparts(file_path);
   [base_dir, name, ext] = fileparts(file_dir);

@@ -1,6 +1,15 @@
 function chopped = chop(test_data_pipeline_res, additional_offset_)
-  % given the result from test_data_pipeline, chop up the input and inverted
-  % data such that the two align in time
+  % Utility function for aligning coarse channel input data and coarse channel
+  % inverted data.
+  %
+  % Args:
+  %   test_data_pipeline_res (cell): Cell array that is result of call to
+  %     ``test_data_pipeline``. Has ``{file_info, data, meta}`` structure.
+  %     See :func:`test_data_pipeline` for more information on this structure.
+  %   additional_offset_ (int): Any additional shift to introduce to output data.
+  % Returns:
+  %   cell: cell array containing "chopped" input and inverted data
+
   additional_offset = 0;
   if exist('additional_offset_', 'var')
     additional_offset = additional_offset_;

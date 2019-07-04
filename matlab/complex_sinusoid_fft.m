@@ -2,20 +2,14 @@ function sig = complex_sinusoid_fft(numFreqBins,freqBinOffset,phase,dtype)
   % Generates a complex sinusoid by inverse-FFT'ing a frequency-domain vector
   % containing one delta function.
   %
-  % Inputs:
-  %    numFreqBins = length of frequency-domain vector
-  %                    (and the corresponding output time-domain vector)
-  %    freqBinOffset = the bin number in which the delta function is placed
-  %    phase = phase of sinusoid (0 to 2pi)
+  % Args:
+  %    numFreqBins (int): length of frequency-domain vector
+  %       (and the corresponding output time-domain vector)
+  %    freqBinOffset (int): the bin number in which the delta function is placed
+  %    phase (single/double): phase of sinusoid (0 to 2pi)
   %
-  % Output:
+  % Returns:
   %    sig - a vector of complex doubles of length numFreqBins
-  %
-  % Author           Date         Comments
-  % ---------------  -----------  ----------------------------------------
-  % I. Morrison      26-May-2017  Original version
-  %
-  % ----------------------------------------------------------------------
 
   % Initialize frequency vector
   freqVector = complex(zeros(numFreqBins,1, dtype));

@@ -1,4 +1,12 @@
 function header = add_fir_filter_to_header(header, fir_filter_coeff, os_factors)
+  % Update some header container with FIR filter information.
+  %
+  % Args:
+  %   header (containers.Map): the header map
+  %   fir_filter_coeff ([numeric]): The FIR filter coefficients to be stored
+  %   os_factors ({struct}): Cell array of os_factor structs
+  % Returns:
+  %   containers.Map: Updated header
 
   function arr_str = arr2str (arr)
     arr_str = "";

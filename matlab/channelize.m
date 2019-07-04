@@ -1,16 +1,31 @@
 function channelize(varargin)
   % This function is meant to be used as a stand alone executable.
-  % It takes as input a DADA dump file, and channelizes it.
-  % @method channelize
-  % @param {string} input_file_path - The path to the input data.
-  % @param {string} channels - The number of channels to create
-  % @param {string} os_factor_str - A string representing the oversampling
+  % It takes as input a DADA dump file, channelizes it, and then saves it
+  % as another data dump file.
+  %
+  % Uses ``inputParser`` to parse command line parameters
+  %
+  % varargin:
+  %
+  % - input_file_path: The path to the input data.
+  % - channels: The number of channels to create
+  % - os_factor_str: A string representing the oversampling
   %   factor. This should be represented as a fraction, eg `'8/7'`.
   %   To channelize with a criticall sampled PFB, use `'1/1'`.
-  % @param {string} output_file_name - The name of the output dada file.
-  % @param {string} output_dir - The directory where the channelized output
+  % - output_file_name: The name of the output dada file.
+  % - output_dir: The directory where the channelized output
   %   dada file will be saved.
-  % @param {string} verbose_ -  Optional verbosity flag.
+  % - verbose\_: Optional verbosity flag, converted to bool.
+  %
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   ./channelize file_to_channelize.dump 8 8/7 channelized.dump ./ 1
+  %
+  % Args:
+  %   varargin (cell): Cell array containing inputs.
+
   tstart = tic;
   p = inputParser;
   validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x > 0);

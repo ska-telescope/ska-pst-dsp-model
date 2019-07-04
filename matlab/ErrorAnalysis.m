@@ -1,5 +1,5 @@
 classdef ErrorAnalysis
-  % defines a collection of functions that can be used in analyzing error
+  % Defines a collection of functions that can be used in analyzing error
   % between two time or frequency domain data series.
   methods
     function a = zero_max_val(obj, a)

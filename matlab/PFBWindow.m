@@ -1,5 +1,5 @@
 classdef PFBWindow
-
+  % defines a collection of FFT windows that are used in FFT based PFB inversion
   properties
     lookup;
   end

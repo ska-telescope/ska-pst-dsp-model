@@ -1,4 +1,24 @@
-function current_performance(tele_, domain_)
+function current_performance(npoints_, tele_, domain_)
+  % Determine the current performance of the Matlab PST FFT PFB inversion
+  % algorithm. Here performance is referring to the ability of the PFB inversion
+  % algorithm to reconstruct input data.
+  %
+  % At the moment, this function must be run from within the containing directory.
+  %
+  % This function will generate plots in png form.
+  %
+  % Example:
+  %
+  %   >> current_performance(10, 'mid', 'time') % get peformance using mid parameters.
+  %
+  % Args:
+  %   npoints_ (numeric): Optional. Number of tones/impulses to use to generate
+  %     performance plots.
+  %   tele_ (string): Optional. The name of the parameter set to use from the
+  %     ``test.config.json`` file. Can be one of ``'test'``, ``'mid'``, or ``'low'``.
+  %     Defaults to ``'test'``.
+  %   domain_ (string): Optional. Do performance analysis for either time domain
+  %     impulse (``'time'``), or tones (``'freq'``). Defaults to ``'time'``.
 
   tele = 'test';
   if exist('tele_', 'var')
@@ -8,6 +28,11 @@ function current_performance(tele_, domain_)
   domain = 'time';
   if exist('domain_', 'var')
     domain = domain_;
+  end
+
+  npoints = 300;
+  if exist('npoints_', 'var')
+    npoints = npoints_;
   end
 
 
@@ -57,7 +82,6 @@ function current_performance(tele_, domain_)
     perf = DomainPerformance().temporal_performance(inv);
   end
 
-  npoints = 300;
 
   % names_temporal = {'Max Spurious Power of Inverted Signal',...
   %                   'Total Spurious Power of Inverted Signal',...

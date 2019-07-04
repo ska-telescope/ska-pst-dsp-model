@@ -5,26 +5,38 @@ function out=polyphase_analysis(...
     os_factor,...
     verbose_...
   )
-
   % Polyphase analysis filterbank with cyclic shift of data into FFT
   % to remove spectrum rotation in output data
-  % @method polyphase_analysis
-  % @author John Bunton <CSIRO> 2003, 2016
-  % @author Dean Shaff <dshaff@swin.edu.au; Swinburne University> 2019
+  % .. @method polyphase_analysis
+  % .. @author John Bunton <CSIRO> 2003, 2016
+  % .. @author Dean Shaff <dshaff@swin.edu.au; Swinburne University> 2019
+  %
+  % Example:
+  %
+  % .. code-block::
+  %
+  %   >> size(in)
+  %     2 1 65536
+  %   >> size(filt)
+  %     81 1
+  %   >> polyphase_analysis(in, filt, 8, struct('nu', 8, 'de', 7), 0);
+  %
+  % Args:
+  %   in ([numeric]): input data. The dimensionality should be
+  %     (n_pol, n_chan, n_dat), where n_chan is equal to 1.
+  %   filt ([numeric]): prototype lowpass filter
+  %     (length should be multiple of step). Should be single dimensional array.
+  %   block (numeric): length of fft
+  %     (prefilter length = length(filt)/block
+  %     if not the 'filt' is padded with zeros to a multiple of block
+  %     Importantly, This is also the number of channels that will
+  %     be created by the PFB.
+  %   os_factor (struct): rational number struct; struct with 'nu' and 'de' fields
+  %   verbose_ (bool): Optional. verbosity flag. Defaults to false.
+  % Return:
+  %   [numeric]: The first dimension is time, the second frequency.
+  %     The number of frequency channels is equal to ``block``
 
-  % @param {single/double []} in - input data. The dimensionality should be
-  %   (n_pol, n_chan, n_dat), where n_chan is equal to 1.
-  % @param {single/double []} filt - prototype lowpass filter
-  %   (length should be multiple of step). Should be single dimensional array.
-  % @param {single/double} block - length of fft
-  %   (prefilter length = length(filt)/block
-  %   if not the 'filt' is padded with zeros to a multiple of block
-  %   Importantly, This is also the number of channels that will
-  %   be created by the PFB.
-  % @param {struct} os_factor - struct with 'nu' and 'de' fields
-  % @return {single/double []} - output data: two dimensional array.
-  %   The first dimension is time, the second frequency. The number of frequency
-  %   frequency channels is equal to `block`
   tstart = tic;
   verbose = 0;
   if exist('verbose_', 'var')

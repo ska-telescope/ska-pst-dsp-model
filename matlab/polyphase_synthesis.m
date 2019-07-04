@@ -15,22 +15,38 @@ function out = polyphase_synthesis(...
   % This code is adapted from code written by Ian Morrison to analyze spectral
   % and temporal purity of the PFB inversion technique.
   %
-  % @method polyphase_synthesis
-  % @param {double/single []} in - Input array. The dimensionality should be
-  %   (n_pol, n_chan, n_dat). Whether the data are complex or real is built
-  %   into array.
-  % @param {double} input_fft_length - The length of the forward FFT.
-  % @param {struct} os_factor - The oversampling factor. This is a struct
-  %   with members `nu` and `de` corresponding to the oversampling factor's
-  %   numerator and denominator, respectively.
-  % @param {struct} deripple_ - A struct containing filter coefficients
-  %     used to channelize data. If the 'apply_deripple' struct flag is true,
-  %     apply derippling correction or 'ripple equalization'.
-  % @param {int} sample_offset_ - offset applied to channelized input prior to
-  %   processing.
-  % @return {double/single []} - Upsampled time domain output array. The
-  %   dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
-  %   return array and the input array will not be the same
+  %
+  % Example:
+  %
+  % Recreate coarse channels from channelized data. Do not do any time domain
+  % windowing, or overlap discard.
+  %
+  % .. code-block::
+  %
+  %   >> size(in)
+  %   2 8 7168
+  %   >> size(filt)
+  %   81 1
+  %   >> polyphase_synthesis(in, 128, struct('nu', 8, 'de', 7),...
+  %                          struct('deripple', 1, 'filter_coeff', filt))
+  % 
+  % Args:
+  %   in ([numeric]): Input array. The dimensionality should be
+  %     (n_pol, n_chan, n_dat). Whether the data are complex or real is built
+  %     into array.
+  %   input_fft_length (double): The length of the forward FFT.
+  %   os_factor (struct): The oversampling factor. This is a struct
+  %     with members `nu` and `de` corresponding to the oversampling factor's
+  %     numerator and denominator, respectively.
+  %   deripple_ (struct): A struct containing filter coefficients
+  %       used to channelize data. If the 'apply_deripple' struct flag is true,
+  %       apply derippling correction or 'ripple equalization'.
+  %   sample_offset_ (int): offset applied to channelized input prior to
+  %     processing.
+  % Returns:
+  %   [numeric]: Upsampled time domain output array. The
+  %     dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
+  %     return array and the input array will not be the same
   tstart = tic;
   function overlap = default_calc_overlap(input_fft_length)
     overlap = round(input_fft_length*0.125);
