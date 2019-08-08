@@ -1,4 +1,4 @@
-function current_performance(npoints_, tele_, domain_)
+function current_performance(npoints_, tele_, domain_, diagnostic_)
   % Determine the current performance of the Matlab PST FFT PFB inversion
   % algorithm. Here performance is referring to the ability of the PFB inversion
   % algorithm to reconstruct input data.
@@ -19,6 +19,8 @@ function current_performance(npoints_, tele_, domain_)
   %     Defaults to ``'test'``.
   %   domain_ (string): Optional. Do performance analysis for either time domain
   %     impulse (``'time'``), or tones (``'freq'``). Defaults to ``'time'``.
+  %    diagnostic_ (bool): Optional. Make diagnostic plots for each domain
+  %      parameter
 
   tele = 'test';
   if exist('tele_', 'var')
@@ -35,8 +37,16 @@ function current_performance(npoints_, tele_, domain_)
     npoints = npoints_;
   end
 
+  diagnostic = false;
+  if exist('diagnostic_', 'var')
+    diagnostic = true;
+  end
 
   config = default_config(tele);
+
+  if (diagnostic)
+    config
+  end
 
   function signal = complex_sinusoid_handle (nbins, frequency, dtype_)
     signal = complex_sinusoid(nbins, [frequency], [pi/4], 0.0, dtype_);
@@ -47,8 +57,8 @@ function current_performance(npoints_, tele_, domain_)
   end
 
   function handle = time_domain_offsets_factory (npoints)
-    function test_params = time_domain_offsets (block_size, nblocks, input_overlap, output_overlap, filt_offset)
-      nbins = block_size*nblocks;
+    function test_params = time_domain_offsets (block_size, nblocks, input_overlap, output_overlap, filt_offset, max_size)
+      nbins = max_size;
       jump = block_size - 2*output_overlap;
       test_params = [];
       spaced = filt_offset:jump:nbins;
@@ -69,7 +79,7 @@ function current_performance(npoints_, tele_, domain_)
     handle = @freq_domain_offsets;
   end
 
-  function handle = freq_domain_performance_factory (fft_length);
+  function handle = freq_domain_performance_factory (fft_length)
     function perf = freq_domain_performance (input, inv)
       p = DomainPerformance();
       perf = p.temporal_difference(input, inv);
@@ -78,10 +88,12 @@ function current_performance(npoints_, tele_, domain_)
     handle = @freq_domain_performance;
   end
 
-  function perf = time_domain_performance (input, inv)
-    perf = DomainPerformance().temporal_performance(inv);
+  function handle = time_domain_performance_factory (nbins)
+    function perf = time_domain_performance (input, inv)
+      perf = DomainPerformance().temporal_performance(inv, nbins);
+    end
+    handle = @time_domain_performance;
   end
-
 
   % names_temporal = {'Max Spurious Power of Inverted Signal',...
   %                   'Total Spurious Power of Inverted Signal',...
@@ -112,14 +124,15 @@ function current_performance(npoints_, tele_, domain_)
   file_name_template = sprintf('./../products/performance.%%s.%s.%d_chan.%d_fft.%d_overlap.%s.png',...
     window_name, config.channels, config.input_fft_length, config.input_overlap, tele);
 
+
   if strcmp(domain, 'time')
     test_overlap = verify_test_vector_params_factory(...
       config,....
       window_function,....
       @time_domain_impulse_handle,....
-      @time_domain_performance,....
+      time_domain_performance_factory(30),....
       time_domain_offsets_factory(npoints),....
-      config.blocks);
+      config.blocks, diagnostic);
 
     res = feval(test_overlap, config.input_fft_length, config.input_overlap);
 
@@ -128,7 +141,7 @@ function current_performance(npoints_, tele_, domain_)
     xlabel('Impulse position');
     h = suptitle(sprintf(title_template, 'Temporal'));
     h.Interpreter = 'none';
-    set(fig, 'visible', 'off');
+    % set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'temporal'));
   end
 
@@ -141,7 +154,7 @@ function current_performance(npoints_, tele_, domain_)
       @complex_sinusoid_handle,....
       freq_domain_performance_factory(fft_length),...
       freq_domain_offsets_factory(npoints),....
-      config.blocks);
+      config.blocks, diagnostic);
 
     res = test_overlap(config.input_fft_length, config.input_overlap);
     freqs = res{1};
@@ -170,11 +183,12 @@ function handle = verify_test_vector_params_factory (config,...
                                         signal_generator_handle,...
                                         performance_handle,...
                                         test_param_generator_handle,...
-                                        nblocks)
+                                        nblocks, diagnostic)
   sample_offset = 1;
   deripple = struct('apply_deripple', config.deripple);
   filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
   filt_offset = round((length(filt_coeff) - 1)/2);
+  filt_taps = length(filt_coeff);
 
   function param_res = verify_test_vector_params (input_fft_length, input_overlap)
     function overlap = calc_overlap (input_fft_length)
@@ -183,29 +197,56 @@ function handle = verify_test_vector_params_factory (config,...
 
     input_overlap = calc_overlap(input_fft_length);
     output_overlap = normalize(config.os_factor, input_overlap)*config.channels;
+    output_overlap = output_overlap - 1;
 
     block_size = normalize(config.os_factor, input_fft_length)*config.channels;
     nbins = nblocks*block_size;
 
+    fprintf('nbins=%d\n', nbins);
+    output_nbins = calc_output_nbins(...
+        nbins, config.channels, config.os_factor,...
+        filt_taps, input_fft_length, input_overlap);
+    fprintf('output_nbins=%d\n', output_nbins);
+
     param_res = [];
 
-    test_params = test_param_generator_handle(block_size, nblocks, input_overlap, output_overlap, filt_offset);
+    test_params = test_param_generator_handle(...
+      block_size, nblocks, input_overlap, output_overlap + 1, filt_offset, output_nbins);
 
-    for param=test_params
+    if diagnostic
+      test_params = test_params(12:end);
+    end
+    prev_bytes = 1;
+    fprintf('\n')
+    % test_params = [100000];
+    for i=1:length(test_params)
+      param = test_params(i);
+      for b=1:prev_bytes
+        fprintf('\b');
+      end
+      %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
+      prev_bytes = fprintf('%d/%d', i, length(test_params));
       res = test_data_pipeline(config, config.channels, config.os_factor,...
                                input_fft_length, nbins,...
                                signal_generator_handle,...
-                               {param}, @polyphase_analysis, {1}, ...
+                               {param}, @polyphase_analysis_padded, {1}, ...
                                @polyphase_synthesis, ...
                                 {deripple,...
                                  sample_offset,...
                                  @calc_overlap,...
-                                 window_function_handle},...
+                                 window_function_handle, 1},...
                                config.data_dir);
       chopped = chop(res, output_overlap);
       perf_res = performance_handle(chopped{:});
-
       param_res = [param_res; perf_res];
+      if diagnostic
+        diagnostic_plot(res, {output_overlap}, sprintf('Param=%d, total spurious power=%f', param, 10*log10(perf_res(2))));
+      end
+
+      if param >= length(chopped{2})
+        test_params = test_params(1:i);
+        break
+      end
     end
     param_res = {test_params, param_res};
   end

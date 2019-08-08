@@ -9,30 +9,26 @@ classdef DomainPerformance
     end
 
 
-    function res = temporal_performance(obj, a)
+    function res = temporal_performance(obj, a, varargin)
       err = ErrorAnalysis;
+      % fprintf('max(a)=%f', max(abs(a)));
       a = abs(a).^2;
+      % fprintf(' max(a.^2)=%f\n', max(abs(a).^2));
       % res = [err.max_spurious_power(a),...
       %        err.total_spurious_power(a),...
       %        err.mean_spurious_power(a)];
-      res = [err.max_spurious_power(a),...
-             err.total_spurious_power(a)];
-
-      % diff = a - b;
-      % mean_diff = mean(abs(diff));
-      % max_diff = max(abs(diff));
-      % sum_diff = sum(abs(diff));
-      % res = [mean_diff, max_diff, sum_diff];
+      res = [err.max_spurious_power(a, varargin{:}),...
+             err.total_spurious_power(a, varargin{:})];
     end
 
-    function res = spectral_performance(obj, a, fft_length)
+    function res = spectral_performance(obj, a, fft_length, varargin)
       err = ErrorAnalysis;
       a_fft = abs(fft(a, fft_length)./fft_length).^2;
       % res = [err.max_spurious_power(a_fft),...
       %        err.total_spurious_power(a_fft),...
       %        err.mean_spurious_power(a_fft)];
-      res = [err.max_spurious_power(a_fft),...
-             err.total_spurious_power(a_fft)];
+      res = [err.max_spurious_power(a_fft, varargin{:}),...
+             err.total_spurious_power(a_fft, varargin{:})];
     end
   end
 end

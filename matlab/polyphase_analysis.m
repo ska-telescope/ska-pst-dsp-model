@@ -59,7 +59,6 @@ function out=polyphase_analysis(...
   input_pad_length = floor(length(filt)/2);
   sample_offset = mod(input_pad_length, block);
   if sample_offset ~= 0
-    sample_offset;
     input_pad_length = input_pad_length + block - sample_offset;
   end
 
@@ -84,6 +83,8 @@ function out=polyphase_analysis(...
                       %intermediate frequency outputs
   % prev_bytes = 1;
   out = complex(zeros(n_pol, block, nblocks, dtype));
+  % in_block = complex(zeros(fl, 1));
+
   for i_pol = 1:n_pol
     if verbose
       fprintf('polyphase_analysis: %d/%d pol\n', i_pol, n_pol);
@@ -99,29 +100,37 @@ function out=polyphase_analysis(...
       %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
       % end
       in_block = in_pol_padded(1+step*k:fl+step*k);
+      % fprintf('size in_block:');
+      % size(in_block)
       % in_block = in(i_pol, 1, 1+step*k:fl+step*k);
       temp=transpose(f.*in_block);
+      % fprintf('size temp:');
+      % size(temp)
+
       % size(in_block)
       % size(f)
       % size(temp)
 
       %index for cyclic shift of data to FFT to eliminate spectrum rotation
       index = (step*k - floor(step*k/block)*block);
-      % index
       temp=circshift(temp',index)';
 
-      temp2=(1:block)*0;
       % size(temp2)
       % size(temp)
       % phases
       % pause
-
+      % temp2 = sum(reshape(temp, block, phases), 2);
+      % temp2 = circshift(temp2, -index);
+      % temp = sum(reshape(temp,))
+      temp2=(1:block)*0;
       for m=0:phases-1
         temp2=temp2+temp(1+block*m:block*(m+1));
       end
-      out(i_pol, 1:block, k+1) = fft(temp2)*block; %temp2;%
+      % out(i_pol, :, k+1) = fft(temp2)*block; %temp2;%
+      out(i_pol, :, k+1) = ifft(temp2)*(block^2); %temp2;%
     end
   end
+
   if verbose
     tdelta = toc(tstart);
     fprintf('polyphase_analysis: Elapsed time is %f seconds\n', tdelta);

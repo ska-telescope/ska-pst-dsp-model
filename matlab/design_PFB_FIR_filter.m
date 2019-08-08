@@ -5,7 +5,7 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
   %
   % .. code-block::
   %
-  %   >> design_PFB_FIR_filter(256, {'nu': 4, 'de': 3}, 256*10 + 1, 0);
+  %   >> design_PFB_FIR_filter(256, {'nu': 4, 'de': 3}, 256*10, 0);
   %
   % Args:
   %   n_chan (numeric): number of PFB output channels
@@ -48,10 +48,12 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
   % Design filter
   Hf = fdesign.lowpass('N,Fp,Fst',n_taps,Fp,Fs);
   H_Obj_0 = design(Hf,'firls','Wstop',15,'systemobject',true);
+  % H_Obj_0 = design(Hf,'equiripple','Wstop',60,'StopbandShape','linear','StopbandDecay',30);
+
   h = H_Obj_0.Numerator;
 
   % Save impulse response h, and other parameters
-  fir_filter_path = sprintf('./../config/Prototype_FIR.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
+  fir_filter_path = sprintf('./../config/Prototype_FIR.new.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
   save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
 
   % Save a sampled version of the Transfer Function for later equalisation

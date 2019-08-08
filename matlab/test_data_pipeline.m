@@ -67,6 +67,7 @@ function res = test_data_pipeline(...
 
   % load in FIR filter coefficients
   fir_filter_coeff = read_fir_filter_coeff(config_struct.fir_filter_path);
+  ntaps = length(fir_filter_coeff);
 
   % load the default header into a struct, and then a containers.Map object.
   json_str = fileread(config_struct.header_file_path);
@@ -82,8 +83,8 @@ function res = test_data_pipeline(...
     input_data(i_pol, 1, :) = impulse_data(:);
   end
   % input_data = input_data(:, :, 43:end);
-  fprintf('test_data_pipeline: size(input_data)=');
-  size(input_data)
+  % fprintf('test_data_pipeline: size(input_data)=');
+  % size(input_data)
   % input_data_flattened = reshape(input_data, 1, numel(input_data));
   % k = find(input_data_flattened)
 
@@ -94,17 +95,18 @@ function res = test_data_pipeline(...
   input_header = default_header;
 
   % save data
-  fprintf('test_data_pipeline: output_dir=%s\n', output_dir);
+  % fprintf('test_data_pipeline: output_dir=%s\n', output_dir);
   input_data_file_name = sprintf('%s.dump', output_file_name);
-  fprintf('test_data_pipeline: input_data_file_name=%s\n', input_data_file_name);
+  % fprintf('test_data_pipeline: input_data_file_name=%s\n', input_data_file_name);
 
   input_data_file_path = fullfile(output_dir, input_data_file_name);
   save_file(input_data_file_path, @write_dada_file, {input_data, input_header});
 
-  fprintf('test_data_pipeline: analysis_handler_args=%s\n', analysis_handler_args{:});
+  % fprintf('test_data_pipeline: analysis_handler_args=%s\n', analysis_handler_args{:});
   % channelize data
 
   channelized = analysis_handler(input_data, fir_filter_coeff, n_chan, os_factor, analysis_handler_args{:});
+
   channelized_header = default_header;
   input_tsamp = str2num(channelized_header('TSAMP'));
   channelized_header('TSAMP') = num2str(n_chan*normalize(os_factor, input_tsamp));
@@ -124,8 +126,11 @@ function res = test_data_pipeline(...
   synthesized_header = default_header;
 
   % calculate the offset between input and inverted data due to the FIR filter
-  fir_offset = round((length(fir_filter_coeff) - 1) / 2);
+  % fir_offset = round((length(fir_filter_coeff) - 1) / 2);
+  %
+  % synthesized = synthesized(1, 1, fir_offset:end);
 
+  fir_offset = 0;
   % save synthesized data
   synthesized_data_file_name = sprintf('%s.%s', func2str(synthesis_handler), input_data_file_name);
   synthesized_data_file_path = fullfile(output_dir, synthesized_data_file_name);

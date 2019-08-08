@@ -30,10 +30,11 @@ function chopped = chop(test_data_pipeline_res, additional_offset_)
   % additional_offset
   % size(sim_squeezed)
   % output_shift
+  % inv_squeezed = inv_squeezed(output_shift+1:end);
   sim_squeezed = sim_squeezed(output_shift+1:end);
 
-  min_ndat = ndat_inv;
-  % min_ndat = min([length(sim_squeezed), ndat_inv]);
+  % min_ndat = ndat_inv;
+  min_ndat = min([length(sim_squeezed), length(inv_squeezed)]);
 
   input = sim_squeezed(1:min_ndat);
   inv = inv_squeezed(1:min_ndat);
