@@ -125,6 +125,7 @@ class DspsrRunner(BaseRunner):
     @_coro
     def _call(self,
               file_path: str,
+              dspsr_bin: str = None,
               dm: float = None,
               period: float = None,
               **kwargs):
@@ -145,6 +146,8 @@ class DspsrRunner(BaseRunner):
             dm = config["dm"]
         if period is None:
             period = config["period"]
+        if dspsr_bin is None:
+            dspsr_bin = "dspsr"
 
         output_ar = os.path.join(self.output_dir, self.output_file_name_base)
         output_log = os.path.join(
@@ -152,7 +155,7 @@ class DspsrRunner(BaseRunner):
 
         module_logger.debug(f"run_dspsr: output archive: {output_ar}")
         module_logger.debug(f"run_dspsr: output log: {output_log}")
-        dspsr_cmd_str = (f"dspsr -c {period} -D {dm} {file_path} "
+        dspsr_cmd_str = (f"{dspsr_bin} -c {period} -D {dm} {file_path} "
                          f"-O {output_ar} {self.extra_args}")
 
         module_logger.info(f"run_dspsr: dspsr command: {dspsr_cmd_str}")

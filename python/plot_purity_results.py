@@ -26,8 +26,8 @@ def plot_purity_results(results_path):
 
     purity_measures = [
         "max_spurious_power",
-        "total_spurious_power",
-        "mean_spurious_power"
+        "total_spurious_power"
+        # "mean_spurious_power"
     ]
 
     diff_measures = [

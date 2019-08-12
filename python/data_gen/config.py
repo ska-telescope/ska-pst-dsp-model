@@ -38,7 +38,7 @@ def load_config():
                             f"in {config_dir}"))
     with open(test_config_file_path, "r") as f:
         config = json.load(f)
-    return config["test"]
+    return config["low"]
 
 
 def _check_config(config):
