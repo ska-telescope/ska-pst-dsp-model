@@ -8,7 +8,7 @@ import argparse
 
 import numpy as np
 import comparator
-from pfb.rational import Rational
+import pfb.rational
 from tqdm import tqdm
 
 import data_gen
@@ -48,7 +48,7 @@ class TestPurity:
     def __init__(self,
                  n_test: int,
                  dspsr_bin: str,
-                 os_factor: typing.Union[Rational, str],
+                 os_factor: typing.Union[pfb.rational.Rational, str],
                  input_fft_length: int,
                  input_overlap: int,
                  fft_window: str,
@@ -72,7 +72,7 @@ class TestPurity:
         self.deripple = deripple
         self.fft_window = fft_window
 
-        os_factor = Rational.from_str(os_factor)
+        os_factor = pfb.rational.Rational.from_str(os_factor)
         normalize = input_fft_length * channels
         block_size = os_factor.normalize(input_fft_length) * channels
 

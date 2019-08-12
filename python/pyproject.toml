@@ -14,6 +14,7 @@ comparator = {git = "git@github.com:dean-shaff/comparator.git"}
 pfb = {git = "git@github.com:dean-shaff/pfb.git"}
 psr-formats = {git = "git@github.com:dean-shaff/psr-formats.git"}
 partialize = {git = "git@github.com:dean-shaff/partialize.git"}
+dspsr-test = {git = "git@gitlab.com:dean-shaff/dspsr-test.git"}
 tqdm = "^4.32"
 
 [tool.poetry.dev-dependencies]
