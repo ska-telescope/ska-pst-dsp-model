@@ -158,7 +158,7 @@ class DspsrRunner(BaseRunner):
         dspsr_cmd_str = (f"{dspsr_bin} -c {period} -D {dm} {file_path} "
                          f"-O {output_ar} {self.extra_args}")
 
-        module_logger.info(f"run_dspsr: dspsr command: {dspsr_cmd_str}")
+        module_logger.debug(f"run_dspsr: dspsr command: {dspsr_cmd_str}")
 
         try:
             with open(output_log, "w") as log_file:

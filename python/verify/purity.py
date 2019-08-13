@@ -60,7 +60,9 @@ class TestPurity:
                  backend: dict,
                  dump_stage: str,
                  dm: float,
-                 period: float):
+                 period: float,
+                 extra_dspsr_args: str = "",
+                 save_output: bool = False):
 
         make_plots = False
         if n_test == 1:
@@ -71,8 +73,10 @@ class TestPurity:
         self.input_overlap = input_overlap
         self.deripple = deripple
         self.fft_window = fft_window
+        self.save_output = save_output
 
         os_factor = pfb.rational.Rational.from_str(os_factor)
+        # normalize = os_factor.normalize(input_fft_length * channels)
         normalize = input_fft_length * channels
         block_size = os_factor.normalize(input_fft_length) * channels
 
@@ -132,9 +136,11 @@ class TestPurity:
                 extra_args=(f"-IF 1:{self.input_fft_length}:"
                             f"{self.input_overlap} "
                             f"{deripple_str} "
-                            f"-fft-window {self.fft_window} -V")
+                            f"-fft-window {self.fft_window} -V "
+                            f"{extra_dspsr_args}")
             )
-
+        self.dspsr_bin = dspsr_bin
+        self.extra_dspsr_args = extra_dspsr_args
         comp = comparator.MultiDomainComparator(domains={
             "time": comparator.SingleDomainComparator("time"),
             "freq": comparator.FrequencyDomainComparator("freq")
@@ -195,7 +201,8 @@ class TestPurity:
 
             self.files.extend(dump_files)
             self.files.append(inverted_dump)
-            self.dispose()
+            if not self.save_output:
+                self.dispose()
             self.report[test_method_name] = method_report
 
     def temporal_purity(self):
@@ -269,7 +276,8 @@ class TestPurity:
         input_dat = (input_dump_file.data[self.total_sample_shift:, 0, :]
                      .flatten())
         inverted_dat = inverted_dump_file.data.flatten()
-        # inverted_dat /= self.normalize
+        if self.dspsr_bin is not None:
+            inverted_dat /= self.normalize
 
         return input_dat, inverted_dat
 
@@ -280,6 +288,12 @@ class TestPurity:
             f"fft_window-{self.fft_window}",
             f"input_overlap-{self.input_overlap}"
         ])
+        if self.extra_dspsr_args is not None:
+            extra_args_str = "-".join([
+                arg.strip("-") for arg in self.extra_dspsr_args.split()
+            ])
+            param_str += f".{extra_args_str}"
+
         param_path = os.path.join(
             products_dir, f"report.purity.{param_str}.json")
         with open(param_path, "w") as f:
@@ -301,6 +315,15 @@ def create_parser():
                         dest="n_test", action="store",
                         default=100, type=int,
                         help="Specify the number of test vectors to use")
+
+    parser.add_argument("--save-output",
+                        dest="save_output", action="store_true",
+                        help="Indicate whether to save intermediate products")
+
+    parser.add_argument("--extra-args",
+                        dest="extra_args", action="store",
+                        default="", type=str,
+                        help="Specify any additional arguments to pass to dspsr")
 
     parser.add_argument("-v", "--verbose",
                         dest="verbose", action="store_true")
@@ -340,10 +363,13 @@ if __name__ == "__main__":
         dump_stage=config["dump_stage"],
         dm=config["dm"],
         period=config["period"],
-        n_test=parsed.n_test
+        n_test=parsed.n_test,
+        extra_dspsr_args=parsed.extra_args,
+        save_output=parsed.save_output
     )
 
     if parsed.do_time:
         purity_test.temporal_purity()
     if parsed.do_freq:
         purity_test.spectral_purity()
+    purity_test.finish()

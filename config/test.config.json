@@ -40,7 +40,7 @@
     "n_pol": 2,
     "dm": 2.64476,
     "period": 0.00575745,
-    "dump_stage": "Detection",
+    "dump_stage": "Convolution",
     "deripple": true,
     "fft_window": "tukey",
     "dspsr_bin": "/home/dshaff/ska/pst/install/dspsr/bin/dspsr"
