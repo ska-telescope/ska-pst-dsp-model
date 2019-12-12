@@ -70,6 +70,7 @@ Testing spectral and temporal purity (not currently fully implemented):
 Testing whether PFB inversion works with dedispersion turned on:
 
 .. code-block::
+  
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_dedispersion
 
