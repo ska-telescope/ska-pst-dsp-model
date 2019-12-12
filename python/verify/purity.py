@@ -288,7 +288,7 @@ class TestPurity:
             f"fft_window-{self.fft_window}",
             f"input_overlap-{self.input_overlap}"
         ])
-        if self.extra_dspsr_args is not None:
+        if self.extra_dspsr_args != "":
             extra_args_str = "-".join([
                 arg.strip("-") for arg in self.extra_dspsr_args.split()
             ])
@@ -320,10 +320,11 @@ def create_parser():
                         dest="save_output", action="store_true",
                         help="Indicate whether to save intermediate products")
 
-    parser.add_argument("--extra-args",
-                        dest="extra_args", action="store",
-                        default="", type=str,
-                        help="Specify any additional arguments to pass to dspsr")
+    parser.add_argument(
+        "--extra-args",
+        dest="extra_args", action="store",
+        default="", type=str,
+        help="Specify any additional arguments to pass to dspsr")
 
     parser.add_argument("-v", "--verbose",
                         dest="verbose", action="store_true")
