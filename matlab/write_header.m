@@ -9,7 +9,12 @@ function write_header(file_id, hdr_map)
     % fprintf('get_hdr_str\n');
     hdr_str = "";
     hdr_size = str2num(header('HDR_SIZE'));
+    hdr_str = strcat(hdr_str, sprintf('HDR_SIZE %s', header('HDR_SIZE')));
+    hdr_str = hdr_str + newline;
     for k=keys(header)
+      if strcmp(k, 'HDR_SIZE')
+        continue;
+      end
       key_val = sprintf('%s %s', k{1}, header(k{1}));
       hdr_str = strcat(hdr_str, key_val);
       hdr_str = hdr_str + newline;

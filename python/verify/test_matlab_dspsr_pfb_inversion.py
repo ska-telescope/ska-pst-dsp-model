@@ -32,7 +32,7 @@ class TestMatlabDspsrPfbInversion:
     as implemented in the PST Matlab model and dspsr do the same thing,
     within the limits of 32-bit float point accuracy.
     """
-    thresh = 1e-7
+    thresh = 1e-6
     output_dir = data_dir
 
     simulated_pulsar_file_path = os.path.join(
@@ -149,7 +149,7 @@ class TestMatlabDspsrPfbInversion:
         # isclose returns an array of booleans;
         # the imaginary component is always zero.
         comp.operators["isclose"] = lambda a, b: np.isclose(
-            a, b, atol=self.thresh)
+            a, b, atol=self.thresh, rtol=self.thresh)
 
         comp.products["sum"] = lambda a: np.sum(a)
         comp.products["mean"] = lambda a: np.mean(a)
@@ -317,6 +317,7 @@ if __name__ == "__main__":
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     logging.getLogger("partialize").setLevel(logging.ERROR)
     logging.getLogger("pfb").setLevel(logging.ERROR)
+    logging.getLogger("comparator").setLevel(logging.ERROR)
     logging.getLogger("psr_formats").setLevel(logging.ERROR)
 
     config = load_config(parsed.sub_config_name)

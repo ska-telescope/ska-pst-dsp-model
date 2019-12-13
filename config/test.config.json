@@ -1,7 +1,7 @@
 {
   "test": {
-    "fir_filter_coeff_file_path": "Prototype_FIR.2_stage.8-7.512.14336.mat",
-    "fir_filter_taps": 14337,
+    "fir_filter_coeff_file_path++": "Prototype_FIR.2_stage.8-7.512.14336.mat",
+    "fir_filter_taps++": 14337,
     "fir_filter_coeff_file_path": "Prototype_FIR.8-7.1024.10240.mat",
     "fir_filter_taps": 10241,
     "header_file_path": "default_header.json",
@@ -12,13 +12,13 @@
     "blocks": 3,
     "backend": {
       "test_vectors": "python",
-      "channelize": "python",
+      "channelize": "matlab",
       "synthesize": "matlab"
     },
     "n_pol": 2,
     "dm": 2.64476,
     "period": 0.00575745,
-    "dump_stage": "Detection",
+    "dump_stage": "Convolution",
     "deripple": true,
     "fft_window": "tukey",
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"

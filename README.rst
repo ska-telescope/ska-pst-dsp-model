@@ -40,13 +40,14 @@ In the same way that the Python code in this repo implements a harness to test t
 Simulated Pulsar Generator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+
 Polyphase Filterbank Filter Generator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Polyphase Filterbank Channelizer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Two separate channelizers exist.
 
 Polyphase Filterbank Inversion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,8 +60,6 @@ The goal of the Python code in this repo is to implement a test harness to test 
 
 Testing Python and Matlab "backends"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Not working at the moment.
 
 .. code-block::
 
