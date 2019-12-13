@@ -48,7 +48,7 @@ def test_backend_factory():
     return TestBackends
 
 
-# @unittest.skip("")
+@unittest.skip("")
 class TestSynthesizerBackends(test_backend_factory()):
 
     @classmethod
@@ -132,7 +132,7 @@ class TestSynthesizerBackends(test_backend_factory()):
             self.assertTrue(isclose_mean == 1.0)
 
 
-@unittest.skip("")
+# @unittest.skip("")
 class TestChannelizerBackends(test_backend_factory()):
     """
     Test to ensure that backends are producing the same output.
@@ -144,14 +144,18 @@ class TestChannelizerBackends(test_backend_factory()):
         input_file_paths = []
 
         input_file_path = generate_test_vector(
-            "time", cls.n_samples,
-            0.01, 1, backend="python").file_path
+            [0.01], [1],
+            n_bins=cls.n_samples,
+            domain_name="time",
+            backend="python").file_path
 
         input_file_paths.append(input_file_path)
 
         input_file_path = generate_test_vector(
-            "freq", cls.n_samples,
-            0.001, np.pi/4, 0.1, backend="python").file_path
+            [0.001], [np.pi/4], 0.1,
+            n_bins=cls.n_samples,
+            domain_name="freq",
+            backend="python").file_path
 
         input_file_paths.append(input_file_path)
 
@@ -184,4 +188,5 @@ class TestChannelizerBackends(test_backend_factory()):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("partialize").setLevel(logging.ERROR)
     unittest.main()

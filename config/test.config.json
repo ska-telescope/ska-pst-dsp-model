@@ -1,19 +1,19 @@
 {
   "test": {
-    "fir_filter_coeff_file_path__": "Prototype_FIR.2_stage.8-7.512.14336.mat",
-    "fir_filter_taps__": 14337,
-    "fir_filter_coeff_file_path": "Prototype_FIR.2_stage.8-7.512.12544.mat",
-    "fir_filter_taps": 12545,
+    "fir_filter_coeff_file_path": "Prototype_FIR.2_stage.8-7.512.14336.mat",
+    "fir_filter_taps": 14337,
+    "fir_filter_coeff_file_path": "Prototype_FIR.8-7.1024.10240.mat",
+    "fir_filter_taps": 10241,
     "header_file_path": "default_header.json",
     "os_factor": "8/7",
-    "channels": 512,
+    "channels": 1024,
     "input_fft_length": 256,
     "input_overlap": 64,
     "blocks": 3,
     "backend": {
       "test_vectors": "python",
       "channelize": "python",
-      "synthesize": "python"
+      "synthesize": "matlab"
     },
     "n_pol": 2,
     "dm": 2.64476,
@@ -21,7 +21,7 @@
     "dump_stage": "Detection",
     "deripple": true,
     "fft_window": "tukey",
-    "dspsr_bin": "dspsr"
+    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "low": {
     "fir_filter_coeff_file_path": "PST_2561_LowFilterCoefficients.mat",
@@ -43,7 +43,7 @@
     "dump_stage": "Convolution",
     "deripple": true,
     "fft_window": "tukey",
-    "dspsr_bin": "/home/dshaff/ska/pst/install/dspsr/bin/dspsr"
+    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "mid": {
     "fir_filter_coeff_file_path_": "Prototype_FIR.2_stage.8-7.4096.100352.mat",
@@ -69,6 +69,6 @@
     "dump_stage": "Detection",
     "deripple": true,
     "fft_window": "tukey",
-    "dspsr_bin": "dspsr"
+    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   }
 }

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "PST_Matlab_dspsr_PFB_inversion_comparison"
+name = "PST_PFB_inversion_verification"
 version = "0.6.1"
 description = ""
 authors = ["Dean Shaff <dshaff@swin.edu.au>"]
@@ -10,11 +10,11 @@ python = "^3.6"
 matplotlib = "^3.0"
 numpy = "^1.16"
 scipy = "^1.2"
-comparator = {git = "git@github.com:dean-shaff/comparator.git"}
-pfb = {git = "git@github.com:dean-shaff/pfb.git"}
-psr-formats = {git = "git@github.com:dean-shaff/psr-formats.git"}
-partialize = {git = "git@github.com:dean-shaff/partialize.git"}
-dspsr-test = {git = "git@gitlab.com:dean-shaff/dspsr-test.git"}
+comparator = {git = "https://github.com/dean-shaff/comparator.git"}
+pfb = {git = "https://github.com/dean-shaff/pfb.git"}
+psr-formats = {git = "https://gitlab.com/dean-shaff/psr-formats.git"}
+partialize = {git = "https://github.com/dean-shaff/partialize.git"}
+dspsr-test = {git = "https://gitlab.com/ska-telescope/dspsr-test"}
 tqdm = "^4.32"
 
 [tool.poetry.dev-dependencies]

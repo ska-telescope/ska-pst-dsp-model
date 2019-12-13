@@ -30,24 +30,51 @@ Matlab code.
 Usage
 -----
 
-The goal of the Python code in this repo is to implement a test harness to
-test different PFB inversion implementations against each other, and to the
-test the temporal and spectral purity of the PFB inversion algorithm.
+Matlab
+------
 
-Testing Python and Matlab "backends" against each other:
+This repo contains Matlab code derived from the PST "Golden" signal chain model. In particular, it contains scripts for generating simulated pulsar data, channelizing data via oversampled PFB, and performing simple FFT based polyphase inversion.
+
+In the same way that the Python code in this repo implements a harness to test the purity of the DSPSR PFB inversion implementation, there is a Matlab script ``current_performance.m`` that implements a pipeline for determining the temporal and spectral purity of the "Golden" PST PFB inversion algorithm.
+
+Simulated Pulsar Generator
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Polyphase Filterbank Filter Generator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Polyphase Filterbank Channelizer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Two separate channelizers exist.
+
+Polyphase Filterbank Inversion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Python
+------
+
+The goal of the Python code in this repo is to implement a test harness to test different PFB inversion implementations against each other, and to the test the temporal and spectral purity of the PFB inversion algorithm.
+
+
+Testing Python and Matlab "backends"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not working at the moment.
 
 .. code-block::
 
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
-  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_backends
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_backends
 
 
-Testing dspsr against some PFB inversion backend:
+Testing dspsr and Matlab PFB Inversion implementations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
 
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
-  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_matlab_dspsr_pfb_inversion
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_matlab_dspsr_pfb_inversion
 
 
 If these tests pass, the program will exit successfully. Moreover, it means
@@ -55,24 +82,63 @@ that the implementations being tested produce the same result to one part
 in 1e-7.
 
 We can configure these tests with the `config/test.config.json` file. For example,
-if we want to turn derippling off in our tests, we change the `"deripple"`
-key from `true` to `false`. See [this](#validation-configuration) for more
-information on the meaning of all the fields in the `test.config.json` file.
+if we want to turn derippling off in our tests, we change the ``"deripple"``
+key from ``true`` to ``false``. See [here](#validation-configuration) for more
+information on the meaning of all the fields in the ``test.config.json`` file.
 
-Testing spectral and temporal purity (not currently fully implemented):
+Testing spectral and temporal purity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
 
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
-  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_purity
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_purity
 
+This code uses the ``"test"`` configuration from ``config/test.config.json`` by default. We can tell the script to do only temporal or spectral purity tests with the ``-t`` and ``-f`` flags respectively.
 
-Testing whether PFB inversion works with dedispersion turned on:
+Full command line arguments:
 
 .. code-block::
-  
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_purity -h
+
+  usage: purity.py [-h] [-t] [-f] [-n N_TEST] [-c SUB_CONFIG_NAME]
+                   [--save-output] [--extra-args EXTRA_ARGS] [-v]
+
+  DSPSR PFB inversion purity
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -t, --do-time
+    -f, --do-freq
+    -n N_TEST, --n-test N_TEST
+                          Specify the number of test vectors to use
+    -c SUB_CONFIG_NAME, --config SUB_CONFIG_NAME
+                          Specify which sub configuration to use
+    --save-output         Indicate whether to save intermediate products
+    --extra-args EXTRA_ARGS
+                          Specify any additional arguments to pass to dspsr
+    -v, --verbose
+
+
+The ``test_purity.py`` script creates a JSON output file in the ``products`` subdirectory. The name of this file depends on the configuration parameters specified in ``test.config.json``. We can plot the results:
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m plot_purity_results.py -i ./../products/report.\*.json
+
+
+Testing whether PFB inversion works with dedispersion turned on
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block::
+
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_dedispersion
+
+
 
 
 .. <!--

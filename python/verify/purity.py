@@ -4,7 +4,6 @@ import functools
 import json
 import glob
 import typing
-import argparse
 
 import numpy as np
 import comparator
@@ -13,9 +12,11 @@ from tqdm import tqdm
 
 import data_gen
 import data_gen.util
-from data_gen.config import matplotlib_config
+from data_gen.config import matplotlib_config, load_config
 
 from . import util as test_util
+from .common import create_parser
+
 
 matplotlib_config()
 
@@ -300,41 +301,11 @@ class TestPurity:
             json.dump(self.report, f, cls=comparator.NumpyEncoder)
 
 
-def create_parser():
-
-    parser = argparse.ArgumentParser(
-        description="DSPSR PFB inversion purity")
-
-    parser.add_argument("-t", "--do-time",
-                        dest="do_time", action="store_true")
-
-    parser.add_argument("-f", "--do-freq",
-                        dest="do_freq", action="store_true")
-
-    parser.add_argument("-n", "--n-test",
-                        dest="n_test", action="store",
-                        default=100, type=int,
-                        help="Specify the number of test vectors to use")
-
-    parser.add_argument("--save-output",
-                        dest="save_output", action="store_true",
-                        help="Indicate whether to save intermediate products")
-
-    parser.add_argument(
-        "--extra-args",
-        dest="extra_args", action="store",
-        default="", type=str,
-        help="Specify any additional arguments to pass to dspsr")
-
-    parser.add_argument("-v", "--verbose",
-                        dest="verbose", action="store_true")
-
-    return parser
-
-
 if __name__ == "__main__":
 
-    parsed = create_parser().parse_args()
+    parsed = create_parser(
+        description="DSPSR PFB inversion purity"
+    ).parse_args()
 
     level = logging.INFO
     if parsed.verbose:
@@ -347,7 +318,7 @@ if __name__ == "__main__":
     logging.getLogger("pfb").setLevel(logging.ERROR)
     logging.getLogger("psr_formats").setLevel(logging.ERROR)
 
-    config = data_gen.config
+    config = load_config(parsed.sub_config_name)
 
     purity_test = TestPurity(
         dspsr_bin=config["dspsr_bin"],

@@ -94,15 +94,18 @@ def generate_test_vector(*args,
 
     .. code-block:: python
 
-        generator = generate_test_vector("matlab", domain_name="freq")
-        dada_file = generator(1000, [10], [np.pi/4], 0.1,
+        generator = generate_test_vector(backend="matlab", domain_name="freq")
+        dada_file = generator([10], [np.pi/4], 0.1,
+                              n_bins=1000,
                               n_pol=2,
                               output_dir="./",
                               output_file_name="complex_sinusoid.dump",
                               dtype=np.complex64)
 
-        generator = generate_test_vector("python", domain_name="time")
-        dada_file = generator(1000, [10], [1], n_pol=2,
+        generator = generate_test_vector(backend="python", domain_name="time")
+        dada_file = generator([10], [1],
+                              n_bins=1000,
+                              n_pol=2,
                               output_dir="./",
                               output_file_name="complex_sinusoid.dump",
                               dtype=np.complex64)
@@ -129,8 +132,14 @@ def generate_test_vector(*args,
                             "{n_pol}.{dtype}.{backend}")
 
     if len(args) > 0:
-        args_str = "-".join([f"{f:.3f}" for f in args])
-        args_str_comma_sep = ",".join([f"{f:.3f}" for f in args])
+        args_list = []
+        for arg in args:
+            if hasattr(arg, "__iter__"):
+                arg = arg[0]
+            args_list.append(f"{arg:.3f}")
+
+        args_str = "-".join(args_list)
+        args_str_comma_sep = ",".join(args_list)
     else:
         args_str = ""
         args_str_comma_sep = ""
@@ -144,7 +153,7 @@ def generate_test_vector(*args,
         dtype=matlab_dtype_str,
         backend=backend
     )
-    args_str = ",".join([f"{f:.3f}" for f in args])
+    args_str = args_str_comma_sep
 
     if backend == "matlab":
         matlab_domain_name_map = {

@@ -1,7 +1,9 @@
 MATLAB_CC=mcc
 BUILD_DIR=build/
 
-.PHONY: clean
+.PHONY: clean all
+
+all: channelize synthesize
 
 channelize: matlab/channelize.m
 	$(MATLAB_CC) -m $^ -d $(BUILD_DIR)

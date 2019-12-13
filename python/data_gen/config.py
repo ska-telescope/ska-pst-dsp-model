@@ -32,13 +32,13 @@ test_config_file_name = "test.config.json"
 test_config_file_path = os.path.join(config_dir, test_config_file_name)
 
 
-def load_config():
+def load_config(sub_config_name: str = "test"):
     if not os.path.exists(test_config_file_path):
         raise RuntimeError((f"Cannot find {test_config_file_name} "
                             f"in {config_dir}"))
     with open(test_config_file_path, "r") as f:
         config = json.load(f)
-    return config["low"]
+    return config[sub_config_name]
 
 
 def _check_config(config):
