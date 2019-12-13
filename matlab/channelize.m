@@ -83,6 +83,7 @@ function channelize(varargin)
   add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
 
   channelized = polyphase_analysis(input_data, fir_filter_coeff, channels, os_factor, verbose);
+  % channelized = polyphase_analysis_padded(input_data, fir_filter_coeff, channels, os_factor, verbose);
 
   if verbose
     fprintf('channelize: channelization complete\n')
