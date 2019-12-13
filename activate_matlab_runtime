@@ -1,1 +1,3 @@
-/apps/skylake/software/core/matlab/2017b/runtime/glnxa64/
+#!/usr/bin/env bash
+matlab_root="/apps/skylake/software/core/matlab/2017b"
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${matlab_root}/runtime/glnxa64/:${matlab_root}/bin/glnxa64/:${matlab_root}/sys/os/glnxa64:${matlab_root}/sys/opengl/lib/glnxa64"

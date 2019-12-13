@@ -8,7 +8,7 @@
     "os_factor": "8/7",
     "channels": 1024,
     "input_fft_length": 256,
-    "input_overlap": 64,
+    "input_overlap": 0,
     "blocks": 3,
     "backend": {
       "test_vectors": "python",

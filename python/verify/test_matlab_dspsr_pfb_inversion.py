@@ -8,6 +8,7 @@ import numpy as np
 import pfb.rational
 import psr_formats
 import comparator
+from tqdm import tqdm
 
 import data_gen
 import data_gen.util
@@ -156,10 +157,9 @@ class TestMatlabDspsrPfbInversion:
         self.comp = comp
         self.report = {}
 
-
     def test_time_domain_impulse(self):
         sub_report = []
-        for offset in self.time_domain_args["offset"]:
+        for offset in tqdm(self.time_domain_args["offset"], desc="test_time_domain_impulse"):
             dada_files = self.pipeline(
                 [offset], [self.time_domain_args["width"]],
                 domain_name="time")
@@ -201,7 +201,7 @@ class TestMatlabDspsrPfbInversion:
         sub_report = []
         args = ([self.freq_domain_args["phase"]],
                 self.freq_domain_args["bin_offset"])
-        for freq in self.freq_domain_args["frequency"]:
+        for freq in tqdm(self.freq_domain_args["frequency"], desc="test_complex_sinusoid"):
             dada_files = self.pipeline([freq], *args, domain_name="freq")
             dspsr_dump = self.dspsr_dumper(
                 dada_files[1].file_path)[0]
