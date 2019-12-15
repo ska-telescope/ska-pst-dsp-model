@@ -1,8 +1,12 @@
 import logging
 import os
 import typing
+import sys
+
+sys.path.insert(0, "/fred/oz002/users/dshaff/software/sources/pfb")
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pfb.rational
 import comparator
 
@@ -23,7 +27,7 @@ module_logger = logging.getLogger(__name__)
 
 class TestBackends:
 
-    thresh = 1e-7
+    thresh = 1e-4
     backends = ["python", "matlab"]
 
     def __init__(self,
@@ -31,7 +35,8 @@ class TestBackends:
                  input_fft_length: int,
                  channels: int,
                  fir_filter_coeff_file_path: str,
-                 blocks: int):
+                 blocks: int,
+                 use_padded: bool = False):
 
         comp = comparator.SingleDomainComparator(name="time")
         comp.operators["this"] = lambda a: a
@@ -50,27 +55,30 @@ class TestBackends:
         self.fir_filter_path = os.path.join(
             config_dir, fir_filter_coeff_file_path)
 
+        self.use_padded = use_padded
+
     def test_channelizer_backends(self):
 
         input_file_paths = []
 
-        input_file_path = generate_test_vector(
-            [0.01], [1],
-            n_bins=self.n_samples,
-            domain_name="time",
-            backend="python").file_path
+        # input_file_path = generate_test_vector(
+        #     [0.01], [1],
+        #     n_bins=self.n_samples,
+        #     domain_name="time",
+        #     backend="python").file_path
+        #
+        # input_file_paths.append(input_file_path)
 
-        input_file_paths.append(input_file_path)
-
         input_file_path = generate_test_vector(
-            [0.001], [np.pi/4], 0.1,
+            [0.001], [np.pi/4], 0.0,
             n_bins=self.n_samples,
             domain_name="freq",
             backend="python").file_path
 
         input_file_paths.append(input_file_path)
 
-        channelizers = [channelize(backend=b) for b in self.backends]
+        channelizers = [channelize(backend=b, use_padded=self.use_padded)
+                        for b in self.backends]
 
         for idx, input_file_path in enumerate(input_file_paths):
 
@@ -99,7 +107,7 @@ class TestBackends:
             for op in ["this", "diff", "isclose"]:
                 figs[op].savefig(
                     os.path.join(products_dir, f"test_backends.channelize.{op}.{idx}.png"))
-
+            # plt.show()
             module_logger.debug(f"test_channelizer_backends: {res_prod['isclose']:.6f}")
             # module_logger.debug(f"{res_prod['diff']:.6e}")
 
@@ -282,9 +290,13 @@ class TestBackends:
 
 if __name__ == "__main__":
 
-    parsed = create_parser(
+    parser = create_parser(
         description="Test Channelizer/Synthesizer backends"
-    ).parse_args()
+    )
+
+    parser.add_argument("--use-padded", action="store_true", dest="use_padded")
+
+    parsed = parser.parse_args()
 
     level = logging.INFO
     if parsed.verbose:
@@ -305,6 +317,7 @@ if __name__ == "__main__":
         channels=config["channels"],
         fir_filter_coeff_file_path=config["fir_filter_coeff_file_path"],
         blocks=config["blocks"],
+        use_padded=parsed.use_padded
     )
     test.test_channelizer_backends()
     # if parsed.do_time:

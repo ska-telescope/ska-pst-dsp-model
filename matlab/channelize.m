@@ -36,6 +36,7 @@ function channelize(varargin)
   addRequired(p,'output_file_name', @ischar);
   addOptional(p,'output_dir', './', @ischar);
   addOptional(p,'verbose', '0', @ischar);
+  addOptional(p,'use_padded', '0', @ischar);
 
   parse(p, varargin{:});
 
@@ -46,6 +47,7 @@ function channelize(varargin)
   output_dir = p.Results.output_dir;
   output_file_name = p.Results.output_file_name;
   verbose = str2num(p.Results.verbose);
+  use_padded = str2num(p.Results.use_padded);
 
   % get the oversampling factor, and load into os_factor struct
   os_factor_split = split(os_factor_str, '/');
@@ -82,8 +84,17 @@ function channelize(varargin)
   channelized_header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
   add_fir_filter_to_header(channelized_header, fir_filter_coeff, os_factor);
 
-  channelized = polyphase_analysis(input_data, fir_filter_coeff, channels, os_factor, verbose);
-  % channelized = polyphase_analysis_padded(input_data, fir_filter_coeff, channels, os_factor, verbose);
+  if use_padded
+    if verbose
+      fprintf('channelize: using polyphase_analysis_padded\n')
+    end
+    channelized = polyphase_analysis_padded(input_data, fir_filter_coeff, channels, os_factor, verbose);
+  else
+    if verbose
+      fprintf('channelize: using polyphase_analysis\n')
+    end
+    channelized = polyphase_analysis(input_data, fir_filter_coeff, channels, os_factor, verbose);
+  end
 
   if verbose
     fprintf('channelize: channelization complete\n')

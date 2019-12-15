@@ -111,7 +111,9 @@ function out=polyphase_analysis_padded(...
     %Iterative Filtering
     BRI = 0;
     for idx = 1:nblocks
-
+        % if verbose
+        %   fprintf('polyphase_analysis_padded: %d/%d blocks\n', idx, nblocks);
+        % end
         %% Polyphase Filtering
         yPFB = sum(filt_padded_2d.*in_mask_2d, 2);
         %Updating the Input Vector

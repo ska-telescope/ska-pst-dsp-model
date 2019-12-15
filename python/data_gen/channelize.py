@@ -23,7 +23,8 @@ def channelize(input_data_file_path: str,
                fir_filter_path: str = None,
                output_file_name: str = None,
                output_dir: str = "./",
-               backend: str = "matlab"):
+               backend: str = "matlab",
+               use_padded: bool = False):
     """
     channelize data contained in some single channel input data file.
     Use either matlab or Python backends.
@@ -61,13 +62,13 @@ def channelize(input_data_file_path: str,
         util.create_output_file_names(output_file_name, output_base)
 
     if backend == "matlab":
-
+        use_padded_int = 1 if use_padded else 0
         cmd_str = (f"{os.path.join(build_dir, matlab_cmd_str)} "
                    f"{input_data_file_path} "
                    f"{channels} {os_factor_str} {fir_filter_path} "
-                   f"{output_file_name} {output_dir} 1")
+                   f"{output_file_name} {output_dir} 1 {use_padded_int}")
 
-        module_logger.debug(f"_synthesize: cmd_str={cmd_str}")
+        module_logger.debug(f"channelize: cmd_str={cmd_str}")
 
         util.run_cmd(cmd_str, log_file_path=os.path.join(
             output_dir, log_file_name))
@@ -78,6 +79,7 @@ def channelize(input_data_file_path: str,
     elif backend == "python":
         input_data_file = psr_formats.DADAFile(input_data_file_path)
         channelizer = pfb.format_handler.PSRFormatChannelizer(
+            use_ifft=True,
             os_factor=os_factor_str,
             nchan=channels,
             fir_filter_coeff=fir_filter_path

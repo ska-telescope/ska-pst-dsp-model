@@ -33,24 +33,34 @@ Usage
 Matlab
 ------
 
-This repo contains Matlab code derived from the PST "Golden" signal chain model. In particular, it contains scripts for generating simulated pulsar data, channelizing data via oversampled PFB, and performing simple FFT based polyphase inversion.
+This repo contains Matlab code derived from the PST "Golden" signal chain model. In particular, it contains scripts for channelizing data via oversampled PFB, and performing FFT based polyphase inversion. The FFT based polyphase inversion implementation in this repo is the "Golden" implementation.
 
 In the same way that the Python code in this repo implements a harness to test the purity of the DSPSR PFB inversion implementation, there is a Matlab script ``current_performance.m`` that implements a pipeline for determining the temporal and spectral purity of the "Golden" PST PFB inversion algorithm.
-
-Simulated Pulsar Generator
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 
 Polyphase Filterbank Filter Generator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Two approaches to generating Polyphase Filterbank (PFB) filter coefficients have been developed for the SKA. *These two approaches require two different PFB channelizers*. Two separate Matlab scripts encapsulate these two approaches:
+
+- ``design_PFB_FIR_filter.m``: Uses a single stage FIR filter design. This is the script used to develop SKA Low channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis_padded.m``
+- ``design_PFB_FIR_filter_two_stage.m``: Uses a two stage FIR filter design. This is adapted from the script used to develop SKA Mid channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis.m``. The two stage design allows for generating large (>1e5) numbers of coefficients.
+
+
 Polyphase Filterbank Channelizer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Matlab code in this repo has two different PFB channelizers.
+
+- ``polyphase_analysis.m``: To be used with SKA Low coefficients, or those created by ``design_PFB_FIR_filter.m``. This is derived from code originally put together by John Bunton. This does not zero pad the input data, meaning that the number of output samples is less than (input samples) / (channels * oversampling ratio).
+- ``polyphase_analysis_padded.m``: To be used with SKA Mid coefficients, or those created by ``design_PFB_FIR_filter_two_stage.m``. This is derived from code orignally put together by Thushara Gunaratne. This zero pads the input data.
 
 
 Polyphase Filterbank Inversion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- polyphase_synthesis.m: This is the Golden FFT based PFB inversion implementation; this is the implementation against which others' correctness is judged.
+
 
 Python
 ------
@@ -60,6 +70,8 @@ The goal of the Python code in this repo is to implement a test harness to test 
 
 Testing Python and Matlab "backends"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``test_backends.py`` script compares the output of the Matlab and Python PFB channelizers.
 
 .. code-block::
 
@@ -75,15 +87,34 @@ Testing dspsr and Matlab PFB Inversion implementations
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
   [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_matlab_dspsr_pfb_inversion
 
+Full command line arguments:
 
-If these tests pass, the program will exit successfully. Moreover, it means
-that the implementations being tested produce the same result to one part
-in 1e-7.
+.. code-block::
 
-We can configure these tests with the `config/test.config.json` file. For example,
-if we want to turn derippling off in our tests, we change the ``"deripple"``
-key from ``true`` to ``false``. See [here](#validation-configuration) for more
-information on the meaning of all the fields in the ``test.config.json`` file.
+  usage: test_matlab_dspsr_pfb_inversion.py [-h] [-t] [-f] [-n N_TEST]
+                                          [-c SUB_CONFIG_NAME] [--save-output]
+                                          [--extra-args EXTRA_ARGS] [-v] [-s]
+
+  Test DSPSR and Matlab PFB Inversion Implementations
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -t, --do-time
+    -f, --do-freq
+    -n N_TEST, --n-test N_TEST
+                          Specify the number of test vectors to use
+    -c SUB_CONFIG_NAME, --config SUB_CONFIG_NAME
+                          Specify which sub configuration to use
+    --save-output         Indicate whether to save intermediate products
+    --extra-args EXTRA_ARGS
+                          Specify any additional arguments to pass to dspsr
+    -v, --verbose
+    -s, --do-simulated-pulsar
+
+
+If these tests pass, the program will exit successfully. Moreover, it means that the implementations being tested produce the same result to one part in 1e-6.
+
+We can configure these tests with the `config/test.config.json` file. For example, if we want to turn derippling off in our tests, we change the ``"deripple"`` key from ``true`` to ``false``. See `Validation Configuration`_ for more information on the meaning of all the fields in the ``test.config.json`` file.
 
 Testing spectral and temporal purity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -139,31 +170,6 @@ Testing whether PFB inversion works with dedispersion turned on
 
 
 
-
-.. <!--
-.. Generating a dual polarization complex sinuosoid:
-..
-.. ```bash
-.. ./build/generate_test_vector complex_sinusoid 1000 0.01,0.5,0.1 single 1 config/default_header.json test_complex_sinusoid.dump ./ 1
-.. ```
-..
-.. Generating a dual polarization time domain impulse of width 50:
-..
-.. ```bash
-.. ./build/generate_test_vector time_domain_impulse 1000 0.01,50 single 2 config/default_header.json test_time_domain_impulse.dump ./ 1
-.. ```
-..
-.. Channelizing some data:
-..
-.. ```bash
-.. ./build/channelize ./data/test_vectors/time/o-0.010_w-1.000/time_domain_impulse.dump 8 8/7 config/OS_Prototype_FIR_8.mat test.channelized.time_domain_impulse.dump ./data/test_vectors/time/o-0.010_w-1.000/ 1
-.. ```
-..
-.. Synthesizing data:
-..
-.. ```bash
-.. ./build/synthesize ./data/test_vectors/time/o-0.010_w-1.000/polyphase_analysis_alt.time_domain_impulse.dump 16384 test_synthesis.dump ./data/test_vectors/time/o-0.010_w-1.000/ 1
-.. ```
 ..
 ..
 .. The following is a list of the files in the repo, and a brief description
