@@ -139,7 +139,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     fig = plot_performance_measures(res{:}, names_temporal);
 
     xlabel('Impulse position');
-    h = suptitle(sprintf(title_template, 'Temporal'));
+    h = subtitle(sprintf(title_template, 'Temporal'));
     h.Interpreter = 'none';
     % set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'temporal'));
