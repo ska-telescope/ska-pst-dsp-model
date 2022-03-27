@@ -8,7 +8,9 @@ function generate_test_vector(varargin)
   %
   % .. code-block::
   %
-  %   ./generate_test_vector complex_sinusoid 1,0.25,0.1 1000 single 1 ./ complex_sinusoid.dump 1
+  %   ./generate_test_vector complex_sinusoid 1000 1,0.25,0.1 single 1 ./ complex_sinusoid.dump 1
+  %
+  %   generate_test_vector('complex_sinusoid', '1000', '0.5,0.25,0.1', 'single', '1', '../config/default_header.json', 'complex_sinusoid.dump', verbose='1')
   %
   %
   % varargin:
@@ -45,27 +47,28 @@ function generate_test_vector(varargin)
   parse(p, varargin{:});
 
   handler_name = p.Results.handler_name;
+  fprintf('generate_test_vector: %s\n', handler_name);
   n_bins = str2num(p.Results.n_bins);
   params = p.Results.params;
   dtype = p.Results.dtype;
   n_pol = str2num(p.Results.n_pol);
+  
   header_template = p.Results.header_template;
   output_dir = p.Results.output_dir;
   output_file_name = p.Results.output_file_name;
   verbose = str2num(p.Results.verbose);
 
-  % if verbose
-  %   fprintf('generate_test_vector: %s\n', handler_name);
-  %   fprintf('generate_test_vector: %d\n', n_bins);
-  %   fprintf('generate_test_vector: %s\n', params);
-  %   fprintf('generate_test_vector: %s\n', dtype);
-  %   fprintf('generate_test_vector: %d\n', n_pol);
-  %   fprintf('generate_test_vector: %s\n', header_template);
-  %   fprintf('generate_test_vector: %s\n', output_dir);
-  %   fprintf('generate_test_vector: %s\n', output_file_name);
-  %   fprintf('generate_test_vector: %d\n', verbose);
-  % end
-
+  if verbose
+     fprintf('generate_test_vector: handler_name=%s\n', handler_name);
+     fprintf('generate_test_vector: n_bins=%d\n', n_bins);
+     fprintf('generate_test_vector: params=%s\n', params);
+     fprintf('generate_test_vector: dtype=%s\n', dtype);
+     fprintf('generate_test_vector: n_pol=%d\n', n_pol);
+     fprintf('generate_test_vector: header_template=%s\n', header_template);
+     fprintf('generate_test_vector: output_dir=%s\n', output_dir);
+     fprintf('generate_test_vector: output_file_name=%s\n', output_file_name);
+     fprintf('generate_test_vector: verbose=%d\n', verbose);
+  end
 
   params_split = strsplit(params, ',');
   params = {};
