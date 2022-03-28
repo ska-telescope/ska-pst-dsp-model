@@ -111,6 +111,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
 
   names_spectral = {'Max Power of Difference of Time Series',...
                     'Total Power of Difference of Time Series',...
+                    'Mean Power of Difference of Time Series',...
                     'Max Spurious Power of Spectrum',...
                     'Total Spurious Power of Spectrum'};
 
@@ -162,15 +163,15 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     fig = plot_performance_measures(freqs, perf(:, 1:3), {names_spectral{1:3}});
 
     xlabel('Frequency (Hz)');
-    h = suptitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
+    h = subtitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
     h.Interpreter = 'none';
     set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'complex_sinusoid_time_series'));
 
-    fig = plot_performance_measures(freqs, perf(:, 4:6), {names_spectral{4:6}});
+    fig = plot_performance_measures(freqs, perf(:, 4:5), {names_spectral{4:5}});
 
     xlabel('Frequency (Hz)');
-    h = suptitle(sprintf(title_template, 'Spectral'));
+    h = subtitle(sprintf(title_template, 'Spectral'));
     h.Interpreter = 'none';
     set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'spectral'));
