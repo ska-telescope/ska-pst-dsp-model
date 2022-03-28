@@ -1,5 +1,6 @@
 {
   "test": {
+    "analysis_function":"polyphase_analysis",
     "fir_filter_coeff_file_path++": "Prototype_FIR.2_stage.8-7.512.14336.mat",
     "fir_filter_taps++": 14337,
     "fir_filter_coeff_file_path": "Prototype_FIR.8-7.1024.10240.mat",
@@ -8,7 +9,7 @@
     "os_factor": "8/7",
     "channels": 1024,
     "input_fft_length": 256,
-    "input_overlap": 0,
+    "input_overlap": 32,
     "blocks": 3,
     "backend": {
       "test_vectors": "python",
@@ -24,6 +25,7 @@
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "low": {
+    "analysis_function":"polyphase_analysis",
     "fir_filter_coeff_file_path": "PST_2561_LowFilterCoefficients.mat",
     "fir_filter_taps": 2561,
     "header_file_path": "default_header.json",
@@ -46,6 +48,7 @@
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "mid": {
+    "analysis_function":"polyphase_analysis_padded",
     "fir_filter_coeff_file_path_": "Prototype_FIR.2_stage.8-7.4096.100352.mat",
     "fir_filter_taps_": 100353,
     "fir_filter_coeff_file_path": "NRC_100353_MidFilterCoefficients.mat",

@@ -140,7 +140,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     fig = plot_performance_measures(res{:}, names_temporal);
 
     xlabel('Impulse position');
-    h = subtitle(sprintf(title_template, 'Temporal'));
+    h = sgtitle(sprintf(title_template, 'Temporal'));
     h.Interpreter = 'none';
     % set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'temporal'));
@@ -163,7 +163,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     fig = plot_performance_measures(freqs, perf(:, 1:3), {names_spectral{1:3}});
 
     xlabel('Frequency (Hz)');
-    h = subtitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
+    h = sgtitle(sprintf(title_template, 'Complex Sinusoid Time Series'));
     h.Interpreter = 'none';
     set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'complex_sinusoid_time_series'));
@@ -171,7 +171,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     fig = plot_performance_measures(freqs, perf(:, 4:5), {names_spectral{4:5}});
 
     xlabel('Frequency (Hz)');
-    h = subtitle(sprintf(title_template, 'Spectral'));
+    h = sgtitle(sprintf(title_template, 'Spectral'));
     h.Interpreter = 'none';
     set(fig, 'visible', 'off');
     saveas(fig, sprintf(file_name_template, 'spectral'));
@@ -227,10 +227,11 @@ function handle = verify_test_vector_params_factory (config,...
       end
       %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
       prev_bytes = fprintf('%d/%d', i, length(test_params));
+      pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
       res = test_data_pipeline(config, config.channels, config.os_factor,...
                                input_fft_length, nbins,...
                                signal_generator_handle,...
-                               {param}, @polyphase_analysis_padded, {1}, ...
+                               {param}, pfb_analysis, {1}, ...
                                @polyphase_synthesis, ...
                                 {deripple,...
                                  sample_offset,...
