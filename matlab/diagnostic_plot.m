@@ -38,7 +38,7 @@ function diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title_)
   fprintf('diagnostic_plot: max/argmax of inverted data: %f/%d\n', m_inv, argmax_inv);
   fprintf('diagnostic_plot: max/argmax of input data: %f/%d\n', m_input, argmax_input);
 
-  suptitle(plot_sub_title);
+  sgtitle(plot_sub_title);
 
   pause;
 
