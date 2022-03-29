@@ -6,13 +6,13 @@ function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os
   %
   % .. code-block::
   %
-  %   >> design_PFB_FIR_filter(256, {'nu': 4, 'de': 3}, 256*10, 0);
+  %   >> design_PFB_FIR_filter_two_stage(4096, {'nu': 8, 'de': 7}, 28);
   %
   % Args:
   %   n_chan (numeric): number of PFB output channels
   %   os_factor (struct): oversampling factor struct
-  %   n_taps (single): Number of filter taps
-  %   display (bool): Optional. Whether or not to generate plots to Defaults to false.
+  %   os_taps_per_chan (single): Number of filter taps per channel
+  %  
   % Returns:
   %   string: Path to newly created ``.mat`` file contaning FIR filter coefficents.
 
@@ -23,6 +23,7 @@ function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os
 
   if exist('os_taps_per_chan_', 'var')
     os_taps_per_chan = os_taps_per_chan_;
+    zero_stuff_factor = (os_taps_per_chan * os_factor.nu) / os_factor.de;
     % if mod((n_chan/os_factor_f), os_taps_per_chan) ~= 0
     %   ME = MException('MYFUN:BadIndex', ...
     %     'Can''t pass os_taps_per_chan that isn''t divisible by n_chan / os_factor');
