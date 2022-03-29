@@ -197,6 +197,7 @@ function handle = verify_test_vector_params_factory (config,...
     end
 
     input_overlap = calc_overlap(input_fft_length);
+
     output_overlap = normalize(config.os_factor, input_overlap)*config.channels;
     output_overlap = output_overlap - 1;
 
@@ -222,11 +223,11 @@ function handle = verify_test_vector_params_factory (config,...
     % test_params = [100000];
     for i=1:length(test_params)
       param = test_params(i);
-      for b=1:prev_bytes
-        fprintf('\b');
-      end
+      %for b=1:prev_bytes
+      %  fprintf('\b');
+      %end
       %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
-      prev_bytes = fprintf('%d/%d', i, length(test_params));
+      prev_bytes = fprintf('test %d/%d \n', i, length(test_params));
       pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
       res = test_data_pipeline(config, config.channels, config.os_factor,...
                                input_fft_length, nbins,...
