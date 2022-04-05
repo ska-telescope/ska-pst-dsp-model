@@ -18,7 +18,7 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   input = squeeze( data{1} );
   inverted = squeeze( data{3} );
   
-  chsize = size(data{2})
+  chsize = size(data{2});
   nchan = chsize(2);
   nsamp = chsize(3);
   
@@ -86,7 +86,7 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   fprintf('diagnostic_plot: diff imax (input - inverted): %d\n', diff_imax);
   fprintf('diagnostic_plot: diff imax (input - scaled): %d\n', argmax_input - scaled_imax);
   
-  res = { argmax_input, argmax_chan, scaled_imax, argmax_input - scaled_imax }
+  res = { argmax_input, argmax_chan, scaled_imax, argmax_input - scaled_imax };
 
   chopped = chop(test_data_pipeline_res, chop_args{:});
   
@@ -96,8 +96,8 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   [m_inv, argmax_inv] = max(inverted_data);
   [m_input, argmax_input] = max(input_data);
 
-  fprintf('diagnostic_plot: max/argmax of inverted data: %f/%d\n', m_inv, argmax_inv);
   fprintf('diagnostic_plot: max/argmax of input data: %f/%d\n', m_input, argmax_input);
+  fprintf('diagnostic_plot: max/argmax of inverted data: %f/%d (offset: %d)\n', m_inv, argmax_inv, argmax_inv-argmax_input);
 
   pause;
 

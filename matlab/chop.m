@@ -24,14 +24,17 @@ function chopped = chop(test_data_pipeline_res, additional_offset_)
   sim_squeezed = squeeze(data{1}(1, 1, :));
   inv_squeezed = squeeze(data{3}(1, 1, :));
 
+  fprintf('chop: fir_offset=%d\n', meta.fir_offset);
+  fprintf('chop: additional_offset=%d\n', additional_offset);
 
-  output_shift = meta.fir_offset + additional_offset;
   % meta.fir_offset
   % additional_offset
   % size(sim_squeezed)
   % output_shift
-  % inv_squeezed = inv_squeezed(output_shift+1:end);
-  sim_squeezed = sim_squeezed(output_shift+1:end);
+  % inv_squeezed = inv_squeezed(meta.fir_offset+1:end);
+  
+  to_chomp = additional_offset-meta.fir_offset;
+  sim_squeezed = sim_squeezed(to_chomp+1:end);
 
   % min_ndat = ndat_inv;
   min_ndat = min([length(sim_squeezed), length(inv_squeezed)]);

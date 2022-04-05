@@ -98,17 +98,17 @@ function out=polyphase_analysis(...
       % fprintf('size in_block:');
       % size(in_block)
 
-      %index for cyclic shift of data to FFT to eliminate spectrum rotation
+      % index for cyclic shift of data to FFT to eliminate spectrum rotation
       index = (step*k - floor(step*k/block)*block);
+      % fprintf('k=%d shift=%d\n', k, index);
+      
       temp=circshift(f.*in_block,index)';
-
-      % size(temp2)
-      % size(temp)
-      % phases
-      % pause
+      
       % temp2 = sum(reshape(temp, block, phases), 2);
       % temp2 = circshift(temp2, -index);
       % temp = sum(reshape(temp,))
+      
+      % block = nfft
       temp2=(1:block)*0;
       for m=0:phases-1
         temp2=temp2+temp(1+block*m:block*(m+1));
