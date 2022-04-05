@@ -106,9 +106,20 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
   %                   'Total Spurious Power of Spectrum',...
   %                   'Mean Spurious Power of Spectrum'};
 
+  %
+  % The elements of this array describe the return value of the
+  % temporal_performance method defined in DomainPerformance.m
+  %
   names_temporal = {'Max Spurious Power of Inverted Signal',...
                     'Total Spurious Power of Inverted Signal'};
 
+  %
+  % The first three elements describe the return value of the
+  % temporal_difference method defined in DomainPerformance.m
+  %
+  % The last two elements describe the return value of the
+  % spectral_performance method defined in DomainPerformance.m
+  %
   names_spectral = {'Max Power of Difference of Time Series',...
                     'Total Power of Difference of Time Series',...
                     'Mean Power of Difference of Time Series',...
@@ -217,7 +228,9 @@ function handle = verify_test_vector_params_factory (config,...
 
     if diagnostic
       test_params = test_params(12:end);
+      pfb_output_offset = 1:length(test_params)
     end
+    
     prev_bytes = 1;
     fprintf('\n')
     % test_params = [100000];
@@ -243,7 +256,8 @@ function handle = verify_test_vector_params_factory (config,...
       perf_res = performance_handle(chopped{:});
       param_res = [param_res; perf_res];
       if diagnostic
-        diagnostic_plot(res, {output_overlap}, sprintf('Param=%d, total spurious power=%f', param, 10*log10(perf_res(2))));
+        diag_res = diagnostic_plot(res, {output_overlap}, sprintf('Param=%d, total spurious power=%f', param, 10*log10(perf_res(2))));
+        pfb_output_offset(i) = diag_res{4};
       end
 
       if param >= length(chopped{2})
@@ -251,6 +265,12 @@ function handle = verify_test_vector_params_factory (config,...
         break
       end
     end
+    
+    if diagnostic
+      figure;
+      plot (pfb_output_offset)
+    end
+    
     param_res = {test_params, param_res};
   end
 
