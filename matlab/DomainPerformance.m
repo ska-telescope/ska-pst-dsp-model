@@ -5,6 +5,11 @@ classdef DomainPerformance
 
     function res = temporal_difference(obj, a, b)
       diff = abs(a - b).^2;
+      %
+      % Any change to the following list of N statistics included in res
+      % should be reflected in the first N elements of names_spectral
+      % (currently defined at line 112 of current_performance.m)
+      %
       res = [max(diff), sum(diff), mean(diff)];
     end
 
@@ -17,6 +22,12 @@ classdef DomainPerformance
       % res = [err.max_spurious_power(a),...
       %        err.total_spurious_power(a),...
       %        err.mean_spurious_power(a)];
+      
+      %
+      % Any change to the following list of statistics included
+      % in res should be reflected in names_temporal
+      % (currently defined at line 109 of current_performance.m)
+      %
       res = [err.max_spurious_power(a, varargin{:}),...
              err.total_spurious_power(a, varargin{:})];
     end
@@ -27,6 +38,12 @@ classdef DomainPerformance
       % res = [err.max_spurious_power(a_fft),...
       %        err.total_spurious_power(a_fft),...
       %        err.mean_spurious_power(a_fft)];
+      
+      %
+      % Any change to the following list of M statistics included in res
+      % should be reflected in the last M elements of names_spectral
+      % (currently defined at line 112 of current_performance.m)
+      %
       res = [err.max_spurious_power(a_fft, varargin{:}),...
              err.total_spurious_power(a_fft, varargin{:})];
     end
