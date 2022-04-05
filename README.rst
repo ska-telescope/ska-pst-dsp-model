@@ -43,8 +43,9 @@ Polyphase Filterbank Filter Generator
 
 Two approaches to generating Polyphase Filterbank (PFB) filter coefficients have been developed for the SKA. *These two approaches require two different PFB channelizers*. Two separate Matlab scripts encapsulate these two approaches:
 
-- ``design_PFB_FIR_filter.m``: Uses a single stage FIR filter design. This is the script used to develop SKA Low channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis_padded.m``
-- ``design_PFB_FIR_filter_two_stage.m``: Uses a two stage FIR filter design. This is adapted from the script used to develop SKA Mid channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis.m``. The two stage design allows for generating large (>1e5) numbers of coefficients.
+- ``design_PFB_FIR_filter.m``: Uses a single stage FIR filter design. This is the script used to develop SKA Low channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis.m``
+
+- ``design_PFB_FIR_filter_two_stage.m``: Uses a two stage FIR filter design. This is adapted from the script used to develop SKA Mid channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis_padded.m``. The two stage design allows for generating large (>1e5) numbers of coefficients.
 
 
 Polyphase Filterbank Channelizer
