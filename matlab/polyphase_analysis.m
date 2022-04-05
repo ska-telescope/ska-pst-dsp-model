@@ -56,11 +56,6 @@ function out=polyphase_analysis(...
   step = floor((block * os_factor.de) / os_factor.nu);
   % Making sure the filter has an integer multiple of block size.
   f = pad_filter(filt, block);
-  input_pad_length = floor(length(filt)/2);
-  sample_offset = mod(input_pad_length, block);
-  if sample_offset ~= 0
-    input_pad_length = input_pad_length + block - sample_offset;
-  end
 
   phases = length(f) / block;
 
@@ -69,8 +64,8 @@ function out=polyphase_analysis(...
 
   if verbose
     fprintf('polyphase_analysis: length(filt)=%d\n', length(filt));
-    fprintf('polyphase_analysis: input_pad_length=%d\n', input_pad_length);
-    fprintf('polyphase_analysis: fl=%d\n', fl);
+    fprintf('polyphase_analysis: length(padded filt)=%d\n', fl);
+    fprintf('polyphase_analysis: nfft=%d\n', block);
     fprintf('polyphase_analysis: step=%d\n', step);
     fprintf('polyphase_analysis: dtype=%s\n', dtype);
     fprintf('polyphase_analysis: nblocks=%d\n', nblocks);
@@ -90,30 +85,22 @@ function out=polyphase_analysis(...
       fprintf('polyphase_analysis: %d/%d pol\n', i_pol, n_pol);
     end
     in_pol = squeeze(in(i_pol, 1, :));
-    in_pol_padded = in_pol;
-    % in_pol_padded = cat(1, zeros(input_pad_length, 1), in_pol);
     for k=0:nblocks-1
+        
       % if mod(k, 10000) == 0 && verbose;
       %   for b=1:prev_bytes
       %     fprintf('\b');
       %   end
       %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
       % end
-      in_block = in_pol_padded(1+step*k:fl+step*k);
+      
+      in_block = in_pol(1+step*k:fl+step*k);
       % fprintf('size in_block:');
       % size(in_block)
-      % in_block = in(i_pol, 1, 1+step*k:fl+step*k);
-      temp=transpose(f.*in_block);
-      % fprintf('size temp:');
-      % size(temp)
-
-      % size(in_block)
-      % size(f)
-      % size(temp)
 
       %index for cyclic shift of data to FFT to eliminate spectrum rotation
       index = (step*k - floor(step*k/block)*block);
-      temp=circshift(temp',index)';
+      temp=circshift(f.*in_block,index)';
 
       % size(temp2)
       % size(temp)
@@ -126,8 +113,7 @@ function out=polyphase_analysis(...
       for m=0:phases-1
         temp2=temp2+temp(1+block*m:block*(m+1));
       end
-      % out(i_pol, :, k+1) = fft(temp2)*block; %temp2;%
-      out(i_pol, :, k+1) = ifft(temp2)*(block^2); %temp2;%
+      out(i_pol, :, k+1) = fft(temp2)*block;
     end
   end
 
