@@ -1,12 +1,12 @@
 {
   "test": {
-    "comment":"test of low-like analysis filterbank",
+    "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
+    "conjugate_synthesis_result": 1,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "Prototype_FIR.new.8-7.1024.24576.mat",
     "fir_filter_taps": 24577,
-    "header_file_path": "default_header.json",
     "os_factor": "8/7",
     "channels": 1024,
     "input_fft_length": 1024,
@@ -17,6 +17,7 @@
       "channelize": "matlab",
       "synthesize": "matlab"
     },
+    "header_file_path": "default_header.json",
     "n_pol": 2,
     "dm": 2.64476,
     "period": 0.00575745,
@@ -26,13 +27,13 @@
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "test2": {
-    "comment":"test of mid-like analysis filterbank",
+    "comment":"test of the SKA Mid analysis filterbank",
+    "analysis_function":"polyphase_analysis_padded",
+    "conjugate_synthesis_result": 0,
     "fir_offset_direction": 0,
     "kludge_offset": 0,
-    "analysis_function":"polyphase_analysis_padded",
     "fir_filter_coeff_file_path": "Prototype_FIR.2_stage.8-7.4096.100352.mat",
     "fir_filter_taps": 100353,
-    "header_file_path": "default_header.json",
     "os_factor": "8/7",
     "channels": 4096,
     "input_fft_length": 512,
@@ -43,6 +44,7 @@
       "channelize": "matlab",
       "synthesize": "matlab"
     },
+    "header_file_path": "default_header.json",
     "n_pol": 2,
     "dm": 2.64476,
     "period": 0.00575745,
