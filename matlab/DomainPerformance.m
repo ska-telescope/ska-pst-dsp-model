@@ -8,36 +8,35 @@ classdef DomainPerformance
       plot_things = 0;
       if (plot_things == 1)
         figure;
-        ax = subplot(311);
+        ax = subplot(321);
         plot(real(a(1:100)))
         grid(ax, 'on');
-        title('real[a]');
+        title('real[input]');
         
-        ax = subplot(312);
+        ax = subplot(323);
         plot(real(b(1:100)))
         grid(ax, 'on');
-        title('real[a]');
+        title('real[inverted]');
         
-        ax = subplot(313);
+        ax = subplot(325);
         plot(real(a(1:100))-real(b(1:100)))
         grid(ax, 'on');
-        title('real[a-b]');
+        title('real[diff]');
         
-        figure;
-        ax = subplot(311);
+        ax = subplot(322);
         plot(imag(a(1:100)))
         grid(ax, 'on');
-        title('imag[a]');
+        title('imag[input]');
         
-        ax = subplot(312);
+        ax = subplot(324);
         plot(imag(b(1:100)))
         grid(ax, 'on');
-        title('imag[a]');
+        title('imag[inverted]');
         
-        ax = subplot(313);
+        ax = subplot(326);
         plot(imag(a(1:100))-imag(b(1:100)))
         grid(ax, 'on');
-        title('imag[a-b]');
+        title('imag[diff]');
         pause;
       end
       

@@ -34,7 +34,14 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   
   powan = PowerAnalysis;
 
-  power = 0;
+  do_fft = 1;
+  if (do_fft == 1)
+    input = fft(input);
+    chantot = fft(chantot);
+    inverted = fft(inverted);
+  end
+  
+  power = 1;
   if (power == 1)
     input = powan.dB(input);
     chantot = powan.dB(chantot);
@@ -89,6 +96,7 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   fprintf('diagnostic_plot: max/argmax of input data: %f/%d\n', m_input, argmax_input);
   fprintf('diagnostic_plot: max/argmax of inverted data: %f/%d (offset: %d)\n', m_inv, argmax_inv, argmax_inv-argmax_input);
 
+  fprintf('Press <ENTER> to continue');
   pause;
 
 end
