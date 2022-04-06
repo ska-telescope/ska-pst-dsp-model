@@ -4,6 +4,43 @@ classdef DomainPerformance
   methods
 
     function res = temporal_difference(obj, a, b)
+
+      plot_things = 0;
+      if (plot_things == 1)
+        figure;
+        ax = subplot(311);
+        plot(real(a(1:100)))
+        grid(ax, 'on');
+        title('real[a]');
+        
+        ax = subplot(312);
+        plot(real(b(1:100)))
+        grid(ax, 'on');
+        title('real[a]');
+        
+        ax = subplot(313);
+        plot(real(a(1:100))-real(b(1:100)))
+        grid(ax, 'on');
+        title('real[a-b]');
+        
+        figure;
+        ax = subplot(311);
+        plot(imag(a(1:100)))
+        grid(ax, 'on');
+        title('imag[a]');
+        
+        ax = subplot(312);
+        plot(imag(b(1:100)))
+        grid(ax, 'on');
+        title('imag[a]');
+        
+        ax = subplot(313);
+        plot(imag(a(1:100))-imag(b(1:100)))
+        grid(ax, 'on');
+        title('imag[a-b]');
+        pause;
+      end
+      
       diff = abs(a - b).^2;
       %
       % Any change to the following list of N statistics included in res

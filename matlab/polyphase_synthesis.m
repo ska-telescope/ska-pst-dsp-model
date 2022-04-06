@@ -6,6 +6,7 @@ function out = polyphase_synthesis(...
   sample_offset_,...
   calc_overlap_handler_,...
   window_handler_,...
+  conjugate_result_,...
   verbose_...
 )
 
@@ -43,6 +44,8 @@ function out = polyphase_synthesis(...
   %       apply derippling correction or 'ripple equalization'.
   %   sample_offset_ (int): offset applied to channelized input prior to
   %     processing.
+  %   conjugate_result_ (int): boolean flag; if true, return the complex 
+  %     conjugate of out
   % Returns:
   %   [numeric]: Upsampled time domain output array. The
   %     dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
@@ -248,6 +251,11 @@ function out = polyphase_synthesis(...
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end
   end
+  
+  if (conjugate_result_)
+      out = conj(out);
+  end
+  
   if verbose
     tdelta = toc(tstart);
     fprintf('polyphase_synthesis: Elapsed time is %f seconds\n', tdelta);

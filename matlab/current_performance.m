@@ -230,11 +230,6 @@ function handle = verify_test_vector_params_factory (config,...
 
     test_params = test_param_generator_handle(...
       block_size, nblocks, input_overlap, output_overlap + 1, filt_offset, output_nbins);
-
-    if diagnostic
-      test_params = test_params(12:end);
-      pfb_output_offset = 1:length(test_params);
-    end
     
     prev_bytes = 1;
     fprintf('\n')
@@ -256,15 +251,16 @@ function handle = verify_test_vector_params_factory (config,...
                                 {deripple,...
                                  sample_offset,...
                                  @calc_overlap,...
-                                 window_function_handle, 1},...
+                                 window_function_handle,...
+                                 config.conjugate_synthesis_result, 1},...
                                config.data_dir);
       chopped = chop(res, output_overlap + config.kludge_offset);
       perf_res = performance_handle(chopped{:});
       param_res = [param_res; perf_res];
       if diagnostic
-        diag_res = diagnostic_plot(res, {output_overlap + config.kludge_offset},...
-                                   sprintf('Param=%d, total spurious power=%f', param, 10*log10(perf_res(2))));
-        pfb_output_offset(i) = diag_res{4};
+        diagnostic_plot(res, {output_overlap + config.kludge_offset},...
+                              sprintf('Param=%d, total spurious power=%f',...
+                              param, 10*log10(perf_res(2))));
       end
 
       if param >= length(chopped{2})
@@ -272,12 +268,7 @@ function handle = verify_test_vector_params_factory (config,...
         break
       end
     end
-    
-    if diagnostic
-      figure;
-      plot (pfb_output_offset)
-    end
-    
+
     param_res = {test_params, param_res};
   end
 
