@@ -27,17 +27,17 @@
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "alt": {
-    "comment":"test of SKA Low analysis filterbank",
+    "comment":"test of SKA Low analysis filterbank (John's new code)",
     "analysis_function":"polyphase_analysis",
     "conjugate_synthesis_result": 1,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
-    "fir_filter_coeff_file_path": "Prototype_FIR.alt.8-7.256.3072.mat",
+    "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
     "fir_filter_taps": 3073,
-    "os_factor": "8/7",
+    "os_factor": "4/3",
     "channels": 256,
     "input_fft_length": 512,
-    "input_overlap": 112,
+    "input_overlap": 96,
     "blocks": 3,
     "backend": {
       "test_vectors": "python",
