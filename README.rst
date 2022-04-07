@@ -1,9 +1,11 @@
 PST_PFB_inversion_verification
 ==============================
 
-Compare the results of dspsr's PFB inversion implementation to the PST Signal model, implemented in Matlab. The goal of this comparison is to assess whether the two implementations produce the same results, within numerical precision.
+These instructions describe how to compare the results of dspsr's PFB inversion implementation with the PST Signal model implemented in Matlab. The goal of this comparison is to assess whether the two implementations produce the same results, within numerical precision.
 
-Attempting to abide by the Matlab coding conventions enumerated `here <https://au.mathworks.com/matlabcentral/fileexchange/46056-matlab-style-guidelines-2-0>`_.
+For instructions on how to quantify the performance of the Matlab implementation, please see
+
+https://confluence.skatelescope.org/display/SE/Testing+polyphase+filter+bank+inversion+using+MATLAB+model
 
 Installation
 ------------
