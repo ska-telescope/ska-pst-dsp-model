@@ -34,7 +34,7 @@ function res = diagnostic_plot(test_data_pipeline_res, chop_args, plot_sub_title
   
   powan = PowerAnalysis;
 
-  do_fft = 1;
+  do_fft = 0;
   if (do_fft == 1)
     input = fft(input);
     chantot = fft(chantot);
