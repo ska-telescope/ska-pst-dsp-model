@@ -41,10 +41,6 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
   fprintf('design_PFB: cut-off frequency: %f\n', Fp);
   fprintf('design_PFB: stop-band frequency: %f\n', Fs);
 
-  % Filter Transfer Function specs
-  Ap = 0.01;
-  As = 60;
-
   % Design filter
   Hf = fdesign.lowpass('N,Fp,Fst',n_taps,Fp,Fs);
   H_Obj_0 = design(Hf,'firls','Wstop',15,'systemobject',true);
@@ -54,7 +50,7 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
 
   % Save impulse response h, and other parameters
   fir_filter_path = sprintf('./../config/Prototype_FIR.new.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
-  save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
+  save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs');
 
   % Save a sampled version of the Transfer Function for later equalisation
   % - length should be n_chan times the half-channel width (where width is FFTlength/OS_factor)
@@ -68,32 +64,36 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
 
     %Rescaling the frequency axis
     W = W/pi;
-
+    
+  % Filter Transfer Function specs
+  Ap = 0.0002;
+  As = 120;
+  
     fig = figure;
-    subplot(1,1,1)
+    subplot(3,1,1)
     plot (W, abs(H0), 'LineWidth', 1.5);
     axis ([0 3.5*Fp -0.15 1.15]);
     title(sprintf('Transfer Function of the Prototype Filter with %d taps', n_taps));
     grid on; box on;
 
-    % subplot(3,1,2)
-    % hold on;
-    % plot (W, 20*log10(abs(H0)));
-    % % plot([0 Fp], [-0.5*Ap -0.5*Ap],'k-.','LineWidth',1);
-    % % plot([0 Fp], [ 0.5*Ap  0.5*Ap],'k-.','LineWidth',1);
-    % hold off;
-    % axis ([0 1.5*Fp -1000*Ap 1000*Ap]);
-    % title ('Passband')
-    % grid on; box on;
+    subplot(3,1,2)
+    hold on;
+    plot (W, 20*log10(abs(H0)));
+    plot([0 Fp], [-0.5*Ap -0.5*Ap],'k-.','LineWidth',1);
+    plot([0 Fp], [ 0.5*Ap  0.5*Ap],'k-.','LineWidth',1);
+    hold off;
+    axis ([0 1.5*Fp -1000*Ap 1000*Ap]);
+    title ('Passband')
+    grid on; box on;
     %
-    % subplot (3,1,3);
-    % hold on;
-    % plot (W, 20*log10(abs(H0)));
-    % plot([Fs 1], [-As -As],'r-','LineWidth',1);
-    % hold off;
-    % axis ([0 1 -(As+10) 3]);
-    % title ('Stopband')
-    % grid on; box on;
+    subplot (3,1,3);
+    hold on;
+    plot (W, 20*log10(abs(H0)));
+    plot([Fs 1], [-As -As],'r-','LineWidth',1);
+    hold off;
+    axis ([0 1 -(As+10) 3]);
+    title ('Stopband')
+    grid on; box on;
 
     saveas(fig, sprintf('./../products/FIR_filter_response.%d.png', n_taps));
 
