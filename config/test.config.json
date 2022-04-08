@@ -26,7 +26,7 @@
     "fft_window": "tukey",
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
-  "alt": {
+  "alt4": {
     "comment":"test of SKA Low analysis filterbank (John's new code)",
     "analysis_function":"polyphase_analysis",
     "conjugate_synthesis_result": 1,
@@ -39,19 +39,46 @@
     "input_fft_length": 512,
     "input_overlap": 96,
     "blocks": 3,
-    "backend": {
-      "test_vectors": "python",
-      "channelize": "matlab",
-      "synthesize": "matlab"
-    },
-    "header_file_path": "default_header.json",
     "n_pol": 2,
-    "dm": 2.64476,
-    "period": 0.00575745,
-    "dump_stage": "Convolution",
     "deripple": true,
     "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "header_file_path": "default_header.json"
+  },
+  "alt8": {
+    "comment":"test of SKA Low analysis filterbank (John's new code)",
+    "analysis_function":"polyphase_analysis",
+    "conjugate_synthesis_result": 1,
+    "fir_offset_direction": -1,
+    "kludge_offset": 1,
+    "fir_filter_coeff_file_path": "Prototype_FIR.alt.8-7.256.7168.mat",
+    "fir_filter_taps": 7169,
+    "os_factor": "8/7",
+    "channels": 256,
+    "input_fft_length": 512,
+    "input_overlap": 112,
+    "blocks": 3,
+    "n_pol": 2,
+    "deripple": true,
+    "fft_window": "tukey",
+    "header_file_path": "default_header.json"
+  },
+  "alt16": {
+    "comment":"test of SKA Low analysis filterbank (John's new code)",
+    "analysis_function":"polyphase_analysis",
+    "conjugate_synthesis_result": 1,
+    "fir_offset_direction": -1,
+    "kludge_offset": 1,
+    "fir_filter_coeff_file_path": "Prototype_FIR.alt.16-15.256.23040.mat",
+    "fir_filter_taps": 23041,
+    "os_factor": "16/15",
+    "channels": 256,
+    "input_fft_length": 512,
+    "input_overlap": 105,
+    "blocks": 3,
+    "n_pol": 2,
+    "deripple": true,
+    "fft_window": "tukey",
+    "header_file_path": "default_header.json"
   },
   "test2": {
     "comment":"test of the SKA Mid analysis filterbank",

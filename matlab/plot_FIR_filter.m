@@ -22,7 +22,7 @@ function fig = plot_FIR_filter (n_chan, OS, h)
   %
   subplot(3,1,1)
   plot (W, H0, 'LineWidth', 1.5);
-  xlim ([0 3.5]);
+  xlim ([0.5 2]);
   
   xline([1.0],'--b', 'LineWidth', 1.5);
   xline([OS],'--', 'LineWidth', 1.5);
@@ -50,7 +50,7 @@ function fig = plot_FIR_filter (n_chan, OS, h)
   %
   subplot (3,1,3);
   plot (W, H0dB);
-  xlim([1 3]);
+  xlim([1 2]);
   
   xline([OS],'--', 'LineWidth', 1.5);
   xline([2*OS-1],'--r', 'LineWidth', 1.5);
