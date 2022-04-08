@@ -16,7 +16,7 @@ totalSamples = length(in)
 outputSamples = floor(totalSamples/192);
 
 %% initialise
-out = zeros(1,216,outputSamples);
+out = zeros(1,256,outputSamples);
 
 scale=192*192;
 out(1,:,:)=dout*scale*scale;
