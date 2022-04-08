@@ -1,4 +1,22 @@
 {
+  "lowcbf": {
+    "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
+    "analysis_function":"polyphase_analysis_lowcbf",
+    "conjugate_synthesis_result": 1,
+    "fir_offset_direction": -1,
+    "kludge_offset": 1,
+    "fir_filter_coeff_file_path": "Prototype_FIR.lowcbf.mat",
+    "fir_filter_taps": 3072,
+    "os_factor": "4/3",
+    "channels": 216,
+    "input_fft_length": 512,
+    "input_overlap": 96,
+    "blocks": 3,
+    "n_pol": 2,
+    "deripple": true,
+    "fft_window": "tukey",
+    "header_file_path": "default_header.json"
+  },
   "test": {
     "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
