@@ -16,7 +16,7 @@ classdef DomainPerformance
         fprintf ('corrected phase difference = %f deg\n', angle(z)*180/pi);
       end
       
-      plot_things = 1;
+      plot_things = 0;
       if (plot_things == 1)
         figure;
         ax = subplot(321);
