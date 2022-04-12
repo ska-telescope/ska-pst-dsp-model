@@ -24,6 +24,8 @@ end
 
 cl=interpft(c,12*256);
 
+[ymax,xmax] = max(cl)
+
 if (pl==2)
     
   plot_FIR_filter (256, 4/3, cl);

@@ -59,41 +59,13 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps, disp
 %     save('./../config/TF_points.mat', 'H0', 'W');
 %
 %     % Optionally display design
+
+
   if (display==1)
-    [H0,W] = freqz (h, 1, n_taps*n_chan);
-
-    %Rescaling the frequency axis
-    W = W/pi;
-    
-  % Filter Transfer Function specs
-  Ap = 0.0002;
-  As = 120;
-  
-    fig = figure;
-    subplot(3,1,1)
-    plot (W, abs(H0), 'LineWidth', 1.5);
-    axis ([0 3.5*Fp -0.15 1.15]);
-    title(sprintf('Transfer Function of the Prototype Filter with %d taps', n_taps));
-    grid on; box on;
-
-    subplot(3,1,2)
-    hold on;
-    plot (W, 20*log10(abs(H0)));
-    plot([0 Fp], [-0.5*Ap -0.5*Ap],'k-.','LineWidth',1);
-    plot([0 Fp], [ 0.5*Ap  0.5*Ap],'k-.','LineWidth',1);
-    hold off;
-    axis ([0 1.5*Fp -1000*Ap 1000*Ap]);
-    title ('Passband')
-    grid on; box on;
-    %
-    subplot (3,1,3);
-    hold on;
-    plot (W, 20*log10(abs(H0)));
-    plot([Fs 1], [-As -As],'r-','LineWidth',1);
-    hold off;
-    axis ([0 1 -(As+10) 3]);
-    title ('Stopband')
-    grid on; box on;
+      
+    fprintf ('plotting response\n');
+      
+    fig = plot_FIR_filter (n_chan, OS, h);
 
     saveas(fig, sprintf('./../products/FIR_filter_response.%d.png', n_taps));
 

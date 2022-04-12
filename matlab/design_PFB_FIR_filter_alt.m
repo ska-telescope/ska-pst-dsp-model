@@ -58,6 +58,9 @@ function fir_filter_path = design_PFB_FIR_filter_alt(n_chan, os_factor, n_taps_p
   h=interpft(c,n_taps);
   h=h/sum(h); % normalize
   
+  % WvS AT3-150: centre the response
+  h = circshift (h, oversampled_ntaps_per_chan/2);
+  
   % Save impulse response h, and other parameters
   fir_filter_path = sprintf('./../config/Prototype_FIR.alt.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
   save(fir_filter_path, 'h', 'n_taps', 'n_chan', 'wo', 'dp', 'ds', 'wt');
@@ -71,7 +74,7 @@ function fir_filter_path = design_PFB_FIR_filter_alt(n_chan, os_factor, n_taps_p
       
     fig = plot_FIR_filter (n_chan, OS, h);
 
-    saveas(fig, sprintf('./../products/FIR_filter_response.%d.png', n_taps));
+    saveas(fig, sprintf('./../products/alt_FIR_filter_response.%d.png', n_taps));
 
   end;
 
