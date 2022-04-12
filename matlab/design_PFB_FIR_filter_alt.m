@@ -5,7 +5,7 @@ function fir_filter_path = design_PFB_FIR_filter_alt(n_chan, os_factor, n_taps_p
   %
   % .. code-block::
   %
-  %   >> design_PFB_FIR_filter(256, {'nu': 4, 'de': 3}, 256*10, 0);
+  %   >> design_PFB_FIR_filter_alt(256, struct('nu', 4, 'de', 3), 12);
   %
   % Args:
   %   n_chan (numeric): number of PFB output channels
@@ -55,7 +55,7 @@ function fir_filter_path = design_PFB_FIR_filter_alt(n_chan, os_factor, n_taps_p
             n,wo,dp,ds,wt);
   c=fircls1(n,wo,dp,ds,wt);
 
-  h=interpft(c,n_taps+1);
+  h=interpft(c,n_taps);
   h=h/sum(h); % normalize
   
   % Save impulse response h, and other parameters

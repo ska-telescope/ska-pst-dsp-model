@@ -18,8 +18,14 @@ outputSamples = floor(totalSamples/192);
 %% initialise
 out = zeros(1,256,outputSamples);
 
-scale=192*192;
-out(1,:,:)=dout*scale*scale;
+%
+% In PSTFilterbank.m, data are divided by
+%
+% /  2^9 on line 21
+% / 2048 on line 39
+% /  256 by taking a 256 point FFT on line 39?
+%
+scale = 2^9 * 2048 * 256;
+out(1,:,:)=dout*scale;
 
-size(out)
 end

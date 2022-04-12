@@ -18,7 +18,7 @@ fftIn = zeros(256,1);
 for outputSample = 1:outputSamples
     % FIR filter, with scaling
     for n1 = 1:256
-        fftIn(n1) = sum(FIRtaps(n1:256:end-1) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
+        fftIn(n1) = sum(FIRtaps(n1:256:end) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
         
      %   if (outputSample == 10)
      %       disp(FIRtaps(n1:256:end));
@@ -51,6 +51,6 @@ for outputSample = 1:outputSamples
    %     keyboard
    % end    
     
-    dout(:,outputSample) = dout2;
+    dout(:,outputSample) = fftshift(dout2);
 end
 

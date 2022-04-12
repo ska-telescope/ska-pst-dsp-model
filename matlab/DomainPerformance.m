@@ -5,7 +5,18 @@ classdef DomainPerformance
 
     function res = temporal_difference(obj, a, b)
 
-      plot_things = 0;
+      correct_phase = 1;
+      if (correct_phase == 1)
+        z = dot(a,b);
+        fprintf ('phase difference = %f deg\n', angle(z)*180/pi);
+
+        z = z / abs(z);
+        a = a * z;
+        z = dot(a,b);
+        fprintf ('corrected phase difference = %f deg\n', angle(z)*180/pi);
+      end
+      
+      plot_things = 1;
       if (plot_things == 1)
         figure;
         ax = subplot(321);

@@ -2,10 +2,10 @@
   "lowcbf": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",
-    "conjugate_synthesis_result": 1,
-    "fir_offset_direction": -1,
-    "kludge_offset": 1,
-    "fir_filter_coeff_file_path": "Prototype_FIR.lowcbf.mat",
+    "conjugate_synthesis_result": 0,
+    "fir_offset_direction": 1,
+    "kludge_offset": 257,
+    "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
     "fir_filter_taps": 3073,
     "os_factor": "4/3",
     "channels": 256,
@@ -45,7 +45,7 @@
     "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
   },
   "alt4": {
-    "comment":"test of SKA Low analysis filterbank (John's new code)",
+    "comment":"test of SKA Low analysis filterbank (John's new filter)",
     "analysis_function":"polyphase_analysis",
     "conjugate_synthesis_result": 1,
     "fir_offset_direction": -1,
