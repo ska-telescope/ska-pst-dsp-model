@@ -4,6 +4,7 @@
 *.log
 *.ar
 *.dat
+*.asv
 python/**/*.txt
 *.out
 *.shifted
@@ -18,3 +19,4 @@ data/test_vectors/
 docs/build/
 To_Dean_20190708/
 To_Dean_20190708.zip
+config/Prototype_FIR*.mat
