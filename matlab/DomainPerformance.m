@@ -5,7 +5,7 @@ classdef DomainPerformance
 
     function res = temporal_difference(obj, a, b)
 
-      correct_phase = 1;
+      correct_phase = 0;
       if (correct_phase == 1)
         z = dot(a,b);
         fprintf ('phase difference = %f deg\n', angle(z)*180/pi);
@@ -17,35 +17,39 @@ classdef DomainPerformance
       end
       
       plot_things = 0;
+      tso = 1000;  % time sample offset
       if (plot_things == 1)
         figure;
+        pa = a(tso+(1:150));
+        pb = b(tso+(1:150));
+
         ax = subplot(321);
-        plot(real(a(1:100)))
+        plot(real(pa))
         grid(ax, 'on');
         title('real[input]');
         
         ax = subplot(323);
-        plot(real(b(1:100)))
+        plot(real(pb))
         grid(ax, 'on');
         title('real[inverted]');
         
         ax = subplot(325);
-        plot(real(a(1:100))-real(b(1:100)))
+        plot(real(pa)-real(pb))
         grid(ax, 'on');
         title('real[diff]');
         
         ax = subplot(322);
-        plot(imag(a(1:100)))
+        plot(imag(pa))
         grid(ax, 'on');
         title('imag[input]');
         
         ax = subplot(324);
-        plot(imag(b(1:100)))
+        plot(imag(pb))
         grid(ax, 'on');
         title('imag[inverted]');
         
         ax = subplot(326);
-        plot(imag(a(1:100))-imag(b(1:100)))
+        plot(imag(pa)-imag(pb))
         grid(ax, 'on');
         title('imag[diff]');
         pause;
