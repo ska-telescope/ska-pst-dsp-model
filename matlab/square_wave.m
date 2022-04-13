@@ -1,10 +1,10 @@
 
 a = SquareWave
 
-a.current
-[a, x] = generate(a, 10)
-a.current
-
-[a, x] = generate(a, 10)
-a.current
+[a, x] = generate(a, 9);
+x
+[a, x] = generate(a, 9);
+x
+[a, x] = generate(a, 9);
+x
 

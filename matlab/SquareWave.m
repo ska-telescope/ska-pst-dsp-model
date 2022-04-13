@@ -1,5 +1,5 @@
 classdef SquareWave
-   % outputs amplitude-modulated noise
+   % generates amplitude-modulated noise
    properties
       period = 26        % samples
       duty_cycle = 0.5   % duty cycle of the square wave
@@ -9,17 +9,41 @@ classdef SquareWave
    end
    methods
       function [obj, x] = generate (obj, nsample)
+      % returns:
+      %   obj = the modified object
+      %   x   = the next nsample samples of the wave
       arguments
          obj     (1,1) SquareWave
          nsample (1,1) {mustBeInteger, mustBeNonnegative}
       end
-         % return the next nsample samples of the wave
-         iphase = mod(obj.current, obj.period);
-         fprintf ('current=%d iphase=%d\n', obj.current, iphase);
-         x = linspace (obj.current, obj.current+nsample, nsample);
-         obj.current = obj.current + nsample;
-         fprintf ('current=%d\n', obj.current);
+         ioff = floor (obj.period*obj.duty_cycle);
+         nout = 0;
+         x = [];
+         while (nout < nsample)
+           
+           iphase = mod (obj.current, obj.period);
 
+           if (iphase < ioff)
+               % on-pulse
+               n = ioff-iphase;
+               a = obj.on_amp;
+           else
+               % off-pulse
+               n = obj.period - iphase;
+               a = obj.off_amp;
+           end
+           
+           if (nout + n >= nsample)
+               n = nsample - nout;
+           end
+           
+           % add n more random values to the output x
+           x = [ x a*randn([1 n]) ];
+           
+           nout = nout + n;
+           obj.current = obj.current + n;
+           
+         end
       end
    end
 end
