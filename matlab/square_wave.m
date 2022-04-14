@@ -19,11 +19,10 @@ fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
 fprintf ('square_wave: period=%d samples\n', sqwv.period);
 
 blocksz = 1024 * 1024;  % Mega sample in RAM
-%blocks = 1024;          % Giga sample to disk
-blocks = 2;
+blocks = 1024;          % Giga sample to disk
 
 for i = 1:blocks
-    fprintf ('block:%d\n', i);
+    fprintf ('block:%d/%d\n', i, blocks);
     [sqwv, x] = generate(sqwv, blocksz);
     file = write (file, x);
 end
