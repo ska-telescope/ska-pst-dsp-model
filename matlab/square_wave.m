@@ -1,8 +1,8 @@
-function square_wave(tele_)
+function square_wave(cfg_)
 
-tele = "";
-if exist('tele_', 'var')
-  tele = tele_;
+cfg = "";
+if exist('cfg_', 'var')
+  cfg = cfg_;
 end
 
 sqwv = SquareWave;
@@ -26,10 +26,10 @@ fprintf ('square_wave: period=%d samples\n', sqwv.period);
 
 n_chan = 1;
 
-if (tele ~= "")
+if (cfg ~= "")
   
-    fprintf ('square_wave: loading "%s" analysis filter bank\n', tele);
-    config = default_config(tele);
+    fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
+    config = default_config(cfg);
 
     pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
@@ -46,8 +46,8 @@ end
 
 file.header = header;
 
-blocksz = 1024 * 1024;  % Mega sample in RAM
-blocks = 1024;          % Giga sample to disk
+blocksz = 4 * 1024 * 1024;  % 4 Mega sample in RAM
+blocks = 8;                 % 32 Mega sample to disk
 
 for i = 1:blocks
     
@@ -56,9 +56,13 @@ for i = 1:blocks
     
     if (n_chan > 1)
       x = pfb_analysis (x(1,1,:), filt_coeff, n_chan, os_factor);
+      xsize = size(x);
+      input_ndat = xsize(3) * n_chan * os_factor.de / os_factor.nu;
+      lost = blocksz - input_ndat;
+      sqwv.current = sqwv.current - lost;
     end
     
-    file = write (file, x);
+    file = write (file, single(x));
 end
 
 file = close (file);
