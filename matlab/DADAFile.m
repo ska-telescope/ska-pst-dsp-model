@@ -4,7 +4,6 @@ classdef DADAFile
     properties
         filename = ''
         fileID   = -1
-        header_template = '../config/default_header.json'
         header   = containers.Map();
     end
    
@@ -21,9 +20,6 @@ classdef DADAFile
             
             obj.fileID = fopen (fname, 'wt');
             obj.filename = fname;
-            
-            json_str = fileread(obj.header_template);
-            obj.header = struct2map(jsondecode(json_str));
 
         end % of open function
 

@@ -12,7 +12,7 @@ function out=polyphase_analysis_lowcbf(...
 doRounding = 0;
 dout = PSTFilterbank(in, filt, doRounding);
 
-totalSamples = length(in)
+totalSamples = length(in);
 outputSamples = floor(totalSamples/192);
 
 %% initialise
