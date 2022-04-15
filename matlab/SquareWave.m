@@ -5,7 +5,7 @@ classdef SquareWave
         period = 26        % number of samples in one cycle of wave
         duty_cycle = 0.5   % duty cycle of the square wave
         on_amp = 1.0       % standard deviation of on-pulse noise
-        off_amp = 0.1      % standard deviation of off-pulse noise
+        off_amp = 1e-6     % standard deviation of off-pulse noise
         current = 0        % current sample
     end
    
