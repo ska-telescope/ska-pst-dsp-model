@@ -72,7 +72,7 @@ function out=polyphase_analysis_padded(...
   % using a filter of length 12545 that has been zero padded to be of length 12800.
   % This code will result in No = 768, while Johns code will result in No = 739
 
-  nblocks = ceil(n_dat / step);
+  nblocks = floor(n_dat / step);
   % No = ceil(Ni/CL);
 
   % in John's code, Nt is `phases`, which is equal to ceil(length(filter)/nchan);
@@ -120,6 +120,7 @@ function out=polyphase_analysis_padded(...
         %Shift the Current Samples by M to the Right
         in_mask(step+1:end) = in_mask(1:end-step);
         %Assign the New Input Samples for the first M samples
+        % fprintf ('%d -> %d\n', idx*step, (idx-1)*step+1);
         in_mask(1:step) = in_pol(idx*step:-1:(idx-1)*step+1);%Note the Flip (Left-Right) place the Newest sample to the front
         %ReShaping in_mask
         in_mask_2d = reshape(in_mask, block, phases);

@@ -1,17 +1,17 @@
 function square_wave(cfg_)
 
+file = DADAFile;
+file.filename = "square_wave.dada";
+
 cfg = "";
 if exist('cfg_', 'var')
   cfg = cfg_;
+  file.filename = "square_wave_" + cfg + ".dada";
 end
 
 sqwv = SquareWave;
 
-file = DADAFile;
-
-file.filename = 'square_wave.dada';
-
-header_template = '../config/square_wave_header.json';
+header_template = "../config/square_wave_header.json";
 json_str = fileread(header_template);
 header = struct2map(jsondecode(json_str));
 
@@ -57,7 +57,7 @@ for i = 1:blocks
     [sqwv, x] = generate(sqwv, blocksz);
     
     if (n_chan > 1)
-      x = pfb_analysis (x(1,1,:), filt_coeff, n_chan, os_factor);
+      x = pfb_analysis (x, filt_coeff, n_chan, os_factor);
       xsize = size(x);
       input_ndat = xsize(3) * n_chan * os_factor.de / os_factor.nu;
       lost = blocksz - input_ndat;

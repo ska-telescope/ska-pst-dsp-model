@@ -159,5 +159,6 @@ function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os
     grid on; box on;
     
     fig = plot_FIR_filter (n_chan, os_factor_f, h);
+    saveas(fig, sprintf('./../products/two_stage_filter_response.%d.png', n_taps));
   end
 end
