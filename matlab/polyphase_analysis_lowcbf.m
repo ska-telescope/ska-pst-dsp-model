@@ -10,13 +10,16 @@ function out=polyphase_analysis_lowcbf(...
 % https://gitlab.com/ska-telescope/ska-low-cbf-firmware/-/blob/main/libraries/signalProcessing/filterbanks/src/matlab/PSTFilterbank.m
 
 doRounding = 0;
-dout = PSTFilterbank(in, filt, doRounding);
+  
+in_size = size(in);
+n_pol = in_size(1);
+n_chan = in_size(2); % This should always be 1.
+n_dat = in_size(3);
 
-totalSamples = length(in);
-outputSamples = floor(totalSamples/192);
-
+outputSamples = floor(n_dat/192);
+  
 %% initialise
-out = zeros(1,256,outputSamples);
+out = zeros(n_pol,256,outputSamples);
 
 %
 % In PSTFilterbank.m, data are divided by
@@ -26,6 +29,12 @@ out = zeros(1,256,outputSamples);
 % /  256 by taking a 256 point FFT on line 39?
 %
 scale = 2^9 * 2048 * 256;
-out(1,:,:)=dout*scale;
+
+for i_pol = 1:n_pol
+  
+    dout = PSTFilterbank(in(i_pol,1,:), filt, doRounding);
+    out(i_pol,:,:)=dout*scale;
+
+end
 
 end
