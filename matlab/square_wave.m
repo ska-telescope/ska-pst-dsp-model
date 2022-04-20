@@ -1,12 +1,12 @@
 function square_wave(cfg_)
 
 file = DADAFile;
-file.filename = "square_wave.dada";
+file.filename = "../products/square_wave.dada";
 
 cfg = "";
 if exist('cfg_', 'var')
   cfg = cfg_;
-  file.filename = "square_wave_" + cfg + ".dada";
+  file.filename = "../products/square_wave_" + cfg + ".dada";
 end
 
 sqwv = SquareWave;

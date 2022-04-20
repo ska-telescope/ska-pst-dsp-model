@@ -19,7 +19,13 @@ for test = [ "low" "low_psi" "low_alt" "low_psi_alt" "mid" ]
     
     current_performance(10, test, 'time');
     current_performance(10, test, 'freq');
+    
+end
+
+%% 
+
+for test = [ "low" "low_psi" "low_alt" "low_psi_alt" "mid" ]
+    
     square_wave(test);
     
 end
-    

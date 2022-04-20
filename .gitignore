@@ -9,6 +9,7 @@ python/**/*.txt
 *.out
 *.shifted
 products/*.json
+products/*.dada
 deprecated/
 python/__pycache__
 python/data_gen/__pycache__

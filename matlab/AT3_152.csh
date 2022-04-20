@@ -1,5 +1,7 @@
 #!/bin/csh
 
+cd ../products
+
 foreach test ( "low" "low_psi" "low_alt" "low_psi_alt" "mid" )
 
   echo test
