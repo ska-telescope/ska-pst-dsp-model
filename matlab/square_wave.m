@@ -31,9 +31,10 @@ if (cfg ~= "")
     fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
 
-    pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
+    filterbank = FilterBank;
+    filterbank = configure (filterbank, config);
+    
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
-
     n_chan = config.channels;
     os_factor = config.os_factor;
 
@@ -55,13 +56,9 @@ for i = 1:blocks
     
     fprintf ('block:%d/%d\n', i, blocks);
     [sqwv, x] = generate(sqwv, blocksz);
-    
+        
     if (n_chan > 1)
-      x = pfb_analysis (x, filt_coeff, n_chan, os_factor);
-      xsize = size(x);
-      input_ndat = xsize(3) * n_chan * os_factor.de / os_factor.nu;
-      lost = blocksz - input_ndat;
-      sqwv.current = sqwv.current - lost;
+        [filterbank, x] = execute (filterbank, x);
     end
     
     file = write (file, single(x));

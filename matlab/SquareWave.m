@@ -23,8 +23,9 @@ classdef SquareWave
             
             ioff = floor (obj.period*obj.duty_cycle);
             nout = 0;
-            x = single([1,1,nsample]);
-            
+            x = zeros(1,1,nsample,'single');
+            % fprintf ('SquareWave::generate ' ); size(x)
+
             while (nout < nsample)
                 
                 iphase = mod (obj.current, obj.period);
@@ -46,6 +47,8 @@ classdef SquareWave
                 % add n more random values to the output x
                 x(1,1,nout+(1:n)) = a*randn([1 n], 'single');
            
+                % fprintf ('SquareWave::generate ' ); size(x)
+                
                 nout = nout + n;
                 obj.current = obj.current + n;
                 
