@@ -4,7 +4,7 @@ function out = polyphase_synthesis(...
   os_factor,...
   deripple_,...
   sample_offset_,...
-  calc_overlap_handler_,...
+  input_overlap_,...
   window_handler_,...
   conjugate_result_,...
   verbose_...
@@ -51,14 +51,10 @@ function out = polyphase_synthesis(...
   %     dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %     return array and the input array will not be the same
   tstart = tic;
-  function overlap = default_calc_overlap(input_fft_length)
-    overlap = round(input_fft_length*0.125);
-  end
 
   function windowed = default_window(input_chunk, input_fft_length, input_overlap)
     windowed = input_chunk;
   end
-
 
   sample_offset = 1;
   if exist('sample_offset_', 'var')
@@ -75,10 +71,10 @@ function out = polyphase_synthesis(...
     verbose = verbose_;
   end
 
-  if exist('calc_overlap_handler_', 'var')
-    calc_overlap_handler = calc_overlap_handler_;
+  if exist('input_overlap_', 'var')
+    input_overlap = input_overlap_;
   else
-    calc_overlap_handler = @default_calc_overlap;
+    input_overlap = input_fft_length / 8;
   end
 
   if exist('window_handler_', 'var')
@@ -99,7 +95,6 @@ function out = polyphase_synthesis(...
     fprintf('polyphase_synthesis: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
   end
 
-  input_overlap = calc_overlap_handler(input_fft_length);
   input_keep = input_fft_length - 2*input_overlap;
 
   n_blocks = floor((n_dat - 2*input_overlap) / input_keep);
@@ -170,7 +165,7 @@ function out = polyphase_synthesis(...
       % ax = subplot(2, 1, 2);
       % plot(imag(in_dat(:)));
       % pause;
-      in_dat(:) = window_handler(in_dat, input_fft_length, input_overlap);
+      in_dat = window_handler(in_dat, input_fft_length, input_overlap);
       % in_dat(:, 1:input_overlap) = complex(0, 0);
       % in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
       % ax = subplot(2, 1, 2);

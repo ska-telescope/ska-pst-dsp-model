@@ -1,4 +1,4 @@
-function square_wave(cfg_)
+function square_wave(cfg_,invert_)
 
 file = DADAFile;
 file.filename = "../products/square_wave.dada";
@@ -7,6 +7,12 @@ cfg = "";
 if exist('cfg_', 'var')
   cfg = cfg_;
   file.filename = "../products/square_wave_" + cfg + ".dada";
+end
+
+invert = 0;
+if exist('invert_', 'var')
+  invert = invert_;
+  file.filename = "../products/square_wave_" + cfg + "_inverted.dada";
 end
 
 sqwv = SquareWave;
@@ -38,13 +44,16 @@ if (cfg ~= "")
     n_chan = config.channels;
     os_factor = config.os_factor;
 
-    header('TSAMP') = num2str(normalize(os_factor, tsamp) * n_chan);
-    header('PFB_DC_CHAN') = '1';
-    header('NCHAN_PFB_0') = num2str(n_chan);
-    header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
-
-    header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
-
+    if (invert == 0)
+        header('TSAMP') = num2str(normalize(os_factor, tsamp) * n_chan);
+        header('PFB_DC_CHAN') = '1';
+        header('NCHAN_PFB_0') = num2str(n_chan);
+        header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
+        header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
+    else
+        inverse = InverseFilterBank;
+        inverse = configure (inverse, config);
+    end
 end
 
 file.header = header;
@@ -59,6 +68,10 @@ for i = 1:blocks
         
     if (n_chan > 1)
         [filterbank, x] = execute (filterbank, x);
+    end
+    
+    if (invert == 1)
+        [inverse, x] = execute (inverse, x);
     end
     
     file = write (file, single(x));

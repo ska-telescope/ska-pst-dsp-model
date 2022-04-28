@@ -7,7 +7,7 @@
   "HDR_VERSION": "1.0",
   "INSTRUMENT": "dspsr",
   "MODE": "CAL",
-  "CALFREQ": "1",
+  "CALFREQ": "100",
   "NBIT": "32",
   "NCHAN": "1",
   "NDIM": "2",
