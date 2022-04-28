@@ -127,7 +127,7 @@ function res = test_data_pipeline(...
   synthesized_header = default_header;
 
   % calculate the offset between input and inverted data due to the FIR filter
-  fir_offset = fir_offset_direction * round((length(fir_filter_coeff) - 1) / 2);
+  fir_offset = fir_offset_direction * floor(length(fir_filter_coeff) / 2);
   %
   % synthesized = synthesized(1, 1, fir_offset:end);
 
