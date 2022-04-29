@@ -53,7 +53,21 @@ classdef FilterBank
             
             input_size = size(input);
             output = obj.pfb_analysis (input, obj.filt_coeff, obj.n_chan, obj.os_factor);
-            output_size = size(output);
+            
+            
+            remainder = 1;
+            while (remainder ~= 0)
+                output_size = size(output);
+                remainder = mod (output_size(3), obj.os_factor.nu);
+                
+                if (remainder ~= 0)
+                    fprintf ('FilterBank: output length = %d samples is not a multiple of %d\n',output_size(3), obj.os_factor.nu);
+                    output_ndat = output_size(3) - remainder;
+                    fprintf ('FilterBank: reducing output from %d to %d\n', output_size(3),output_ndat);
+                    output = output(:,:,1:output_ndat);
+                end
+            end
+            
             input_idat = output_size(3) * obj.n_chan * obj.os_factor.de / obj.os_factor.nu;
             obj.buffered_samples = input_size(3) - input_idat;
             
