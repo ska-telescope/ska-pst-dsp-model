@@ -24,10 +24,22 @@ for test = tests
     
 end
 
-%% generate DADA files containing square-wave amplitude modulated noise
+%% generate DADA files containing square-wave amplitude modulated noise 
+% passed through the specified analysis filter bank configuration
 
 for test = tests
     
     square_wave(test);
+    
+end
+
+%% generate DADA files containing square-wave amplitude modulated noise
+% passed through the specified analysis filter bank configuration
+% and then inverted using the InverseFilterbank
+
+for test = tests
+    
+    fprintf ('Producing inverted square waves after %s filter bank \n', test);
+    square_wave(test,1);
     
 end
