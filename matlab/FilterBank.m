@@ -58,7 +58,7 @@ classdef FilterBank
             obj.buffered_samples = input_size(3) - input_idat;
             
             if (obj.buffered_samples > 0)
-               obj.input_buffer = input (:,:,input_idat:end);
+                obj.input_buffer = input (:,:,(input_idat+1):end);
             end
             
         end % of execute function
