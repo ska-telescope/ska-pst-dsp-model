@@ -44,7 +44,7 @@ for outputSample = 1:outputSamples
     % Rotation is by pi/2, advancing with each frequency bin and time sample.
     % note : DC is at 129; no rotation; Output sample 0 has no rotation.
     % rotation defined here is in units of pi/2
-    rotation = mod(outputSample * (-128:127),4);
+    rotation = mod((outputSample-1) * (-128:127),4);
     dout2 = dout1 .* shiftdim(exp(1i*2*pi*rotation/4));
     
     %keyboard
