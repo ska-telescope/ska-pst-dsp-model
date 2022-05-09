@@ -1,3 +1,5 @@
+% AT3-188 14. bin_offset is the fourth argument
+% AT3-188 15. n_bins is the first argument
 function signal = complex_sinusoid(n_bins, frequencies, phases, bin_offset, dtype_)
   % generate a complex sinusoid that is the linear combination of sinusoids
   % with specified frequencies and phases.
@@ -24,6 +26,7 @@ function signal = complex_sinusoid(n_bins, frequencies, phases, bin_offset, dtyp
   t = 0:n_bins-1;
   signal = complex(zeros(1, n_bins, dtype));
   for i = 1:length(frequencies)
+    % AT3-188 13. frequency has bin_offset added to it
     signal = signal + exp(j*(2*pi*(frequencies(i) + bin_offset)/n_bins*t + phases(i)));
   end
 end

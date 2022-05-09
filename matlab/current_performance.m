@@ -48,6 +48,7 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
     config
   end
 
+  % AT3-188 12. the second argument is the frequency
   function signal = complex_sinusoid_handle (nbins, frequency, dtype_)
     signal = complex_sinusoid(nbins, [frequency], [pi/4], 0.0, dtype_);
   end
@@ -74,7 +75,12 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
 
   function handle = freq_domain_offsets_factory (npoints)
     function test_params = freq_domain_offsets (block_size, nblocks, varargin)
+      % AT3-188 1. harmonic numbers set here
+      fprintf ('freq_domain_offsets nblocks=%d block_size=%d npoints=%d\n',nblocks,block_size,npoints);
       test_params = (1:round(block_size/npoints):block_size).*nblocks;
+      % test_mid = test_params(npoints/2);
+      % step=32;
+      % test_params = test_mid + (0:step:npoints*step)
     end
     handle = @freq_domain_offsets;
   end
@@ -158,8 +164,11 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
   end
 
   if strcmp(domain, 'freq')
+      % AT-188 fft_length computed here
     fft_length = 2*normalize(config.os_factor, config.input_fft_length)*config.channels;
 
+    % AT3-188 2. handle to freq_domain_offsets passed as fifth argument
+    % AT3-188 11. the third argument passed is complex_sinusoid_handle
     test_overlap = verify_test_vector_params_factory(...
       config,....
       window_function,....
@@ -190,6 +199,8 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
 end
 
 
+% AT3-188 3. handle to freq_domain_offsets -> test_param_generator_handle
+% AT3-188 10. signal_generator_handle is the third argument to verify_test_vector_params_factory
 function handle = verify_test_vector_params_factory (config,...
                                         window_function_handle,...
                                         signal_generator_handle,...
@@ -213,9 +224,11 @@ function handle = verify_test_vector_params_factory (config,...
     fprintf ('current_performance: output_overlap=%d\n', output_overlap);
     
     block_size = normalize(config.os_factor, input_fft_length)*config.channels;
+    
+    % AT3-188 19. nbins set here
     nbins = nblocks*block_size;
-
     fprintf('nbins=%d\n', nbins);
+    
     output_nbins = calc_output_nbins(...
         nbins, config.channels, config.os_factor,...
         filt_taps, input_fft_length, input_overlap);
@@ -223,6 +236,7 @@ function handle = verify_test_vector_params_factory (config,...
 
     param_res = [];
 
+    % AT3-188 4. test_param_generator_handle creates array of test parameters
     test_params = test_param_generator_handle(...
       block_size, nblocks, input_overlap, output_overlap + 1, filt_offset, output_nbins);
     
@@ -237,6 +251,10 @@ function handle = verify_test_vector_params_factory (config,...
       %   prev_bytes = fprintf('polyphase_analysis: %d/%d blocks\n', k, nblocks);
       prev_bytes = fprintf('test %d/%d \n', i, length(test_params));
       pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
+      
+      % AT3-188 5. each parameter is passed as the eight argument to test_data_pipeline
+      % AT3-188 9. the seventh argument is signal_generator_handle
+      % AT3-188 18. nbins is passed as the fifth argument
       res = test_data_pipeline(config, config.channels, config.os_factor,...
                                input_fft_length, nbins,...
                                config.fir_offset_direction,...
@@ -249,6 +267,7 @@ function handle = verify_test_vector_params_factory (config,...
                                  window_function_handle,...
                                  config.conjugate_synthesis_result, 1},...
                                config.data_dir);
+                           
       chopped = chop(res, output_overlap + config.kludge_offset);
       perf_res = performance_handle(chopped{:});
       param_res = [param_res; perf_res];

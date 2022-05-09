@@ -1,3 +1,6 @@
+% AT3-188 6. Eighth argument named test_vector_handler_args
+% AT3-188 8. test_vector_handler the seventh argument
+% AT3-188 17. n_bins is the fifth argument
 function res = test_data_pipeline(...
     config_struct,...
     n_chan, os_factor,...
@@ -78,6 +81,8 @@ function res = test_data_pipeline(...
 
   % generate some impulse, either in the time or spectral domain
 
+  % AT3-188 7. test_vector_handler_args passed as second argument to test_vector_handler
+  % AT3-188 16. n_bins is the first argument passed to test_vector_handler
   impulse_data = test_vector_handler(n_bins, test_vector_handler_args{:}, dtype);
   input_data = complex(zeros(n_pol, 1, n_bins, dtype));
   for i_pol=1:n_pol

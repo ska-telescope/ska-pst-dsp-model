@@ -21,8 +21,8 @@ classdef ErrorAnalysis
       end
 
       [max_val, argmax] = max(a);
-
-      % fprintf('zero_max_val: domain=%d\n', domain);
+      n=size(a);
+      fprintf('max: idx=%d n=%d\n', argmax, n);
       
       low = argmax - domain;
       if (low < 1)

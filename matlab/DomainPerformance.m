@@ -13,7 +13,7 @@ classdef DomainPerformance
         z = z / abs(z);
         a = a * z;
         z = dot(a,b);
-        fprintf ('corrected phase difference = %f deg\n', angle(z)*180/pi);
+        % fprintf ('corrected phase difference = %f deg\n', angle(z)*180/pi);
       end
       
       plot_things = 0;
