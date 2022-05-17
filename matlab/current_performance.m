@@ -78,9 +78,19 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
       % AT3-188 1. harmonic numbers set here
       fprintf ('freq_domain_offsets nblocks=%d block_size=%d npoints=%d\n',nblocks,block_size,npoints);
       test_params = (1:round(block_size/npoints):block_size).*nblocks;
+      
+      %
+      % AT3-194 WvS 2022-05-17
+      %
+      % To experiment with the frequencies of the tones that are
+      % passed through the signal chain, modify the test_params 
+      % vector here, as in the following example:
+      
       % test_mid = test_params(npoints/2);
       % step=32;
       % test_params = test_mid + (0:step:npoints*step)
+      
+      % 
     end
     handle = @freq_domain_offsets;
   end
