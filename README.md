@@ -1,92 +1,269 @@
-# Ska Pst Dsp Model
+# SKA PST DSP Model
 
+## Overview
 
+These instructions describe how to compare the results of dspsr's PFB inversion implementation with the PST Signal model implemented in Matlab. The goal of this comparison is to assess whether the two implementations produce the same results, within numerical precision.
 
-## Getting started
+For instructions on how to quantify the performance of the Matlab implementation, please see
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/ska-telescope/ska-pst-dsp-model.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/ska-telescope/ska-pst-dsp-model/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+https://confluence.skatelescope.org/display/SE/Testing+polyphase+filter+bank+inversion+using+MATLAB+model
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+
+This repo uses Python to process test vectors generated by a Matlab pipeline.
+
+With `poetry <https://poetry.eustace.io/docs/>`_ installed:
+
+.. code-block::
+
+  cd python
+  poetry install
+
+
+In order to run tests with the Matlab backend, the `Matlab runtime environment <https://au.mathworks.com/products/compiler/matlab-runtime.html>`_
+must be installed.
+
+## Building
+
+With matlab installed, run `make` to create stand alone executables from
+Matlab code.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Matlab
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+This repo contains Matlab code derived from the PST "Golden" signal chain model. In particular, it contains scripts for channelizing data via oversampled PFB, and performing FFT based polyphase inversion. The FFT based polyphase inversion implementation in this repo is the "Golden" implementation.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+In the same way that the Python code in this repo implements a harness to test the purity of the DSPSR PFB inversion implementation, there is a Matlab script ``current_performance.m`` that implements a pipeline for determining the temporal and spectral purity of the "Golden" PST PFB inversion algorithm.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Polyphase Filterbank Filter Generator
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Two approaches to generating Polyphase Filterbank (PFB) filter coefficients have been developed for the SKA. *These two approaches require two different PFB channelizers*. Two separate Matlab scripts encapsulate these two approaches:
 
-## License
-For open source projects, say how it is licensed.
+- ``design_PFB_FIR_filter.m``: Uses a single stage FIR filter design. This is the script used to develop SKA Low channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis.m``
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- ``design_PFB_FIR_filter_two_stage.m``: Uses a two stage FIR filter design. This is adapted from the script used to develop SKA Mid channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis_padded.m``. The two stage design allows for generating large (>1e5) numbers of coefficients.
+
+
+### Polyphase Filterbank Channelizer
+
+The Matlab code in this repo has two different PFB channelizers.
+
+- ``polyphase_analysis.m``: To be used with SKA Low coefficients, or those created by ``design_PFB_FIR_filter.m``. This is derived from code originally put together by John Bunton. This does not zero pad the input data, meaning that the number of output samples is less than (input samples) / (channels * oversampling ratio).
+- ``polyphase_analysis_padded.m``: To be used with SKA Mid coefficients, or those created by ``design_PFB_FIR_filter_two_stage.m``. This is derived from code orignally put together by Thushara Gunaratne. This zero pads the input data.
+
+
+### Polyphase Filterbank Inversion
+
+- polyphase_synthesis.m: This is the Golden FFT based PFB inversion implementation; this is the implementation against which others' correctness is judged.
+
+
+### Python
+
+The goal of the Python code in this repo is to implement a test harness to test different PFB inversion implementations against each other, and to the test the temporal and spectral purity of the PFB inversion algorithm.
+
+
+### Testing Python and Matlab "backends"
+
+The ``test_backends.py`` script compares the output of the Matlab and Python PFB channelizers.
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_backends
+
+
+### Testing dspsr and Matlab PFB Inversion implementations
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_matlab_dspsr_pfb_inversion
+
+Full command line arguments:
+
+.. code-block::
+
+  usage: test_matlab_dspsr_pfb_inversion.py [-h] [-t] [-f] [-n N_TEST]
+                                          [-c SUB_CONFIG_NAME] [--save-output]
+                                          [--extra-args EXTRA_ARGS] [-v] [-s]
+
+  Test DSPSR and Matlab PFB Inversion Implementations
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -t, --do-time
+    -f, --do-freq
+    -n N_TEST, --n-test N_TEST
+                          Specify the number of test vectors to use
+    -c SUB_CONFIG_NAME, --config SUB_CONFIG_NAME
+                          Specify which sub configuration to use
+    --save-output         Indicate whether to save intermediate products
+    --extra-args EXTRA_ARGS
+                          Specify any additional arguments to pass to dspsr
+    -v, --verbose
+    -s, --do-simulated-pulsar
+
+
+If these tests pass, the program will exit successfully. Moreover, it means that the implementations being tested produce the same result to one part in 1e-6.
+
+We can configure these tests with the `config/test.config.json` file. For example, if we want to turn derippling off in our tests, we change the ``"deripple"`` key from ``true`` to ``false``. See `Validation Configuration`_ for more information on the meaning of all the fields in the ``test.config.json`` file.
+
+### Testing spectral and temporal purity
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_purity
+
+This code uses the ``"test"`` configuration from ``config/test.config.json`` by default. We can tell the script to do only temporal or spectral purity tests with the ``-t`` and ``-f`` flags respectively.
+
+Full command line arguments:
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m verify.test_purity -h
+
+  usage: purity.py [-h] [-t] [-f] [-n N_TEST] [-c SUB_CONFIG_NAME]
+                   [--save-output] [--extra-args EXTRA_ARGS] [-v]
+
+  DSPSR PFB inversion purity
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -t, --do-time
+    -f, --do-freq
+    -n N_TEST, --n-test N_TEST
+                          Specify the number of test vectors to use
+    -c SUB_CONFIG_NAME, --config SUB_CONFIG_NAME
+                          Specify which sub configuration to use
+    --save-output         Indicate whether to save intermediate products
+    --extra-args EXTRA_ARGS
+                          Specify any additional arguments to pass to dspsr
+    -v, --verbose
+
+
+The ``test_purity.py`` script creates a JSON output file in the ``products`` subdirectory. The name of this file depends on the configuration parameters specified in ``test.config.json``. We can plot the results:
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m plot_purity_results.py -i ./../products/report.\*.json
+
+
+### Testing whether PFB inversion works with dedispersion turned on
+
+.. code-block::
+
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison]$ cd python
+  [me@host path/to/PST_Matlab_dspsr_PFB_inversion_comparison/python]$ poetry run python -m test.test_dedispersion
+
+
+
+..
+..
+.. The following is a list of the files in the repo, and a brief description
+.. of what they do.
+..
+.. - `single_double_fft.m`: Determines if matlab's `fft` returns an array whose data
+.. type is the same a that of the input. This also produces a plot displaying the
+.. numerical difference between the input arrays and the results of applying
+.. the `fft` function to each of the input arrays. The motivation for this script
+.. comes from the fact that Numpy's FFT implementation does not return the same
+.. datatype for single precision inputs:
+..
+.. ```python
+.. >>> import numpy as np
+.. >>> a = np.random.rand(1024, dtype=np.float32)
+.. >>> f = np.fft.fft(a)
+.. >>> print(f.dtype)
+.. complex128
+.. ```
+..
+.. If Numpy's FFT were datatype consistent, the above example should output `complex64`.
+.. Moreover, we can see that Numpy actually implicitly upcasts 32 bit data when
+.. calling `numpy.fft.fft`:
+..
+.. ```python
+.. >>> import numpy as np
+.. >>> a32 = np.random.rand(1024, dtype=np.float32)
+.. >>> a64 = a32.astype(np.float64)
+.. >>> f32 = np.fft.fft(a32) # not actually 32-bit data!
+.. >>> f64 = np.fft.fft(a64)
+.. >>> np.sum(np.abs(f32 - f64))
+.. 0
+.. ```
+..
+.. If Numpy were actually computing a 32-bit FFT, we would see some numerical
+.. difference between `f32` and `f64` even though the inputs are attempting to
+.. represent the same array of numbers. This is actually a known bug in Numpy:
+.. https://github.com/numpy/numpy/issues/6012
+..
+.. - `write_header.m`: Writes a DADA header to an open file
+.. - `read_header.m`: Reads a DADA header from an open file
+.. - `load_file.m`: Create a file handler, and then pass it to a callback before
+.. closing the file. Return whatever the callback returned.
+.. - `save_file.m`: Create a file handler, and then pass it to a callback before
+.. closing the file. Can pass arguments to the callback.
+.. - `read_fir_filter_coeff.m`: Read in FIR filter coefficents from a matlab
+.. `.mat` file.
+.. - `struct2map.m`: Convert a `struct` object to a `containers.Map` object.
+.. - `normalize.m`: Normalize an integer given some oversampling factor struct.
+.. - `compare_dump_files.m`: Compare two dump files. Prefer the Python version,
+.. as it has many more features and a cleaner interface.
+.. - `channelize.m`: Channelize some data from a given file. Save the output.
+.. - `synthesize.m`: Apply PFB inversion to the data in a given file. Save the
+.. output.
+.. - `test.m`: Run all the test commands.
+.. - `pad_filter.m`: Zero pad the start of an FIR filter.
+.. - `polyphase_analysis.m`: Implements polyphase filterbank algorithm.
+.. This is originally John Bunton's code with some (small) modifications to incorporate
+.. `os_factor` structs.
+.. - `polyphase_analysis_alt.m`: Implements polyphase filterbank algorithm using
+.. an alternative algorithm. This is based on code written by Ian Morrison and
+.. Thushara Kanchana Gunaratne.
+.. - `polyphase_synthesis.m`: Implements polyphase filterbank inversion algorithm.
+.. - `polyphase_synthesis_alt.m`: Implements polyphase filterbank inversion algorithm.
+.. The purpose of this function is to exactly implement the PFB inversion algorithm
+.. used in Ian Morrison's PST spectral and temporal purity [tests](https://github.com/SKA-PST/PST_Matlab_channelizer_inverter_purity_measurement_CDR).
+.. - `time_domain_impulse.m`: Generates a time domain impulse. Can generate
+.. multiple impulses of varying widths.
+.. - `complex_sinusoid.m`: Generate a complex sinusoid at a given frequency. Can
+.. also generate a linear combination of sinusoids at any number of specified
+.. frequencies.
+.. - `pipeline.m`: Run the test vector generation, analysis and synthesis pipeline.
+.. This will create a directory structure in the `data` subdirectory. -->
+..
+.. <!-- ### Unittesting
+..
+.. Run `test.m` to run a basic suite of unit-like tests. -->
+
+Validation Configuration
+------------------------
+
+``config/test.config.json`` determines what parameters are to run different
+implementations of PFB inversion.
+
+- fir_filter_coeff_file_path (str): Relative (to config directory) path to FIR filter coefficients, in .mat format.
+- header_file_path (str): Relative (to config directory) path to default header file.
+- os_factor (str): Oversampling factor, expressed as "{nu}/{de}"
+- channels (int): The number of channels to generate in PFB inversion.
+- input_fft_length (int): The size of the forward FFT used in PFB inversion.
+- input_overlap (int): The input overlap size used in PFB inversion.
+- blocks (int): Number of processing blocks to generate.
+- backend: Each of the child fields can either be "python" or "matlab", indicating which implementation to use. Python is (significantly) faster, as there is no call overhead, but Matlab is the prototype "gold standard".
+   - test_vectors (str): backend for generating test vectors
+   - channelize (str): PFB channelizer backend
+   - synthesize (str): PFB inversion backend
+- n_pol (int): Number of polarizations to generate
+- dm (float): Dispersion measure. Set to zero to disable dedispersion.
+- period (float): pulsar period.
+- dump_stage (str): Tells dspsr after which stage to dump the results of PFB inversion.
+- deripple (bool): Boolean value indicating whether or not to perform derippling.
+- fft_window (str): the FFT window to use in PFB inversion. Can be "no_window"
+or "tukey"
+
+In order to get sensible results, the FIR filter coefficients must be tuned
+to the oversampling factor and the number of PFB channels.
