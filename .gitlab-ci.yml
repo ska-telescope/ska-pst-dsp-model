@@ -1,0 +1,29 @@
+image: python:3.6
+
+stages:
+  - build
+  - deploy
+
+build:pages:
+  stage: build
+  script:
+    - export base_dir=${PWD}
+    - pip install -r docs/requirements.txt
+    - cd docs
+    - make html
+    - cp -r build/html ${base_dir}/public
+  artifacts:
+    paths:
+      - public
+
+pages:
+  stage: deploy
+  script:
+    - echo "deploying pages"
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+  dependencies:
+    - build:pages
