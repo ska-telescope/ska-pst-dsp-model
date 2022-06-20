@@ -1,4 +1,4 @@
-function square_wave(cfg_,invert_)
+function square_wave(cfg_,invert_,two_stage_)
 
 file = DADAFile;
 file.filename = "../products/square_wave.dada";
@@ -13,6 +13,15 @@ invert = 0;
 if exist('invert_', 'var')
   invert = invert_;
   file.filename = "../products/square_wave_" + cfg + "_inverted.dada";
+end
+
+two_stage  = 0;
+if exist('two_stage_', 'var')
+  two_stage  = two_stage_;      
+  if (two_stage * invert ~= 0)
+     error ('Cannot invert two-stage filter bank\n');
+  end
+  file.filename = "../products/square_wave_" + cfg + "_two_stage.dada";
 end
 
 sqwv = SquareWave;
@@ -36,15 +45,22 @@ if (cfg ~= "")
   
     fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
-
-    filterbank = TwoStageFilterBank (config);
     
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor = config.os_factor;
 
+    new_tsamp = normalize(os_factor, tsamp) * n_chan;
+    
+    if (two_stage == 0)
+        filterbank = FilterBank (config);
+    else
+        filterbank = TwoStageFilterBank (config);
+        new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+    end
+    
     if (invert == 0)
-        header('TSAMP') = num2str(normalize(os_factor, tsamp) * n_chan);
+        header('TSAMP') = num2str(new_tsamp);
         header('PFB_DC_CHAN') = '1';
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
