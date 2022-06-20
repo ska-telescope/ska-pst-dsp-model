@@ -1,4 +1,4 @@
-classdef FilterBank
+classdef FilterBank < Channelizer
     % analysis polyphase filter bank with input buffering
     
     properties
@@ -6,7 +6,7 @@ classdef FilterBank
         pfb_analysis = @polyphase_analysis
 
         % over sampling ratio
-        os_factor = struct('nu', 8, 'de', 7)
+        os_factor = struct([])
 
         filt_coeff          % filter coefficients
         n_chan              % number of channels in ouput
@@ -16,19 +16,18 @@ classdef FilterBank
    
     methods
 
-        function obj = configure (obj, config)
+        function obj = FilterBank (config)
             % returns:
             %   obj = the configured FilterBank object
-            %   x   = the next nsample samples of the wave
 
             arguments
-                obj     (1,1) FilterBank
                 config
             end
             
             fprintf ('FilterBank::configure analysis function=%s\n',...
                      config.analysis_function);
                  
+            obj = obj@Channelizer     
             obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
             obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
             obj.n_chan = config.channels;

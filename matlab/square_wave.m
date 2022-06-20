@@ -37,8 +37,7 @@ if (cfg ~= "")
     fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
 
-    filterbank = FilterBank;
-    filterbank = configure (filterbank, config);
+    filterbank = FilterBank (config);
     
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
@@ -58,8 +57,8 @@ end
 
 file.header = header;
 
-blocksz = 4 * 1024 * 1024;  % 4 Mega sample in RAM
-blocks = 8;                 % 32 Mega sample to disk
+blocksz = 1 * 1024 * 1024;  % 1 Mega sample in RAM
+blocks = 3;                 % 3 Mega sample to disk
 
 for i = 1:blocks
     
@@ -77,4 +76,5 @@ for i = 1:blocks
     file = write (file, single(x));
 end
 
+fprintf ('closing %s\n',file.filename)
 file = close (file);
