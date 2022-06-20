@@ -37,7 +37,7 @@ if (cfg ~= "")
     fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
 
-    filterbank = FilterBank (config);
+    filterbank = TwoStageFilterBank (config);
     
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;

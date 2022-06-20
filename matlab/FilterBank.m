@@ -15,25 +15,24 @@ classdef FilterBank < Channelizer
     end
    
     methods
-
+        
         function obj = FilterBank (config)
             % returns:
             %   obj = the configured FilterBank object
-
-            arguments
-                config
+            
+            %fprintf ('FilterBank::configure analysis function=%s\n',...
+            %         config.analysis_function);
+                  
+              obj = obj@Channelizer;
+              
+            if  nargin > 0
+              obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
+              obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
+              obj.n_chan = config.channels;
+              obj.os_factor = config.os_factor;
             end
             
-            fprintf ('FilterBank::configure analysis function=%s\n',...
-                     config.analysis_function);
-                 
-            obj = obj@Channelizer     
-            obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
-            obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
-            obj.n_chan = config.channels;
-            obj.os_factor = config.os_factor;
-            
-        end % of configure function
+        end % of FilterBank constructor
 
         function [obj, output] = execute (obj, input)
             % returns:
