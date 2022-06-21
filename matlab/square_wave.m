@@ -74,7 +74,7 @@ end
 file.header = header;
 
 blocksz = 1 * 1024 * 1024;  % 1 Mega sample in RAM
-blocks = 3;                 % 3 Mega sample to disk
+blocks = 64;               % 128 Mega sample to disk
 
 for i = 1:blocks
     

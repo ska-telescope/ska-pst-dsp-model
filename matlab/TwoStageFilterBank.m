@@ -49,7 +49,11 @@ classdef TwoStageFilterBank < Channelizer
             nch2 = (nch1 * os.de) / os.nu;
             offset = (nch1 - nch2) / 2;
             
-            fprintf ('stage 2 nch2=%d offset=%d\n',nch2,offset);
+            if (obj.single == 1)
+                nch1 = 1;
+            end
+            
+            fprintf ('stage 2 nch1=%d nch2=%d offset=%d\n',nch1,nch2,offset);
             for ich = 1:nch1
                 
                  [obj.stage2(ich), tmp] = obj.stage2(ich).execute (out1(1,ich,:));
