@@ -1,4 +1,4 @@
-function square_wave(cfg_,invert_,two_stage_)
+function square_wave(cfg_,invert_,two_stage_,critical_)
 
 file = DADAFile;
 file.filename = "../products/square_wave.dada";
@@ -22,6 +22,15 @@ if exist('two_stage_', 'var')
      error ('Cannot invert two-stage filter bank\n');
   end
   file.filename = "../products/square_wave_" + cfg + "_two_stage.dada";
+end
+
+critical  = 0;
+if exist('critical_', 'var')
+  critical  = critical_;      
+  if (critical == 1 && two_stage == 0)
+     error ('Critically-sampled output makes sense only for two-stage\n');
+  end
+  file.filename = "../products/square_wave_" + cfg + "_critical.dada";
 end
 
 sqwv = SquareWave;
@@ -55,7 +64,7 @@ if (cfg ~= "")
     if (two_stage == 0)
         filterbank = FilterBank (config);
     else
-        filterbank = TwoStageFilterBank (config);
+        filterbank = TwoStageFilterBank (config, critical);
         new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
     end
     

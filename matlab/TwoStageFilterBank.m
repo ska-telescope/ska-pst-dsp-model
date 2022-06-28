@@ -4,12 +4,13 @@ classdef TwoStageFilterBank < Channelizer
     properties
         stage1  (1,1) FilterBank
         stage2  (:,1) FilterBank
-        single = 0
+        critical = 0  % output critically sampled subset of channels
+        single = 0    % output only channel 0
     end
    
     methods
 
-        function obj = TwoStageFilterBank (config)
+        function obj = TwoStageFilterBank (config, critical)
             % returns:
             %   obj = the configured FilterBank object
                  
@@ -24,9 +25,10 @@ classdef TwoStageFilterBank < Channelizer
               for ichan = 1:obj.stage1.n_chan
                  obj.stage2(ichan) = FilterBank (config);
               end
+              
             end
             
-            obj.single = 1;
+            obj.critical = critical;
             
         end % of TwoStageFilterBank constructor
 
@@ -46,7 +48,13 @@ classdef TwoStageFilterBank < Channelizer
             os = obj.stage1.os_factor;
             
             nch1 = obj.stage1.n_chan;
-            nch2 = (nch1 * os.de) / os.nu;
+            
+            if (obj.critical)
+                nch2 = (nch1 * os.de) / os.nu;
+            else
+                nch2 = nch1;
+            end
+            
             offset = (nch1 - nch2) / 2;
             
             if (obj.single == 1)
