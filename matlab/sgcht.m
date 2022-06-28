@@ -1,18 +1,20 @@
-function square_wave(cfg_,invert_,two_stage_,critical_)
+function sgcht(cfg_,invert_,two_stage_,critical_)
+
+signal = "square_wave";
 
 file = DADAFile;
-file.filename = "../products/square_wave.dada";
+file.filename = "../products/" + signal;
 
 cfg = "";
 if exist('cfg_', 'var')
   cfg = cfg_;
-  file.filename = "../products/square_wave_" + cfg + ".dada";
+  file.filename = file.filename + "_" + cfg;
 end
 
 invert = 0;
 if exist('invert_', 'var')
   invert = invert_;
-  file.filename = "../products/square_wave_" + cfg + "_inverted.dada";
+  file.filename = file.filename + "_" + cfg + "_inverted";
 end
 
 two_stage  = 0;
@@ -21,7 +23,7 @@ if exist('two_stage_', 'var')
   if (two_stage * invert ~= 0)
      error ('Cannot invert two-stage filter bank\n');
   end
-  file.filename = "../products/square_wave_" + cfg + "_two_stage.dada";
+  file.filename = file.filename + "_" + cfg + "_two_stage";
 end
 
 critical  = 0;
@@ -30,10 +32,10 @@ if exist('critical_', 'var')
   if (critical == 1 && two_stage == 0)
      error ('Critically-sampled output makes sense only for two-stage\n');
   end
-  file.filename = "../products/square_wave_" + cfg + "_critical.dada";
+  file.filename = file.filename + "_" + cfg + "_critical";
 end
 
-sqwv = SquareWave;
+file.filename = file.filename + ".dada";
 
 header_template = "../config/square_wave_header.json";
 json_str = fileread(header_template);
@@ -42,11 +44,14 @@ header = struct2map(jsondecode(json_str));
 calfreq = str2num(header('CALFREQ'));  % in Hz
 tsamp = str2num(header('TSAMP'));      % in microseconds
 
-sqwv.period = 1e6 / (calfreq * tsamp); % in samples
-
-fprintf ('square_wave: frequency=%f Hz\n', calfreq);
-fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
-fprintf ('square_wave: period=%d samples\n', sqwv.period);
+if (signal == "square_wave")
+    gen = SquareWave;
+    gen.period = 1e6 / (calfreq * tsamp); % in samples
+    
+    fprintf ('square_wave: frequency=%f Hz\n', calfreq);
+    fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
+    fprintf ('square_wave: period=%d samples\n', gen.period);
+end
 
 n_chan = 1;
 
@@ -88,7 +93,7 @@ blocks = 64;               % 128 Mega sample to disk
 for i = 1:blocks
     
     fprintf ('block:%d/%d\n', i, blocks);
-    [sqwv, x] = generate(sqwv, blocksz);
+    [gen, x] = generate(gen, blocksz);
         
     if (n_chan > 1)
         [filterbank, x] = execute (filterbank, x);

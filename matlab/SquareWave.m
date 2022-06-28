@@ -1,4 +1,4 @@
-classdef SquareWave
+classdef SquareWave < Generator
     % generates amplitude-modulated noise
     
     properties
