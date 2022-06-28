@@ -86,9 +86,9 @@ if (signal == "square_wave")
 elseif (signal == "complex_sinusoid")
     
     gen = PureTone;
-    calfreq = str2num(header('CALFREQ')); % in Hz
-    gen.period = 1e6 / (calfreq * tsamp); % in samples
-    fprintf ('complex_sinusoid: frequency=%f Hz\n', calfreq);
+    calfreq = str2num(header('TONEFREQ')); % in kHz
+    gen.period = 1e3 / (calfreq * tsamp); % in samples
+    fprintf ('complex_sinusoid: frequency=%f kHz\n', calfreq);
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
     fprintf ('square_wave: period=%d samples\n', gen.period);
 
@@ -119,6 +119,7 @@ if (cfg ~= "")
     end
     
     if (invert == 0)
+        header('HDR_SIZE') = '65536';
         header('TSAMP') = num2str(new_tsamp);
         header('PFB_DC_CHAN') = '1';
         header('NCHAN_PFB_0') = num2str(n_chan);
@@ -132,8 +133,8 @@ end
 
 file.header = header;
 
-blocksz = 1 * 1024 * 1024;% 1 Mega sample in RAM
-blocks = 64;             % 128 Mega sample to disk
+blocksz = 1 * 1024 * 256; % 256k-sample blocks in RAM
+blocks = 64;               % blocks written to disk
 
 for i = 1:blocks
     

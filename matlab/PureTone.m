@@ -19,7 +19,7 @@ classdef PureTone < Generator
                 nsample (1,1) {mustBeInteger, mustBeNonnegative}
             end
             
-            freq = 1/obj.period;
+            freq = 1.0/obj.period;
             t = 0:nsample-1;
             x = complex(zeros(1,1,nsample,'single'));
             x(1,1,:) = exp(j*(2*pi*freq*(t+obj.current)));  
