@@ -89,11 +89,15 @@ elseif (signal == "complex_sinusoid")
     calfreq = str2num(header('TONEFREQ')); % in kHz
     gen.period = 1e3 / (calfreq * tsamp); % in samples
     fprintf ('complex_sinusoid: frequency=%f kHz\n', calfreq);
-    fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
-    fprintf ('square_wave: period=%d samples\n', gen.period);
+    fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
+    fprintf ('complex_sinusoid: period=%f samples\n', gen.period);
 
-elseif (signal == "time_domain_impulse")
-    error ("Unimplemented signal: " + signal);
+elseif (signal == "temporal_impulse")
+
+    gen = Impulse;
+    gen.offset = 20000; % in samples
+    fprintf ('temporal_impulse: offset=%d samples\n', gen.offset);
+
 else
     error ('Unrecognized signal: ' + signal);
 end
@@ -134,7 +138,7 @@ end
 file.header = header;
 
 blocksz = 1 * 1024 * 256; % 256k-sample blocks in RAM
-blocks = 64;               % blocks written to disk
+blocks = 1;               % blocks written to disk
 
 for i = 1:blocks
     
