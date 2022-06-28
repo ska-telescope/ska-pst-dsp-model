@@ -10,7 +10,7 @@ classdef TwoStageFilterBank < Channelizer
    
     methods
 
-        function obj = TwoStageFilterBank (config, critical)
+        function obj = TwoStageFilterBank (config)
             % returns:
             %   obj = the configured FilterBank object
                  
@@ -27,9 +27,7 @@ classdef TwoStageFilterBank < Channelizer
               end
               
             end
-            
-            obj.critical = critical;
-            
+                        
         end % of TwoStageFilterBank constructor
 
         function [obj, out] = execute (obj, input)

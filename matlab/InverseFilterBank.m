@@ -1,4 +1,4 @@
-classdef InverseFilterBank
+classdef InverseFilterBank < DeChannelizer
     % polyphase synthesis with input buffering
     
     properties
@@ -19,15 +19,13 @@ classdef InverseFilterBank
    
     methods
 
-        function obj = configure (obj, config)
+        function obj = InverseFilterBank (config)
             % returns:
-            %   obj = the configured FilterBank object
-            %   x   = the next nsample samples of the wave
-
-            arguments
-                obj     (1,1) InverseFilterBank
-                config
-            end
+            %   obj = the configured InverseFilterBank object
+                 
+            obj = obj@DeChannelizer;
+            
+            if nargin > 0
             
             obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
             obj.n_fft = config.input_fft_length;
@@ -40,10 +38,12 @@ classdef InverseFilterBank
             factory = win.lookup(config.fft_window);
             obj.window_function = factory(config.input_fft_length, config.input_overlap);
             
-            fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
-                     config.fft_window,config.input_fft_length,config.input_overlap);
+            % fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
+            %         config.fft_window,config.input_fft_length,config.input_overlap);
                  
-        end % of configure function
+            end
+            
+        end % of InverseFilterBank constructor
 
         function [obj, output] = execute (obj, input)
             % returns:
@@ -64,12 +64,22 @@ classdef InverseFilterBank
             n_pol  = size_in(1);
             n_chan = size_in(2);
             n_dat  = size_in(3);
-            
+
+            if isreal(input)
+                error ('polyphase_synthesis input data are real-valued!');
+            end
+                        
             output = polyphase_synthesis (input, obj.n_fft, obj.os_factor,...
                 struct('apply_deripple', obj.deripple, 'filter_coeff', obj.filt_coeff),...
                 obj.sample_offset+1, obj.overlap,...
                 obj.window_function,obj.conjugate_result,0);
             
+            if isreal(output)
+                fprintf ('size of input data ');
+                size(input)
+                error ('polyphase_synthesis output data are real-valued!');
+            end
+                    
             remainder = 1;
             while (remainder ~= 0)
                 output_size = size(output);

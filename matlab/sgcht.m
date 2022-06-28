@@ -41,19 +41,8 @@ if ( cfg ~= "" )
   file.filename = file.filename + "_" + cfg;
 end
 
-invert = p.Results.invert;
-if ( invert )
-  if ( cfg == "" )
-     error ('Cannot invert without analysis filterbank cfg');
-  end
-  file.filename = file.filename + "_inverted";
-end
-
 two_stage  = p.Results.two_stage;
 if ( two_stage )
-  if ( invert )
-     error ('Cannot invert two-stage filter bank');
-  end
   file.filename = file.filename + "_two_stage";
 end
 
@@ -63,6 +52,14 @@ if (critical == 1)
      error ('Critically-sampled output makes sense only for two-stage\n');
   end
   file.filename = file.filename + "_critical";
+end
+
+invert = p.Results.invert;
+if ( invert )
+  if ( cfg == "" )
+     error ('Cannot invert without analysis filterbank cfg');
+  end
+  file.filename = file.filename + "_inverted";
 end
 
 file.filename = file.filename + ".dada";
@@ -112,33 +109,50 @@ if (cfg ~= "")
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor = config.os_factor;
-
-    new_tsamp = normalize(os_factor, tsamp) * n_chan;
-    
-    if (two_stage == 0)
-        filterbank = FilterBank (config);
+        
+    if (two_stage)
+        filterbank = TwoStageFilterBank (config);
+        filterbank.critical = critical;
+        level = 2;
     else
-        filterbank = TwoStageFilterBank (config, critical);
-        new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+        filterbank = FilterBank (config);
+        level = 1;
     end
     
-    if (invert == 0)
+    if (invert)
+        if (two_stage)
+            inverse = TwoStageInverseFilterBank (config);
+        else
+            inverse = InverseFilterBank (config);
+        end
+        
+        level = level - 1;
+    end
+    
+    if (level)
+        
+        new_tsamp = tsamp;
+        for l = 1:level
+            new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+        end
+    
+        header('TSAMP') = num2str(new_tsamp);
+
         header('HDR_SIZE') = '65536';
         header('TSAMP') = num2str(new_tsamp);
         header('PFB_DC_CHAN') = '1';
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
         header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
-    else
-        inverse = InverseFilterBank;
-        inverse = configure (inverse, config);
+    
     end
+
 end
 
 file.header = header;
 
-blocksz = 1 * 1024 * 256; % 256k-sample blocks in RAM
-blocks = 1;               % blocks written to disk
+blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
+blocks = 2;                 % blocks written to disk
 
 for i = 1:blocks
     
