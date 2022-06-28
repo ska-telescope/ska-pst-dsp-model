@@ -11,31 +11,23 @@ function sgcht(varargin)
 %
 % .. code-block::
 %
-%   ./sgcht complex_sinusoid 1000 1,0.25,0.1 single 1 ./ complex_sinusoid.dump 1
-%
 %   sgcht(signal='complex_sinusoid', cfg='low')
-%
-% varargin:
-%   - handler_name: name of handler to use to create function
-%   - params: comma separate list of inputs
-%   - n_bins: number of bins per polarization
-%   - dtype: type of data to generate
-%   - n_pol: number of polarizations to generate
-%   - output_dir: The directory where the synthesized output
-%     dada file will be saved.
-%   - output_file_name: The name of the output dada file.
-%   - verbose:  Optional verbosity flag.
 %
 % Args:
 %   varargin (cell): Inputs to parsed.
     
 p = inputParser;
 
+% name of the analysis filter bank configuration (default: none)
 addOptional(p, 'cfg',       '',            @ischar);
+% name of the signal generator (default: square wave)
 addOptional(p, 'signal',    'square_wave', @ischar);
-addOptional(p, 'invert',    0,             @islogical);
-addOptional(p, 'two_stage', 0,             @islogical);
-addOptional(p, 'critical',  0,             @islogical);
+% when true, peform two stages of analysis filterbank
+addOptional(p, 'two_stage', false,         @islogical);
+% when true, invert the (second stage) analysis filterbank
+addOptional(p, 'invert',    false,         @islogical);
+% when true, retain only the critically sampled fraction of (first stage)
+addOptional(p, 'critical',  false,         @islogical);
 
 parse(p, varargin{:});
 
@@ -52,17 +44,17 @@ end
 invert = p.Results.invert;
 if ( invert )
   if ( cfg == "" )
-     error ('Cannot invert without analysis filterbank cfg\n');
+     error ('Cannot invert without analysis filterbank cfg');
   end
-  file.filename = file.filename + "_" + cfg + "_inverted";
+  file.filename = file.filename + "_inverted";
 end
 
 two_stage  = p.Results.two_stage;
 if ( two_stage )
   if ( invert )
-     error ('Cannot invert two-stage filter bank\n');
+     error ('Cannot invert two-stage filter bank');
   end
-  file.filename = file.filename + "_" + cfg + "_two_stage";
+  file.filename = file.filename + "_two_stage";
 end
 
 critical  = p.Results.critical;
@@ -70,32 +62,47 @@ if (critical == 1)
   if (two_stage == 0)
      error ('Critically-sampled output makes sense only for two-stage\n');
   end
-  file.filename = file.filename + "_" + cfg + "_critical";
+  file.filename = file.filename + "_critical";
 end
 
 file.filename = file.filename + ".dada";
 
-header_template = "../config/square_wave_header.json";
+header_template = "../config/" + signal + "_header.json";
 json_str = fileread(header_template);
 header = struct2map(jsondecode(json_str));
-
-calfreq = str2num(header('CALFREQ'));% in Hz
 tsamp = str2num(header('TSAMP'));    % in microseconds
 
 if (signal == "square_wave")
+    
     gen = SquareWave;
+    
+    calfreq = str2num(header('CALFREQ')); % in Hz
     gen.period = 1e6 / (calfreq * tsamp); % in samples
     
     fprintf ('square_wave: frequency=%f Hz\n', calfreq);
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
     fprintf ('square_wave: period=%d samples\n', gen.period);
+    
+elseif (signal == "complex_sinusoid")
+    
+    gen = PureTone;
+    calfreq = str2num(header('CALFREQ')); % in Hz
+    gen.period = 1e6 / (calfreq * tsamp); % in samples
+    fprintf ('complex_sinusoid: frequency=%f Hz\n', calfreq);
+    fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
+    fprintf ('square_wave: period=%d samples\n', gen.period);
+
+elseif (signal == "time_domain_impulse")
+    error ("Unimplemented signal: " + signal);
+else
+    error ('Unrecognized signal: ' + signal);
 end
 
 n_chan = 1;
 
 if (cfg ~= "")
   
-    fprintf ('square_wave: loading "%s" analysis filter bank\n', cfg);
+    fprintf ('loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
     
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
