@@ -1,35 +1,73 @@
-function sgcht(cfg_,invert_,two_stage_,critical_)
+function sgcht(varargin)
 
-signal = "square_wave";
+% Signal Generator, Channelizer, and Tester (s g ch & t)  
+% This function is meant to be used as a stand alone executable.
+% It creates a DADA file containing the generated signal and can
+% optionally perform fidelity tests.
+%
+% Uses ``inputParser`` and a bunch of other classes
+%
+% Example:
+%
+% .. code-block::
+%
+%   ./sgcht complex_sinusoid 1000 1,0.25,0.1 single 1 ./ complex_sinusoid.dump 1
+%
+%   sgcht(signal='complex_sinusoid', cfg='low')
+%
+% varargin:
+%   - handler_name: name of handler to use to create function
+%   - params: comma separate list of inputs
+%   - n_bins: number of bins per polarization
+%   - dtype: type of data to generate
+%   - n_pol: number of polarizations to generate
+%   - output_dir: The directory where the synthesized output
+%     dada file will be saved.
+%   - output_file_name: The name of the output dada file.
+%   - verbose:  Optional verbosity flag.
+%
+% Args:
+%   varargin (cell): Inputs to parsed.
+    
+p = inputParser;
+
+addOptional(p, 'cfg',       '',            @ischar);
+addOptional(p, 'signal',    'square_wave', @ischar);
+addOptional(p, 'invert',    0,             @islogical);
+addOptional(p, 'two_stage', 0,             @islogical);
+addOptional(p, 'critical',  0,             @islogical);
+
+parse(p, varargin{:});
+
+signal = p.Results.signal;
 
 file = DADAFile;
 file.filename = "../products/" + signal;
 
-cfg = "";
-if exist('cfg_', 'var')
-  cfg = cfg_;
+cfg = p.Results.cfg;
+if ( cfg ~= "" )
   file.filename = file.filename + "_" + cfg;
 end
 
-invert = 0;
-if exist('invert_', 'var')
-  invert = invert_;
+invert = p.Results.invert;
+if ( invert )
+  if ( cfg == "" )
+     error ('Cannot invert without analysis filterbank cfg\n');
+  end
   file.filename = file.filename + "_" + cfg + "_inverted";
 end
 
-two_stage  = 0;
-if exist('two_stage_', 'var')
-  two_stage  = two_stage_;      
-  if (two_stage * invert ~= 0)
+two_stage  = p.Results.two_stage;
+if ( two_stage )
+  if ( invert )
      error ('Cannot invert two-stage filter bank\n');
   end
   file.filename = file.filename + "_" + cfg + "_two_stage";
 end
 
-critical  = 0;
-if exist('critical_', 'var')
-  critical  = critical_;      
-  if (critical == 1 && two_stage == 0)
+critical  = p.Results.critical;
+if (critical == 1)
+  if (two_stage == 0)
      error ('Critically-sampled output makes sense only for two-stage\n');
   end
   file.filename = file.filename + "_" + cfg + "_critical";
@@ -41,8 +79,8 @@ header_template = "../config/square_wave_header.json";
 json_str = fileread(header_template);
 header = struct2map(jsondecode(json_str));
 
-calfreq = str2num(header('CALFREQ'));  % in Hz
-tsamp = str2num(header('TSAMP'));      % in microseconds
+calfreq = str2num(header('CALFREQ'));% in Hz
+tsamp = str2num(header('TSAMP'));    % in microseconds
 
 if (signal == "square_wave")
     gen = SquareWave;
@@ -87,8 +125,8 @@ end
 
 file.header = header;
 
-blocksz = 1 * 1024 * 1024;  % 1 Mega sample in RAM
-blocks = 64;               % 128 Mega sample to disk
+blocksz = 1 * 1024 * 1024;% 1 Mega sample in RAM
+blocks = 64;             % 128 Mega sample to disk
 
 for i = 1:blocks
     
