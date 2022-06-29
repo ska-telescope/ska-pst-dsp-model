@@ -23,7 +23,7 @@ classdef SquareWave < Generator
             
             ioff = floor (obj.period*obj.duty_cycle);
             nout = 0;
-            x = zeros(1,1,nsample,'single');
+            x = complex(zeros(1,1,nsample,'single'));
             % fprintf ('SquareWave::generate ' ); size(x)
 
             while (nout < nsample)
@@ -45,8 +45,9 @@ classdef SquareWave < Generator
                 end
                 
                 % add n more random values to the output x
-                x(1,1,nout+(1:n)) = a*randn([1 n], 'single');
-           
+                x(1,1,nout+(1:n)) ...
+                    = a*(randn([1 n], 'single') + 1i*randn([1 n], 'single'));
+                           
                 % fprintf ('SquareWave::generate ' ); size(x)
                 
                 nout = nout + n;
