@@ -133,7 +133,11 @@ if (cfg ~= "")
         
         new_tsamp = tsamp;
         for l = 1:level
-            new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+            if (critical)
+                new_tsamp = new_tsamp * n_chan;
+            else
+                new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+            end
         end
     
         header('TSAMP') = num2str(new_tsamp);
