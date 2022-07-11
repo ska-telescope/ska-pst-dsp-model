@@ -1,4 +1,4 @@
-classdef FilterBank
+classdef FilterBank < Channelizer
     % analysis polyphase filter bank with input buffering
     
     properties
@@ -6,7 +6,7 @@ classdef FilterBank
         pfb_analysis = @polyphase_analysis
 
         % over sampling ratio
-        os_factor = struct('nu', 8, 'de', 7)
+        os_factor = struct([])
 
         filt_coeff          % filter coefficients
         n_chan              % number of channels in ouput
@@ -15,26 +15,24 @@ classdef FilterBank
     end
    
     methods
-
-        function obj = configure (obj, config)
+        
+        function obj = FilterBank (config)
             % returns:
             %   obj = the configured FilterBank object
-            %   x   = the next nsample samples of the wave
-
-            arguments
-                obj     (1,1) FilterBank
-                config
+            
+            %fprintf ('FilterBank::configure analysis function=%s\n',...
+            %         config.analysis_function);
+                  
+              obj = obj@Channelizer;
+              
+            if  nargin > 0
+              obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
+              obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
+              obj.n_chan = config.channels;
+              obj.os_factor = config.os_factor;
             end
             
-            fprintf ('FilterBank::configure analysis function=%s\n',...
-                     config.analysis_function);
-                 
-            obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
-            obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
-            obj.n_chan = config.channels;
-            obj.os_factor = config.os_factor;
-            
-        end % of configure function
+        end % of FilterBank constructor
 
         function [obj, output] = execute (obj, input)
             % returns:
@@ -61,9 +59,9 @@ classdef FilterBank
                 remainder = mod (output_size(3), obj.os_factor.nu);
                 
                 if (remainder ~= 0)
-                    fprintf ('FilterBank: output length = %d samples is not a multiple of %d\n',output_size(3), obj.os_factor.nu);
+                    % fprintf ('FilterBank: output length = %d samples is not a multiple of %d\n',output_size(3), obj.os_factor.nu);
                     output_ndat = output_size(3) - remainder;
-                    fprintf ('FilterBank: reducing output from %d to %d\n', output_size(3),output_ndat);
+                    % fprintf ('FilterBank: reducing output from %d to %d\n', output_size(3),output_ndat);
                     output = output(:,:,1:output_ndat);
                 end
             end

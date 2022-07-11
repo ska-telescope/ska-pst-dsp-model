@@ -20,8 +20,6 @@ With [poetry](https://poetry.eustace.io/docs/) installed:
 In order to run tests with the Matlab backend, the [Matlab runtime environment](https://au.mathworks.com/products/compiler/matlab-runtime.html)
 must be installed.
 
-## Building
-
 With matlab installed, run `make` to create stand alone executables from
 Matlab code.
 
@@ -34,7 +32,7 @@ This repo contains Matlab code derived from the PST "Golden" signal chain model.
 In the same way that the Python code in this repo implements a harness to test the purity of the DSPSR PFB inversion implementation, there is a Matlab script ``current_performance.m`` that implements a pipeline for determining the temporal and spectral purity of the "Golden" PST PFB inversion algorithm.
 
 
-### Polyphase Filterbank Filter Generator
+#### Polyphase Filterbank Filter Generator
 
 Two approaches to generating Polyphase Filterbank (PFB) filter coefficients have been developed for the SKA. *These two approaches require two different PFB channelizers*. Two separate Matlab scripts encapsulate these two approaches:
 
@@ -43,7 +41,7 @@ Two approaches to generating Polyphase Filterbank (PFB) filter coefficients have
 - ``design_PFB_FIR_filter_two_stage.m``: Uses a two stage FIR filter design. This is adapted from the script used to develop SKA Mid channelizer coefficients. Requires using the PFB implementation in ``polyphase_analysis_padded.m``. The two stage design allows for generating large (>1e5) numbers of coefficients.
 
 
-### Polyphase Filterbank Channelizer
+#### Polyphase Filterbank Channelizer
 
 The Matlab code in this repo has two different PFB channelizers.
 
@@ -51,7 +49,7 @@ The Matlab code in this repo has two different PFB channelizers.
 - ``polyphase_analysis_padded.m``: To be used with SKA Mid coefficients, or those created by ``design_PFB_FIR_filter_two_stage.m``. This is derived from code orignally put together by Thushara Gunaratne. This zero pads the input data.
 
 
-### Polyphase Filterbank Inversion
+#### Polyphase Filterbank Inversion
 
 - polyphase_synthesis.m: This is the Golden FFT based PFB inversion implementation; this is the implementation against which others' correctness is judged.
 
@@ -59,14 +57,14 @@ The Matlab code in this repo has two different PFB channelizers.
 
 The goal of the Python code in this repo is to implement a test harness to test different PFB inversion implementations against each other, and to the test the temporal and spectral purity of the PFB inversion algorithm.
 
-### Testing Python and Matlab "backends"
+#### Testing Python and Matlab "backends"
 
 The ``test_backends.py`` script compares the output of the Matlab and Python PFB channelizers. From the top-level folder
 
     cd python
     poetry run python -m verify.test_backend
 
-### Testing dspsr and Matlab PFB Inversion implementations
+#### Testing dspsr and Matlab PFB Inversion implementations
 
     cd python
     poetry run python -m verify.test_matlab_dspsr_pfb_inversion
@@ -98,7 +96,7 @@ If these tests pass, the program will exit successfully. Moreover, it means that
 
 We can configure these tests with the `config/test.config.json` file. For example, if we want to turn derippling off in our tests, we change the ``"deripple"`` key from ``true`` to ``false``. See `Validation Configuration`_ for more information on the meaning of all the fields in the ``test.config.json`` file.
 
-### Testing spectral and temporal purity
+#### Testing spectral and temporal purity
 
     cd python
     poetry run python -m verify.test_purity
@@ -132,7 +130,7 @@ The ``test_purity.py`` script creates a JSON output file in the ``products`` sub
     cd python
     poetry run python -m plot_purity_results.py -i ./../products/report.\*.json
 
-### Testing whether PFB inversion works with dedispersion turned on
+#### Testing whether PFB inversion works with dedispersion turned on
 
     cd python
     poetry run python -m test.test_dedispersion
