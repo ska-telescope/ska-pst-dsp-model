@@ -28,6 +28,8 @@ addOptional(p, 'two_stage', false,         @islogical);
 addOptional(p, 'invert',    false,         @islogical);
 % when true, retain only the critically sampled fraction of (first stage)
 addOptional(p, 'critical',  false,         @islogical);
+% when true, output only the first coarse channel
+addOptional(p, 'single',  false,           @islogical);
 
 parse(p, varargin{:});
 
@@ -60,6 +62,14 @@ if ( invert )
      error ('Cannot invert without analysis filterbank cfg');
   end
   file.filename = file.filename + "_inverted";
+end
+
+single_chan = p.Results.single;
+if ( single_chan )
+  if ( cfg == "" )
+     error ('Cannot single without analysis filterbank cfg');
+  end
+  file.filename = file.filename + "_single";
 end
 
 file.filename = file.filename + ".dada";
@@ -113,6 +123,7 @@ if (cfg ~= "")
     if (two_stage)
         filterbank = TwoStageFilterBank (config);
         filterbank.critical = critical;
+        filterbank.single = single_chan;
         level = 2;
     else
         filterbank = FilterBank (config);
@@ -122,6 +133,7 @@ if (cfg ~= "")
     if (invert)
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
+            inverse.single = single_chan;
         else
             inverse = InverseFilterBank (config);
         end
@@ -166,7 +178,7 @@ for i = 1:blocks
     if (n_chan > 1)
         [filterbank, x] = execute (filterbank, x);
     end
-    
+        
     if (invert == 1)
         [inverse, x] = execute (inverse, x);
     end
