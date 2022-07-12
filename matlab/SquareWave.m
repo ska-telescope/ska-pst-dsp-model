@@ -33,7 +33,7 @@ classdef SquareWave < Generator
                 if (iphase < ioff)
                     % on-pulse
                     n = ioff-iphase;
-                    a = obj.on_amp;
+                    a = sqrt(obj.on_amp * 0.5);
                 else
                     % off-pulse
                     n = obj.period - iphase;
