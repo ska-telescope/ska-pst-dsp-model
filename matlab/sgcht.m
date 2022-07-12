@@ -45,13 +45,16 @@ end
 
 two_stage  = p.Results.two_stage;
 if ( two_stage )
+  if ( cfg == "" )
+     error ('Cannot have two stages without analysis filterbank cfg');
+  end
   file.filename = file.filename + "_two_stage";
 end
 
 critical  = p.Results.critical;
 if (critical == 1)
   if (two_stage == 0)
-     error ('Critically-sampled output makes sense only for two-stage\n');
+     error ('Critically-sampled output implemented only for two-stage\n');
   end
   file.filename = file.filename + "_critical";
 end
@@ -66,8 +69,8 @@ end
 
 single_chan = p.Results.single;
 if ( single_chan )
-  if ( cfg == "" )
-     error ('Cannot single without analysis filterbank cfg');
+  if (two_stage == 0)
+     error ('Single-channel output implemented only for two-stage\n');
   end
   file.filename = file.filename + "_single";
 end
