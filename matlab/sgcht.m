@@ -173,6 +173,8 @@ file.header = header;
 blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
 blocks = 2;                 % blocks written to disk
 
+tstart = tic;
+
 for i = 1:blocks
     
     fprintf ('block:%d/%d\n', i, blocks);
@@ -189,5 +191,8 @@ for i = 1:blocks
     file = write (file, single(x));
 end
 
+tdelta = toc(tstart);
+fprintf('sgcht took %f seconds\n', tdelta);
+    
 fprintf ('closing %s\n',file.filename)
 file = close (file);
