@@ -56,8 +56,11 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                         
             fprintf ('invrt 2 nch1=%d nchan=%d nch2=%d\n',nch1,nchan,nch2);
 
+            critical = false;
+            
             if (nch2 == (obj.nch1 * os.de) / os.nu)
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
+                critical = true;
             elseif (obj.single)
                 fprintf ('TwoStageInverseFilterBank::execute single channel\n');
             elseif (nch2 ~= obj.nch1)
@@ -67,6 +70,8 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             for ich = 1:nch1
                 
                 intmp = input(1,(1:nch2)+(ich-1)*nch2,:);
+                
+                obj.stage2(ich).critical = critical;
                 
                 [obj.stage2(ich), tmp] = obj.stage2(ich).execute (intmp);
                 

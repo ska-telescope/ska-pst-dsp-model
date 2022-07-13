@@ -1,5 +1,6 @@
 function out = polyphase_synthesis(...
   in,...
+  input_fully_spans_Nyquist_zone,...
   input_fft_length,...
   os_factor,...
   deripple_,...
@@ -50,6 +51,7 @@ function out = polyphase_synthesis(...
   %   [numeric]: Upsampled time domain output array. The
   %     dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
   %     return array and the input array will not be the same
+  %%
   tstart = tic;
 
   function windowed = default_window(input_chunk, input_fft_length, input_overlap)
@@ -103,6 +105,8 @@ function out = polyphase_synthesis(...
   output_overlap = normalize(os_factor, input_overlap) * n_chan;
   output_keep = output_fft_length - 2*output_overlap;
 
+  fprintf('polyphase_synthesis: input spans DC=%d\n', input_fully_spans_Nyquist_zone);
+  
   if verbose
     fprintf('polyphase_synthesis: input_fft_length=%d\n', input_fft_length);
     fprintf('polyphase_synthesis: output_fft_length=%d\n', output_fft_length);
@@ -116,9 +120,11 @@ function out = polyphase_synthesis(...
   out = complex(zeros(n_pol, 1, n_blocks*output_keep, dtype));
 
 
-  FN_width = input_fft_length*os_factor.de/os_factor.nu;
+  FN_width = (input_fft_length*os_factor.de)/os_factor.nu;
   FN_width_2 = FN_width / 2;
 
+  discard_2 = (input_fft_length - FN_width) / 2;
+  
   if deripple.apply_deripple
     if verbose
       fprintf('polyphase_synthesis: applying deripple\n');
@@ -132,22 +138,13 @@ function out = polyphase_synthesis(...
     % - apply to both halves of channel
     filter_response = ones(passband_length+1,1)./abs(H0(1:passband_length+1,1));
   end
-  % j is complex number.
-  % in Python we have to write 1j; this is not necessary in Matlab
-  phase_shift_arr = [0,...
-    j,...
-    0.5 + (sqrt(3.0)/2.0)*j,...
-    sqrt(3.0)/2.0 + 0.5i,...
-    1,...
-    sqrt(3.0)/2.0 - 0.5i,...
-    0.5 - (sqrt(3.0)/2.0)*j,...
-    -j
-  ];
 
   FFFF = complex(zeros(n_chan*FN_width, 1));
   FN = complex(zeros(FN_width, n_chan, dtype));
   in_dat = complex(zeros(n_chan, input_fft_length));
 
+  chan0_psd = zeros(input_fft_length);
+  
   % fig = figure;
   for n=1:n_blocks
     for i_pol=1:n_pol
@@ -174,16 +171,20 @@ function out = polyphase_synthesis(...
 
       spectra = transpose(in_dat);
       spectra = fft(spectra, input_fft_length); % fft operates on each of the columns
-      spectra = fftshift(spectra, 1);
-      spectra = fftshift(spectra, 2);
+      spectra = fftshift(spectra, 1);           % WvS - this swaps the harmonics in each channel
+      spectra = fftshift(spectra, 2);           % WvS - this swaps the channel order
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         % fprintf('i_block=%d, i_pol=%d, chan=%d\n', n, i_pol, chan);
         % size(FN)
-        discard = (1.0 - (os_factor.de/os_factor.nu))/2.0;
         % phase_shift_arr(chan);
-        % FN(:, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan).*phase_shift_arr(chan);
-        FN(1:FN_width, chan) = spectra(round(discard*input_fft_length)+1:round((1.0-discard)*input_fft_length), chan);
+        
+        FN(1:FN_width, chan) = spectra((1:FN_width)+discard_2, chan);
+        
+        if (chan == 1)
+            chan0_psd = chan0_psd + abs(spectra(:,chan)).^2;
+        end
+        
         if deripple.apply_deripple
           % applied_response = zeros(passband_length*2, 1);
           for ii = 1:passband_length
@@ -194,6 +195,11 @@ function out = polyphase_synthesis(...
               % applied_response(passband_length+ii) = filter_response(ii);
           end
         end
+        
+        if (input_fully_spans_Nyquist_zone == 0)
+            FFFF((1:FN_width) + (chan-1)*FN_width) = FN(:, chan);
+        end
+        
       end
       % size(FN(:, 1))
       % catted = cat(1, FN(:, 1), FN(:, 2));
@@ -202,18 +208,22 @@ function out = polyphase_synthesis(...
       % pause
 
       %% Combine chunks & back-transform
-      idx_start = 1;
-      idx_end = FN_width_2;
-      FFFF(idx_start:idx_end) = FN(FN_width_2+1:FN_width,1); % upper half of chan 1 is first part of FFFF
-      for chan = 1 : n_chan-1
-          idx_start = (chan-1)*FN_width + FN_width_2;
-          idx_end = idx_start + FN_width;
-          FFFF(idx_start + 1:idx_end) = FN(:, chan+1);
-          % FFFF = [FFFF; FN(:,chan)];
+      if (input_fully_spans_Nyquist_zone == 1)
+          
+          % upper half of chan 1 is first part of FFFF
+          FFFF(1:FN_width_2) = FN(FN_width_2+1:FN_width,1); 
+          
+          % and lower half of chan 1 is last part of FFFF
+          FFFF(n_chan*FN_width - FN_width_2 + 1:end) = FN(1:FN_width/2,1);
+                    
+          for chan = 1 : n_chan-1
+              idx_start = (chan-1)*FN_width + FN_width_2;
+              idx_end = idx_start + FN_width;
+              FFFF(idx_start + 1:idx_end) = FN(:, chan+1);
+          end
       end
-      FFFF(n_chan*FN_width - FN_width_2 + 1:end) = FN(1:FN_width/2,1);
-      % FFFF = [FFFF; FN(1:FN_width/2,1)]; % lower half of chan 1 is last part of FFFF
-    	% back transform
+      
+      % back transform
       iFFFF = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);
 
       % for chan = 1:n_chan
@@ -250,6 +260,9 @@ function out = polyphase_synthesis(...
   if (conjugate_result_)
       out = conj(out);
   end
+  
+  % plot (chan0_psd);
+  % pause;
   
   if verbose
     tdelta = toc(tstart);
