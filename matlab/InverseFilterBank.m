@@ -12,6 +12,7 @@ classdef InverseFilterBank < DeChannelizer
         window_function
         deripple = 0
         conjugate_result = 0
+        critical = false    % input channels do not span DC
         
         input_buffer        % input_buffer
         buffered_samples=0  % number of time samples in the input buffer
@@ -68,11 +69,15 @@ classdef InverseFilterBank < DeChannelizer
             if isreal(input)
                 error ('polyphase_synthesis input data are real-valued!');
             end
-                        
-            output = polyphase_synthesis (input, obj.n_fft, obj.os_factor,...
+
+            verbose = 0;
+            % obj.critical = 1;  % test "not spanning DC" mode
+            
+            output = polyphase_synthesis (input, ~obj.critical, ...
+                obj.n_fft, obj.os_factor,...
                 struct('apply_deripple', obj.deripple, 'filter_coeff', obj.filt_coeff),...
                 obj.sample_offset+1, obj.overlap,...
-                obj.window_function,obj.conjugate_result,0);
+                obj.window_function,obj.conjugate_result,verbose);
             
             if isreal(output)
                 fprintf ('size of input data ');
@@ -81,17 +86,20 @@ classdef InverseFilterBank < DeChannelizer
             end
                     
             remainder = 1;
+            
+            modu = obj.os_factor.nu; % * obj.os_factor.nu;
+            
             while (remainder ~= 0)
                 output_size = size(output);
                 input_idat = output_size(3) * obj.os_factor.nu / (n_chan * obj.os_factor.de);
                 obj.buffered_samples = n_dat - input_idat;
                             
-                remainder = mod (obj.buffered_samples, obj.os_factor.nu);
+                remainder = mod (obj.buffered_samples, modu);
                 
                 if (remainder ~= 0)
                     fprintf ('InverseFilterBank: buffer length = %d samples is not a multiple of %d\n',...
-                          obj.buffered_samples, obj.os_factor.nu);
-                    obj.buffered_samples = obj.buffered_samples + obj.os_factor.nu - remainder;
+                          obj.buffered_samples, modu);
+                    obj.buffered_samples = obj.buffered_samples + modu - remainder;
                     input_idat = n_dat - obj.buffered_samples;
                     output_ndat = input_idat * (n_chan * obj.os_factor.de) / obj.os_factor.nu;
                     fprintf ('InverseFilterBank: reducing output from %d to %d\n', output_size(3),output_ndat);

@@ -28,6 +28,8 @@ addOptional(p, 'two_stage', false,         @islogical);
 addOptional(p, 'invert',    false,         @islogical);
 % when true, retain only the critically sampled fraction of (first stage)
 addOptional(p, 'critical',  false,         @islogical);
+% when true, output only the first coarse channel
+addOptional(p, 'single',  false,           @islogical);
 
 parse(p, varargin{:});
 
@@ -43,13 +45,16 @@ end
 
 two_stage  = p.Results.two_stage;
 if ( two_stage )
+  if ( cfg == "" )
+     error ('Cannot have two stages without analysis filterbank cfg');
+  end
   file.filename = file.filename + "_two_stage";
 end
 
 critical  = p.Results.critical;
 if (critical == 1)
   if (two_stage == 0)
-     error ('Critically-sampled output makes sense only for two-stage\n');
+     error ('Critically-sampled output implemented only for two-stage\n');
   end
   file.filename = file.filename + "_critical";
 end
@@ -60,6 +65,14 @@ if ( invert )
      error ('Cannot invert without analysis filterbank cfg');
   end
   file.filename = file.filename + "_inverted";
+end
+
+single_chan = p.Results.single;
+if ( single_chan )
+  if (two_stage == 0)
+     error ('Single-channel output implemented only for two-stage\n');
+  end
+  file.filename = file.filename + "_single";
 end
 
 file.filename = file.filename + ".dada";
@@ -113,6 +126,7 @@ if (cfg ~= "")
     if (two_stage)
         filterbank = TwoStageFilterBank (config);
         filterbank.critical = critical;
+        filterbank.single = single_chan;
         level = 2;
     else
         filterbank = FilterBank (config);
@@ -122,6 +136,7 @@ if (cfg ~= "")
     if (invert)
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
+            inverse.single = single_chan;
         else
             inverse = InverseFilterBank (config);
         end
@@ -158,6 +173,8 @@ file.header = header;
 blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
 blocks = 2;                 % blocks written to disk
 
+tstart = tic;
+
 for i = 1:blocks
     
     fprintf ('block:%d/%d\n', i, blocks);
@@ -166,7 +183,7 @@ for i = 1:blocks
     if (n_chan > 1)
         [filterbank, x] = execute (filterbank, x);
     end
-    
+        
     if (invert == 1)
         [inverse, x] = execute (inverse, x);
     end
@@ -174,5 +191,8 @@ for i = 1:blocks
     file = write (file, single(x));
 end
 
+tdelta = toc(tstart);
+fprintf('sgcht took %f seconds\n', tdelta);
+    
 fprintf ('closing %s\n',file.filename)
 file = close (file);

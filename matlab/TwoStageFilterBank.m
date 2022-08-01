@@ -67,13 +67,18 @@ classdef TwoStageFilterBank < Channelizer
                  if (ich == 1)
                      sz = size(tmp);
                      ndat = sz(3);
-                     out = zeros(1,nch1*nch2,ndat); 
+                     out = zeros(1,nch1*nch2,ndat,'single'); 
                  end
+                 
+                 tmp = fftshift(tmp,2);
                  
                  out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,(1:nch2)+offset,:);
                  
             end
               
+            % class(out)
+            % out(1,2,1)
+            
         end % of execute function
     end % of methods section
 end % of FilterBank class definition
