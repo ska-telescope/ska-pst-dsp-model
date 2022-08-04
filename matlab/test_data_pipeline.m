@@ -128,7 +128,8 @@ function res = test_data_pipeline(...
 
   % synthesize channelized data
   synthesis_handler_args{1}.filter_coeff = fir_filter_coeff;
-  synthesized = synthesis_handler(channelized, input_fft_length, os_factor, synthesis_handler_args{:});
+  input_fully_spans_Nyquist_zone = 1;
+  synthesized = synthesis_handler(channelized, input_fully_spans_Nyquist_zone, input_fft_length, os_factor, synthesis_handler_args{:});
   synthesized_header = default_header;
 
   % calculate the offset between input and inverted data due to the FIR filter
