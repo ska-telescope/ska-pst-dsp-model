@@ -88,19 +88,30 @@ if (signal == "square_wave")
     
     calfreq = str2num(header('CALFREQ')); % in Hz
     gen.period = 1e6 / (calfreq * tsamp); % in samples
-    
+
     fprintf ('square_wave: frequency=%f Hz\n', calfreq);
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
-    fprintf ('square_wave: period=%d samples\n', gen.period);
+    fprintf ('square_wave: period=%f samples\n', gen.period);
+
+elseif (signal == "frequency_comb")
     
+    nfft = 1024;
+    nharmonic = 64;
+    amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
+    fmin = -0.5;  % cycles per sample
+    fmax = fmin + (nharmonic - 1.0) / nharmonic;
+    frequencies = transpose(linspace (fmin, fmax, nharmonic));    
+    gen = FrequencyComb (amplitudes, frequencies);
+
 elseif (signal == "complex_sinusoid")
     
     gen = PureTone;
     calfreq = str2num(header('TONEFREQ')); % in kHz
-    gen.period = 1e3 / (calfreq * tsamp); % in samples
+    gen.frequency = (calfreq * tsamp) / 1e6; % in samples
+    
     fprintf ('complex_sinusoid: frequency=%f kHz\n', calfreq);
     fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
-    fprintf ('complex_sinusoid: period=%f samples\n', gen.period);
+    fprintf ('complex_sinusoid: period=%d samples\n', 1./gen.frequency);
 
 elseif (signal == "temporal_impulse")
 
@@ -170,14 +181,22 @@ end
 
 file.header = header;
 
-blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
-blocks = 2;                 % blocks written to disk
+if ( two_stage )
+    blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
+    blocks = 2;                 % blocks written to disk
+else
+    blocksz = 64 * 1024; % 64 M-sample blocks in RAM
+    blocks = 2 * 1024;    
+end
 
 tstart = tic;
 
 for i = 1:blocks
     
-    fprintf ('block:%d/%d\n', i, blocks);
+    if ( two_stage || mod(i,100) == 0)
+        fprintf ('block:%d/%d\n', i, blocks);
+    end
+    
     [gen, x] = generate(gen, blocksz);
         
     if (n_chan > 1)
