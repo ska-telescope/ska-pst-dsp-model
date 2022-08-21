@@ -1,44 +1,70 @@
 function sgcht(varargin)
 
 % Signal Generator, Channelizer, and Tester (s g ch & t)  
-% This function is meant to be used as a stand alone executable.
-% It creates a DADA file containing the generated signal and can
-% optionally perform fidelity tests.
 %
-% Uses ``inputParser`` and a bunch of other classes
+% This function creates a DADA file containing a generated signal 
+% and can optionally perform fidelity tests.
 %
 % Example:
-%
-% .. code-block::
 %
 %   sgcht(signal='complex_sinusoid', cfg='low')
 %
 % Args:
-%   varargin (cell): Inputs to parsed.
+%
+%   cfg (string):    analysis filter bank configuration (default: '')
+%
+%   signal (string): signal generated (default: 'square_wave')
+%                    'square_wave' - amplitude-modulated noise
+%                    'frequency_comb' - harmonics with amplitude slope
+%                    'complex_sinusoid' - pure tone
+%                    'temporal_impulse' - delta function
+%   
     
 p = inputParser;
 
 % name of the analysis filter bank configuration (default: none)
 addOptional(p, 'cfg',       '',            @ischar);
+
 % name of the signal generator (default: square wave)
 addOptional(p, 'signal',    'square_wave', @ischar);
-% when true, peform two stages of analysis filterbank
+
+% peform two stages of analysis filterbank
 addOptional(p, 'two_stage', false,         @islogical);
-% when true, invert the (second stage) analysis filterbank
+
+% invert the (second stage) analysis filterbank
 addOptional(p, 'invert',    false,         @islogical);
-% when true, retain only the critically sampled fraction of (first stage)
+
+% retain only the critically sampled fraction of (first stage)
 addOptional(p, 'critical',  false,         @islogical);
-% when true, output only the first coarse channel
+
+% output only the first coarse channel
 addOptional(p, 'single',  false,           @islogical);
+
+% produce a frequency comb that spans a single coarse or find channel
+addOptional(p, 'comb', '', @ischar);
+
+% test the fidelity of 'complex_sinusoid' or 'temporal_impulse'
+addOptional(p, 'test',  false,             @islogical);
 
 parse(p, varargin{:});
 
 signal = p.Results.signal;
+cfg = p.Results.cfg;
 
 file = DADAFile;
 file.filename = "../products/" + signal;
 
-cfg = p.Results.cfg;
+comb  = p.Results.comb;
+if ( comb == "coarse" || comb == "fine")
+  if ( cfg == "" )
+     error ('Cannot have specify comb spacing without analysis filterbank cfg');
+  end
+  if ( signal ~= "frequency_comb" )
+     error ('Cannot specify comb spacing when signal is not a frequency comb');
+  end
+  file.filename = file.filename + "_" + comb;
+end
+
 if ( cfg ~= "" )
   file.filename = file.filename + "_" + cfg;
 end
@@ -81,36 +107,6 @@ header_template = "../config/" + signal + "_header.json";
 json_str = fileread(header_template);
 header = struct2map(jsondecode(json_str));
 tsamp = str2num(header('TSAMP'));    % in microseconds
-
-if (signal == "square_wave")
-    
-    gen = SquareWave;
-    
-    calfreq = str2num(header('CALFREQ')); % in Hz
-    gen.period = 1e6 / (calfreq * tsamp); % in samples
-    
-    fprintf ('square_wave: frequency=%f Hz\n', calfreq);
-    fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
-    fprintf ('square_wave: period=%d samples\n', gen.period);
-    
-elseif (signal == "complex_sinusoid")
-    
-    gen = PureTone;
-    calfreq = str2num(header('TONEFREQ')); % in kHz
-    gen.period = 1e3 / (calfreq * tsamp); % in samples
-    fprintf ('complex_sinusoid: frequency=%f kHz\n', calfreq);
-    fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
-    fprintf ('complex_sinusoid: period=%f samples\n', gen.period);
-
-elseif (signal == "temporal_impulse")
-
-    gen = Impulse;
-    gen.offset = 20000; % in samples
-    fprintf ('temporal_impulse: offset=%d samples\n', gen.offset);
-
-else
-    error ('Unrecognized signal: ' + signal);
-end
 
 n_chan = 1;
 
@@ -168,24 +164,94 @@ if (cfg ~= "")
 
 end
 
+if (signal == "square_wave")
+    
+    gen = SquareWave;
+    
+    calfreq = str2num(header('CALFREQ')); % in Hz
+    gen.period = 1e6 / (calfreq * tsamp); % in samples
+
+    fprintf ('square_wave: frequency=%f Hz\n', calfreq);
+    fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
+    fprintf ('square_wave: period=%f samples\n', gen.period);
+
+elseif (signal == "frequency_comb")
+    
+    nfft = 1024;
+    nharmonic = 32;
+    amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
+    fmin = -0.5;  % cycles per sample
+    fmax = fmin + (nharmonic - 1.0) / nharmonic;
+
+    if (comb == "coarse")
+        fmin = fmin / n_chan;
+        fmax = fmax / n_chan;
+    elseif (comb == "fine")
+        fmin = fmin / n_chan^2;
+        fmax = fmax / n_chan^2;
+    end
+
+    frequencies = transpose(linspace (fmin, fmax, nharmonic));    
+    gen = FrequencyComb (amplitudes, frequencies);
+
+elseif (signal == "complex_sinusoid")
+    
+    gen = PureTone;
+    calfreq = str2num(header('TONEFREQ')); % in kHz
+    gen.frequency = (calfreq * tsamp) / 1e6; % in samples
+    
+    fprintf ('complex_sinusoid: frequency=%f kHz\n', calfreq);
+    fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
+    fprintf ('complex_sinusoid: period=%d samples\n', 1./gen.frequency);
+
+elseif (signal == "temporal_impulse")
+
+    gen = Impulse;
+    gen.offset = 20000; % in samples
+    fprintf ('temporal_impulse: offset=%d samples\n', gen.offset);
+
+else
+    error ('Unrecognized signal: ' + signal);
+end
+
 file.header = header;
 
-blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
-blocks = 2;                 % blocks written to disk
+if ( two_stage )
+    blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
+    blocks = 2;                 % blocks written to disk
+else
+    blocksz = 64 * 1024; % 64 M-sample blocks in RAM
+    blocks = 2 * 1024;
+
+    if (signal == "frequency_comb")
+        blocks = 128;
+    end
+end
+
 
 tstart = tic;
 
 for i = 1:blocks
     
-    fprintf ('block:%d/%d\n', i, blocks);
+    if ( two_stage || mod(i,100) == 0)
+        fprintf ('block:%d/%d\n', i, blocks);
+    end
+    
     [gen, x] = generate(gen, blocksz);
         
     if (n_chan > 1)
         [filterbank, x] = execute (filterbank, x);
     end
         
-    if (invert == 1)
+    if (invert)
         [inverse, x] = execute (inverse, x);
+
+        if (test)
+
+            % perhaps ask the signal generator to compare?
+            
+        end
+
     end
     
     file = write (file, single(x));

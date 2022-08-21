@@ -38,7 +38,7 @@
   "low_alt": {
     "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 1,
+    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
@@ -65,7 +65,7 @@
   "low": {
     "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 1,
+    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "Prototype_FIR.new.4-3.256.3072.mat",
@@ -118,7 +118,7 @@
   },
   "low_external": {
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 1,
+    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "PST_2561_LowFilterCoefficients.mat",

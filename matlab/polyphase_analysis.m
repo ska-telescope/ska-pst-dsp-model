@@ -113,7 +113,11 @@ function out=polyphase_analysis(...
       for m=0:phases-1
         temp2=temp2+temp(1+block*m:block*(m+1));
       end
-      out(i_pol, :, k+1) = fft(temp2)*block;
+      % AT3-235: this produces negative frequency offsets (lower sideband)
+      % out(i_pol, :, k+1) = fft(temp2)*block;
+      
+      % AT3-235: this produces positive frequency offsets (upper sideband)
+      out(i_pol, :, k+1) = conj( ifft(temp2)*(block^2) );
     end
   end
 

@@ -2,8 +2,8 @@ classdef PureTone < Generator
     % generates complex-valued sinusoide
     
     properties
-        period = 26.5      % number of samples in one cycle of wave
-        amplitude = 1.0    % amplitude of waved
+        frequency = 1/26.5 % cycles per sample
+        amplitude = 1.0    % amplitude of wave
         current = 0        % current sample
     end
    
@@ -19,10 +19,9 @@ classdef PureTone < Generator
                 nsample (1,1) {mustBeInteger, mustBeNonnegative}
             end
             
-            freq = 1.0/obj.period;
             t = 0:nsample-1;
             x = complex(zeros(1,1,nsample,'single'));
-            x(1,1,:) = exp(j*(2*pi*freq*(t+obj.current)));  
+            x(1,1,:) = obj.amplitude * exp(j*(2*pi*obj.frequency*(t+obj.current)));  
             
             obj.current = obj.current + nsample;
             
