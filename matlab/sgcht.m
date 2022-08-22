@@ -34,6 +34,9 @@ addOptional(p, 'two_stage', false,         @islogical);
 % invert the (second stage) analysis filterbank
 addOptional(p, 'invert',    false,         @islogical);
 
+% number of coarse channels to be combined when inverting second stage
+addOptional(p, 'combine',    1,            @isnumeric);
+
 % retain only the critically sampled fraction of (first stage)
 addOptional(p, 'critical',  false,         @islogical);
 
@@ -93,6 +96,17 @@ if ( invert )
   file.filename = file.filename + "_inverted";
 end
 
+combine = p.Results.combine;
+if ( combine > 1 )
+  if ( ~two_stage )
+     error ('Cannot combine coarse channels without two-stage analysis');
+  end
+  if ( ~invert )
+     error ('Cannot combine coarse channels without inverting the second stage');
+  end
+  file.filename = file.filename + "_" + string(combine);
+end
+
 single_chan = p.Results.single;
 if ( single_chan )
   if (two_stage == 0)
@@ -133,6 +147,7 @@ if (cfg ~= "")
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
             inverse.single = single_chan;
+            inverse.combine = combine;
         else
             inverse = InverseFilterBank (config);
         end
@@ -151,10 +166,10 @@ if (cfg ~= "")
             end
         end
     
+        new_tsamp = new_tsamp / combine;
+        
         header('TSAMP') = num2str(new_tsamp);
-
         header('HDR_SIZE') = '65536';
-        header('TSAMP') = num2str(new_tsamp);
         header('PFB_DC_CHAN') = '1';
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
@@ -245,13 +260,6 @@ for i = 1:blocks
         
     if (invert)
         [inverse, x] = execute (inverse, x);
-
-        if (test)
-
-            % perhaps ask the signal generator to compare?
-            
-        end
-
     end
     
     file = write (file, single(x));

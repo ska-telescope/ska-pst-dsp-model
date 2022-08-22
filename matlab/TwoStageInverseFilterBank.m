@@ -6,6 +6,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
         stage2  (:,1) InverseFilterBank
         nch1 = 0    % number of channels output by stage 1 filter bank
         single = 0  % output only a single coarse channel
+        combine = 1 % number of coarse channels combined on inversion
     end
    
     methods
@@ -48,9 +49,6 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             nchan = sz(2);
 
             nch1 = obj.nch1;
-            if (obj.single)
-                nch1 = 1;
-            end
             
             nch2 = nchan / nch1;
                         
@@ -61,12 +59,22 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             if (nch2 == (obj.nch1 * os.de) / os.nu)
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
                 critical = true;
-            elseif (obj.single)
-                fprintf ('TwoStageInverseFilterBank::execute single channel\n');
-            elseif (nch2 ~= obj.nch1)
+            elseif (nch2 == obj.nch1)
+                fprintf ('TwoStageInverseFilterBank::execute oversampled\n');
+                if (obj.combine > 1)
+                    error ('TwoStageInverseFilterBank::execute cannot combine oversampled coarse channels');
+                end
+            else
                 error ('TwoStageInverseFilterBank::execute invalid nchan');
             end
             
+            nch2 = nch2 * obj.combine;
+            nch1 = nch1 / obj.combine;
+
+            if (obj.single)
+                nch1 = 1;
+            end
+
             for ich = 1:nch1
                 
                 intmp = input(1,(1:nch2)+(ich-1)*nch2,:);
@@ -87,8 +95,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                     
                    sz = size(tmp);
                    ndat = sz(3);
-                   out = complex(zeros(1,nch1,ndat)); 
-                   
+                   out = complex(zeros(1,nch1,ndat));
                    
                 end
                  

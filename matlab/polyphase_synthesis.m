@@ -224,7 +224,7 @@ function out = polyphase_synthesis(...
       end
       
       % back transform
-      iFFFF = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);
+      iFFFF = ifft(FFFF)./(os_factor.nu/os_factor.de);
 
       % for chan = 1:n_chan
       %   ax = subplot(n_chan+1, 2, 2*chan-1);
