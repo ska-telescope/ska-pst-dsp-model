@@ -170,12 +170,9 @@ function out = polyphase_synthesis(...
       spectra = transpose(in_dat);
       spectra = fft(spectra, input_fft_length);
 
-      % WvS - swap the channel order    
+      % WvS - swap the channel order
       spectra = fftshift(spectra, 1);
 
-      % WvS - swap the harmonics in each channel
-      % spectra = fftshift(spectra, 2);
-      
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         % fprintf('i_block=%d, i_pol=%d, chan=%d\n', n, i_pol, chan);

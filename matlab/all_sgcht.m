@@ -26,10 +26,9 @@ for cfg = configs
 
                 end
             end
-        end        
-    end  
+        end
 
-    % combs apply only to frequency_comb
-    combs = {''};
-
+        % combs apply only to frequency_comb
+        combs = {''};
+    end
 end
