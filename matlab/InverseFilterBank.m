@@ -9,9 +9,9 @@ classdef InverseFilterBank < DeChannelizer
         n_fft               % input fft length
         overlap             % input overlap
         sample_offset = 0
-        window_function
+        temporal_taper
+        spectral_taper = @identity_taper
         deripple = 0
-        conjugate_result = 0
         critical = false    % input channels do not span DC
         
         input_buffer        % input_buffer
@@ -33,11 +33,10 @@ classdef InverseFilterBank < DeChannelizer
             obj.os_factor = config.os_factor;
             obj.overlap = config.input_overlap;
             obj.deripple = config.deripple;
-            obj.conjugate_result = config.conjugate_synthesis_result;
             
             win = PFBWindow();
             factory = win.lookup(config.fft_window);
-            obj.window_function = factory(config.input_fft_length, config.input_overlap);
+            obj.temporal_taper = factory(config.input_fft_length, config.input_overlap);
             
             % fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
             %         config.fft_window,config.input_fft_length,config.input_overlap);
@@ -77,7 +76,7 @@ classdef InverseFilterBank < DeChannelizer
                 obj.n_fft, obj.os_factor,...
                 struct('apply_deripple', obj.deripple, 'filter_coeff', obj.filt_coeff),...
                 obj.sample_offset+1, obj.overlap,...
-                obj.window_function,obj.conjugate_result,verbose);
+                obj.temporal_taper,obj.spectral_taper,verbose);
             
             if isreal(output)
                 fprintf ('size of input data ');
