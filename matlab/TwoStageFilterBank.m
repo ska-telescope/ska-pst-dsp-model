@@ -53,7 +53,7 @@ classdef TwoStageFilterBank < Channelizer
                 nch2 = nch1;
             end
             
-            offset = (nch1 - nch2) / 2;
+            offset = (nch1 - nch2);
             
             if (obj.single == 1)
                 nch1 = 1;
@@ -70,9 +70,13 @@ classdef TwoStageFilterBank < Channelizer
                      out = zeros(1,nch1*nch2,ndat,'single'); 
                  end
                  
-                 % tmp = fftshift(tmp,2);
-                 
-                 out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,(1:nch2)+offset,:);
+                 % tmp[0] is DC and tmp[nch2/2] is Nyquist
+                 % so chomp out oversampled channels in middle of array
+                 if (offset)
+                     tmp(1,nch2/2+1:nch2,:)=tmp(1,(1:nch2/2)+offset+nch2/2,:);
+                 end
+
+                 out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,1:nch2,:);
                  
             end
               
