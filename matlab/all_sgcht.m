@@ -32,7 +32,8 @@ for cfg = configs
 
                 end % loop over PFB inversion
 
-                % when twostg = true on next loop, then
+                % when twostg = true on next loop, 
+                % then critical = true is possible
                 critical = [ false, true ];
 
             end % loop over stages

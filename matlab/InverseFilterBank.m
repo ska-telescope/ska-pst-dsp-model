@@ -35,9 +35,12 @@ classdef InverseFilterBank < DeChannelizer
             obj.deripple = config.deripple;
             
             win = PFBWindow();
-            factory = win.lookup(config.fft_window);
+            factory = win.lookup(config.temporal_taper);
             obj.temporal_taper = factory(config.input_fft_length, config.input_overlap);
-            
+
+            factory = win.lookup(config.spectral_taper);
+            obj.spectral_taper = factory(config.input_fft_length, config.input_overlap);
+
             % fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
             %         config.fft_window,config.input_fft_length,config.input_overlap);
                  

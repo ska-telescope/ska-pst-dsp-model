@@ -143,11 +143,11 @@ function current_performance(npoints_, tele_, domain_, diagnostic_)
                     'Total Spurious Power of Spectrum'};
 
   win = PFBWindow();
-  factory = win.lookup(config.fft_window);
+  factory = win.lookup(config.temporal_taper);
   temporal_taper = factory(config.input_fft_length, config.input_overlap);
 
   spectral_taper = @identity_taper;
-  window_name = config.fft_window;
+  window_name = config.temporal_taper;
 
   title_template = sprintf('%%s performance, %s window function\n%d channels, %d forward FFT, %d overlap',...
     window_name, config.channels, config.input_fft_length, config.input_overlap);

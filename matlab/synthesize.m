@@ -31,7 +31,7 @@ function synthesize(varargin)
   addOptional(p, 'sample_offset', '1', @ischar);
   addOptional(p, 'deripple', '1', @ischar);
   addOptional(p, 'overlap', '0', @ischar);
-  addOptional(p, 'fft_window', 'tukey', @ischar);
+  addOptional(p, 'temporal_taper', 'tukey', @ischar);
 
   parse(p, varargin{:});
 
@@ -44,7 +44,7 @@ function synthesize(varargin)
   overlap = str2num(p.Results.overlap);
   deripple = str2num(p.Results.deripple);
   deripple_struct = struct('apply_deripple', deripple);
-  fft_window_str = p.Results.fft_window;
+  temporal_taper_str = p.Results.temporal_taper;
 
   function o = calc_overlap(input_fft_length)
     o = overlap;
@@ -52,12 +52,12 @@ function synthesize(varargin)
 
   win = PFBWindow;
 
-  fft_window = win.lookup(fft_window_str);
-  fft_window = fft_window(input_fft_length, overlap);
+  temporal_taper = win.lookup(temporal_taper_str);
+  temporal_taper = temporal_taper(input_fft_length, overlap);
   if verbose
-    fprintf('synthesize: using %s fft window function\n', get_function_name(fft_window));
+    fprintf('synthesize: using %s fft window function\n', get_function_name(temporal_taper));
   end
-  x = fft_window(ones(1, input_fft_length), overlap)
+  x = temporal_taper(ones(1, input_fft_length), overlap)
 
   % load in input data
   if verbose
@@ -93,7 +93,7 @@ function synthesize(varargin)
   synthesized_header('TSAMP') = num2str(input_tsamp / normalize(os_factor, 1) / channels);
   synthesized = polyphase_synthesis(...
     input_data, input_fft_length, os_factor, deripple_struct,...
-    sample_offset, @calc_overlap, fft_window, verbose);
+    sample_offset, @calc_overlap, temporal_taper, verbose);
 
   if verbose
     fprintf('synthesize: synthesis complete\n')
