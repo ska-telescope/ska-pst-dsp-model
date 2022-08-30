@@ -2,7 +2,7 @@ function all_sgcht ()
 
 signals = { 'frequency_comb', 'square_wave' };
 
-configs = { 'low', 'mid', 'low_psi' };
+configs = { 'mid', 'low', 'low_psi' };
 
 for cfg = configs
 
@@ -12,23 +12,36 @@ for cfg = configs
 
         sgcht(signal=sig{1});
 
-        for twostg = [ false, true ]
+        for cmb = combs
 
-            for inv = [ false, true ]
+            critical = [ false ];
 
-                for cmb = combs
+            for twostg = [ false, true ]
 
-                    fprintf ('sig=%s cmb=%s cfg=%s 2stg=%d inv=%d\n', ...
-                             sig{1}, cmb{1}, cfg{1}, twostg, inv);
+                for inv = [ false, true ]
 
-                    sgcht(signal=sig{1}, comb=cmb{1}, cfg=cfg{1}, ...
-                            two_stage=twostg, invert=inv);
+                    for crit = critical
 
-                end
-            end
-        end
+                        fprintf ('sig=%s cmb=%s cfg=%s 2stg=%d inv=%d crt=%d\n', ...
+                             sig{1}, cmb{1}, cfg{1}, twostg, inv, critical);
+
+                        sgcht(signal=sig{1}, comb=cmb{1}, cfg=cfg{1}, ...
+                            two_stage=twostg, invert=inv, critical=crit);
+
+                    end % loop over critical sampling
+
+                end % loop over PFB inversion
+
+                % when twostg = true on next loop, then
+                critical = [ false, true ];
+
+            end % loop over stages
+
+        end % loop over combs
 
         % combs apply only to frequency_comb
         combs = {''};
-    end
-end
+
+    end % loop over signals
+
+end % loop over PFB configurations

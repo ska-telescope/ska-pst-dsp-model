@@ -80,7 +80,8 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                 intmp = input(1,(1:nch2)+(ich-1)*nch2,:);
                 
                 obj.stage2(ich).critical = critical;
-                
+                obj.stage2(ich).combine = obj.combine;
+
                 [obj.stage2(ich), tmp] = obj.stage2(ich).execute (intmp);
                 
                 if (ich == 1)  

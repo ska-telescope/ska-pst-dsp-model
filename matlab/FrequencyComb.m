@@ -17,12 +17,12 @@ classdef FrequencyComb < Generator
             sz = size(amplitudes);
             obj.ntone = sz(1);
             
-            fprintf ("ntone=%u\n", obj.ntone);
+            fprintf ("FrequencyComb ntone=%u\n", obj.ntone);
             
             for itone = 1:obj.ntone
                  obj.tone(itone) = PureTone;
-                 fprintf ( "i=%u amp=%f frequency=%f \n",...
-                     itone, amplitudes(itone), frequencies(itone) );
+                 %fprintf ( "i=%u amp=%f frequency=%f \n",...
+                 %    itone, amplitudes(itone), frequencies(itone) );
                  obj.tone(itone).amplitude = amplitudes(itone);
                  obj.tone(itone).frequency = frequencies(itone);
             end

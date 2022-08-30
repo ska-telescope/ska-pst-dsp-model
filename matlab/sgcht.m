@@ -235,14 +235,17 @@ if ( two_stage )
     blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
     blocks = 2;                 % blocks written to disk
 else
-    blocksz = 64 * 1024; % 64 M-sample blocks in RAM
-    blocks = 2 * 1024;
+    blocksz = 64 * 1024;        % 64 k-sample blocks in RAM
+    blocks = 2 * 1024;          % more blocks
 
     if (signal == "frequency_comb")
         blocks = 128;
     end
 end
 
+if ( cfg == "mid" )
+    blocksz = blocksz * 2;  % 'mid' needs more data
+end
 
 tstart = tic;
 

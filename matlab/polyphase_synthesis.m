@@ -8,6 +8,7 @@ function out = polyphase_synthesis(...
   input_overlap_,...
   temporal_taper_,...
   spectral_taper_,...
+  combine_,...
   verbose_...
 )
 
@@ -83,6 +84,18 @@ function out = polyphase_synthesis(...
     temporal_taper = @default_window;
   end
 
+  if exist('spectral_taper_', 'var')
+    spectral_taper = spectral_taper_;
+  else
+    spectral_taper = @default_window;
+  end
+
+  if exist('combine_', 'var')
+    combine = combine_;
+  else
+    combine = 1;
+  end
+
   in = in(:, :, sample_offset:end);
 
   size_in = size(in);
@@ -142,6 +155,8 @@ function out = polyphase_synthesis(...
 
   chan0_psd = zeros(input_fft_length);
   
+  fine_chan_per_coarse_chan = n_chan / combine;
+
   % fig = figure;
   for n=1:n_blocks
     for i_pol=1:n_pol
@@ -162,28 +177,55 @@ function out = polyphase_synthesis(...
       in_dat = temporal_taper(in_dat, input_fft_length, input_overlap);
       % in_dat(:, 1:input_overlap) = complex(0, 0);
       % in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
-      % ax = subplot(2, 1, 2);
-      % plot(abs(in_dat(:)));
-      % pause
 
       % fft operates on each of the columns
       spectra = transpose(in_dat);
       spectra = fft(spectra, input_fft_length);
 
-      % WvS - swap the channel order
+      % WvS - swap harmonics in each channel
       spectra = fftshift(spectra, 1);
+
+      chan0_psd = chan0_psd + abs(spectra(:,1)).^2;
 
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         % fprintf('i_block=%d, i_pol=%d, chan=%d\n', n, i_pol, chan);
         % size(FN)
         % phase_shift_arr(chan);
-        
-        FN(1:FN_width, chan) = spectra((1:FN_width)+discard_2, chan);
-        
-        if (chan == 1)
-            chan0_psd = chan0_psd + abs(spectra(:,chan)).^2;
+
+        jchan = chan;
+
+        if (combine > 1)
+
+           % compute new index using C-style indexing
+           jchan = jchan - 1;
+
+           % fprintf ('fine chan per coarse chan = %d\n',fine_chan_per_coarse_chan);
+
+           % re-order input channels in DSB monotonically
+           coarse_channel = floor(jchan / fine_chan_per_coarse_chan);
+           fine_channel = mod(jchan,fine_chan_per_coarse_chan);
+
+           % fprintf ('chan=%d coarse=%d fine=%d \n', chan, coarse_channel, fine_channel);
+
+           output_channel = floor(coarse_channel / combine);
+           coarse_offset = mode(coarse_channel, combine);
+
+           % fprintf ('output=%d offset=%d \n', output_channel, coarse_offset);
+
+           % swap halves of the band within the output channel
+           coarse_offset = mod ((coarse_offset + combine/2), combine);
+           
+           % swap halves of the band within the coarse channel
+           fine_channel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_coarse_chan);
+
+           jchan = (output_channel * combine + coarse_offset) * fine_chan_per_coarse_chan + fine_channel;
+
+           % convert back to Matlab-style indexing
+           jchan = jchan + 1;
         end
+
+        FN(1:FN_width, chan) = spectra((1:FN_width)+discard_2, jchan);
         
         if deripple.apply_deripple
           % applied_response = zeros(passband_length*2, 1);
@@ -223,6 +265,10 @@ function out = polyphase_synthesis(...
           end
       end
       
+      % length(FFFF)
+
+      FFFF = spectral_taper(FFFF, length(FFFF), input_overlap);
+
       % back transform
       iFFFF = ifft(FFFF)./(os_factor.nu/os_factor.de);
 

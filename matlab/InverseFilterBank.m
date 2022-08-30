@@ -13,7 +13,7 @@ classdef InverseFilterBank < DeChannelizer
         spectral_taper = @identity_taper
         deripple = 0
         critical = false    % input channels do not span DC
-        
+        combine = 1         % number of coarse channels to combine
         input_buffer        % input_buffer
         buffered_samples=0  % number of time samples in the input buffer
     end
@@ -76,7 +76,7 @@ classdef InverseFilterBank < DeChannelizer
                 obj.n_fft, obj.os_factor,...
                 struct('apply_deripple', obj.deripple, 'filter_coeff', obj.filt_coeff),...
                 obj.sample_offset+1, obj.overlap,...
-                obj.temporal_taper,obj.spectral_taper,verbose);
+                obj.temporal_taper,obj.spectral_taper,obj.combine,verbose);
             
             if isreal(output)
                 fprintf ('size of input data ');
