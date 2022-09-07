@@ -2,7 +2,10 @@
 
 ## Overview
 
-These instructions describe how to compare the results of dspsr's PFB inversion implementation with the PST Signal model implemented in Matlab. The goal of this comparison is to assess whether the two implementations produce the same results, within numerical precision.
+These instructions describe how to compare the results of dspsr's PFB 
+inversion implementation with the PST Signal model implemented in Matlab. 
+The goal of this comparison is to assess whether the two implementations 
+produce the same results, within numerical precision.
 
 For instructions on how to quantify the performance of the Matlab implementation, please see
 
