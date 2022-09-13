@@ -40,7 +40,7 @@ classdef TwoStageFilterBank < Channelizer
                 input
             end
 
-            fprintf ('stage 1\n');
+            fprintf ('TwoStageFilterBank::execute stage 1\n');
             [obj.stage1, out1] = obj.stage1.execute (input);
             
             os = obj.stage1.os_factor;
@@ -59,7 +59,7 @@ classdef TwoStageFilterBank < Channelizer
                 nch1 = 1;
             end
             
-            fprintf ('stage 2 nch1=%d nch2=%d offset=%d\n',nch1,nch2,offset);
+            fprintf ('TwoStageFilterBank::execute stage 2 nch1=%d nch2=%d offset=%d\n',nch1,nch2,offset);
             for ich = 1:nch1
                 
                  [obj.stage2(ich), tmp] = obj.stage2(ich).execute (out1(1,ich,:));
