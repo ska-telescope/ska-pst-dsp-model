@@ -1,4 +1,4 @@
-function sgcht(varargin)
+function result = sgcht(varargin)
 
 % Signal Generator, Channelizer, and Tester (s g ch & t)  
 %
@@ -115,6 +115,15 @@ if ( single_chan )
   file.filename = file.filename + "_single";
 end
 
+testing = p.Results.test;
+if ( testing )
+  if ( signal ~= "complex_sinusoid" && signal ~= "temporal_impulse" )
+    error ('Testing implemented for only complex_sinusoid and temporal_impulse');
+  end
+
+  fprintf ('When testing, no file is output.\n')
+end
+
 file.filename = file.filename + ".dada";
 
 header_template = "../config/" + signal + "_header.json";
@@ -219,12 +228,26 @@ elseif (signal == "complex_sinusoid")
     fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
     fprintf ('complex_sinusoid: period=%d samples\n', 1./gen.frequency);
 
+    if (testing)
+      tester = TestPureTone;
+      tester.frequency = gen.frequency;
+    end
+
 elseif (signal == "temporal_impulse")
 
     gen = Impulse;
     gen.offset = 20000; % in samples
     fprintf ('temporal_impulse: offset=%d samples\n', gen.offset);
 
+    if (testing)
+      output_overlap = normalize(config.os_factor,config.input_overlap)*config.channels;
+      % calculate the offset between input and inverted data due to the FIR filter
+      fir_offset = config.fir_offset_direction * floor(length(filt_coeff) / 2);
+      filter_offset = output_overlap - 1 + config.kludge_offset;
+      fprintf ('TestImpulse offset=%d \n',filter_offset)
+      tester = TestImpulse;
+      tester.offset = gen.offset + fir_offset - filter_offset;
+    end
 else
     error ('Unrecognized signal: ' + signal);
 end
@@ -265,11 +288,27 @@ for i = 1:blocks
         [inverse, x] = execute (inverse, x);
     end
     
-    file = write (file, single(x));
+    if (testing)
+      [tester, result] = test (tester, x);
+
+      if (result ~= 0)
+          fprintf('sgcht test failed\n')
+          result = -1;
+          return;
+      end
+
+    else
+      file = write (file, single(x));
+    end
+
 end
 
 tdelta = toc(tstart);
 fprintf('sgcht took %f seconds\n', tdelta);
-    
-fprintf ('closing %s\n',file.filename)
-file = close (file);
+
+if (~testing)
+    fprintf ('closing %s\n',file.filename)
+    file = close (file);
+end
+
+result = 0;

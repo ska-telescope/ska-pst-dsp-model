@@ -7,7 +7,7 @@
   "HDR_VERSION": "1.0",
   "INSTRUMENT": "dspsr",
   "MODE": "CAL",
-  "TONEFREQ": "31.25",
+  "TONEFREQ": "250000",
   "NBIT": "32",
   "NCHAN": "1",
   "NDIM": "2",
