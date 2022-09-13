@@ -3,7 +3,7 @@ classdef InverseFilterBank < DeChannelizer
     
     properties
         % over sampling ratio
-        os_factor = struct('nu', 8, 'de', 7)
+        os_factor = struct('nu', 1, 'de', 1)
 
         filt_coeff          % filter coefficients
         n_fft               % input fft length
@@ -38,8 +38,10 @@ classdef InverseFilterBank < DeChannelizer
             factory = win.lookup(config.temporal_taper);
             obj.temporal_taper = factory(config.input_fft_length, config.input_overlap);
 
-            factory = win.lookup(config.spectral_taper);
-            obj.spectral_taper = factory(config.input_fft_length, config.input_overlap);
+            if (obj.combine > 1)
+                factory = win.lookup(config.spectral_taper);
+                obj.spectral_taper = factory(config.input_fft_length, config.input_overlap);
+            end
 
             % fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
             %         config.fft_window,config.input_fft_length,config.input_overlap);
@@ -74,8 +76,9 @@ classdef InverseFilterBank < DeChannelizer
 
             verbose = 0;
             % obj.critical = 1;  % test "not spanning DC" mode
-            
-            output = polyphase_synthesis (input, ~obj.critical, ...
+            spans_dc = true; % ~obj.critical;
+
+            output = polyphase_synthesis (input, spans_dc, ...
                 obj.n_fft, obj.os_factor,...
                 struct('apply_deripple', obj.deripple, 'filter_coeff', obj.filt_coeff),...
                 obj.sample_offset+1, obj.overlap,...
