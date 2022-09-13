@@ -7,6 +7,7 @@ classdef TestFrequencyComb < TestSignal
       os_factor = struct('nu', 8, 'de', 7)
       two_stage = false
       invert = false
+      critical = false
     end
    
     methods
@@ -57,10 +58,14 @@ classdef TestFrequencyComb < TestSignal
                     if (obj.invert)
                         level = level - 1;
                     end
+
+                    if (obj.critical)
+                        level = level - 1;
+                    end
     
                     hfac = nchan*nfft;
 
-                    if (level)
+                    if (level > 0)
                         for l = 1:level
                             hfac = normalize(obj.os_factor,hfac);
                         end
@@ -71,7 +76,7 @@ classdef TestFrequencyComb < TestSignal
                     % pause
 
                     for i = 1:nharm
-                        jchan = floor(obj.frequencies(i) * nchan);
+                        jchan = round(obj.frequencies(i) * nchan);
                         jchan = mod(jchan+nchan, nchan);
                         jchan = jchan + 1;
 
