@@ -57,7 +57,7 @@ cfg = p.Results.cfg;
 file = DADAFile;
 file.filename = "../products/" + signal;
 
-comb  = p.Results.comb;
+comb = p.Results.comb;
 if ( comb == "coarse" || comb == "fine")
   if ( cfg == "" )
      error ('Cannot have specify comb spacing without analysis filterbank cfg');
@@ -117,10 +117,6 @@ end
 
 testing = p.Results.test;
 if ( testing )
-  if ( signal ~= "complex_sinusoid" && signal ~= "temporal_impulse" )
-    error ('Testing implemented for only complex_sinusoid and temporal_impulse');
-  end
-
   fprintf ('When testing, no file is output.\n')
 end
 
@@ -199,24 +195,44 @@ if (signal == "square_wave")
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
     fprintf ('square_wave: period=%f samples\n', gen.period);
 
+    if (testing)
+        error ('Testing not implemented for square_wave')
+    end
+
 elseif (signal == "frequency_comb")
     
-    nfft = 1024;
     nharmonic = 32;
     amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
     fmin = -0.5;  % cycles per sample
     fmax = fmin + (nharmonic - 1.0) / nharmonic;
 
     if (comb == "coarse")
+        fprintf ('frequency_comb: coarse channels\n');
         fmin = fmin / n_chan;
         fmax = fmax / n_chan;
     elseif (comb == "fine")
+        fprintf ('frequency_comb: fine channels\n');
         fmin = fmin / n_chan^2;
         fmax = fmax / n_chan^2;
+    elseif (n_chan > 1)
+        fprintf ('frequency_comb: add quarter-channel offset (nchan=%d)\n', n_chan)
+        nch = n_chan;
+        if (two_stage)
+            nch = n_chan^2;
+        end
+        fmin = fmin + 1.0/(nch*4);
+        fmax = fmax + 1.0/(nch*4);
     end
 
     frequencies = transpose(linspace (fmin, fmax, nharmonic));    
     gen = FrequencyComb (amplitudes, frequencies);
+
+    if (testing)
+      tester = TestFrequencyComb;
+      tester.frequencies = frequencies;
+      tester.os_factor = os_factor;
+      tester.two_stage = two_stage;
+    end
 
 elseif (signal == "complex_sinusoid")
     
