@@ -203,7 +203,11 @@ elseif (signal == "frequency_comb")
     
     nharmonic = 32;
     amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
-    fmin = -0.5;  % cycles per sample
+
+    % add 1/4 spacing because exactly -0.5 gets rounded down to -1 
+    % when computing channel and harmonic offsets
+
+    fmin = -0.5 + 1.0 / (nharmonic * 4);  % cycles per sample
     fmax = fmin + (nharmonic - 1.0) / nharmonic;
 
     if (comb == "coarse")
@@ -215,13 +219,18 @@ elseif (signal == "frequency_comb")
         fmin = fmin / n_chan^2;
         fmax = fmax / n_chan^2;
     elseif (n_chan > 1)
-        fprintf ('frequency_comb: add quarter-channel offset (nchan=%d)\n', n_chan)
         nch = n_chan;
         if (two_stage)
             nch = n_chan^2;
         end
-        fmin = fmin + 1.0/(nch*4);
-        fmax = fmax + 1.0/(nch*4);
+        if (invert)
+            nch = nch / n_chan;
+        end
+        if (nch > 1)
+            fprintf ('frequency_comb: add quarter-channel offset (nch=%d)\n', nch)
+            fmin = fmin + 1.0/(nch*4);
+            fmax = fmax + 1.0/(nch*4);
+        end
     end
 
     frequencies = transpose(linspace (fmin, fmax, nharmonic));    
@@ -233,6 +242,7 @@ elseif (signal == "frequency_comb")
       tester.invert = invert;
       tester.os_factor = os_factor;
       tester.two_stage = two_stage;
+      tester.critical = critical;
     end
 
 elseif (signal == "complex_sinusoid")
