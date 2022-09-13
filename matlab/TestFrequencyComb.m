@@ -5,7 +5,8 @@ classdef TestFrequencyComb < TestSignal
     properties
       frequencies
       os_factor = struct('nu', 8, 'de', 7)
-      two_stage
+      two_stage = false
+      invert = false
     end
    
     methods
@@ -47,9 +48,22 @@ classdef TestFrequencyComb < TestSignal
 
                     fft_in = abs(fft(x)./(nfft*nchan));
 
-                    hfac = normalize(obj.os_factor,nchan*nfft);
                     if (obj.two_stage)
-                        hfac = normalize(obj.os_factor,hfac);
+                        level = 2;
+                    else
+                        level = 1;
+                    end
+    
+                    if (obj.invert)
+                        level = level - 1;
+                    end
+    
+                    hfac = nchan*nfft;
+
+                    if (level)
+                        for l = 1:level
+                            hfac = normalize(obj.os_factor,hfac);
+                        end
                     end
 
                     % figure
@@ -76,14 +90,15 @@ classdef TestFrequencyComb < TestSignal
 % fprintf ('TestFrequencyComb: test harmonic[%d]=%f in chan=%d offset=%f i=%d\n', ...
   % i, obj.frequencies(i), ichan, offset, iharm);
 
+% figure
+% plot(fft_in)
+% pause
                             if ( fft_in(iharm) < 0.5 )
                                 fprintf ('TestFrequencyComb: did not detect expected harmonic[%d]=%f \n', i, obj.frequencies(i))
                                 fprintf ('  in chan=%d offset=%f i=%d nfft=%d\n', ichan, offset, iharm, nfft)
                                 result = -1;
-
-figure
-plot(fft_in)
-pause
+                                figure
+                                plot(fft_in)
                                 return;
                             end
                         end

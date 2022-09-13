@@ -230,6 +230,7 @@ elseif (signal == "frequency_comb")
     if (testing)
       tester = TestFrequencyComb;
       tester.frequencies = frequencies;
+      tester.invert = invert;
       tester.os_factor = os_factor;
       tester.two_stage = two_stage;
     end
