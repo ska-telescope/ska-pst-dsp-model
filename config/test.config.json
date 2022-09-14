@@ -81,8 +81,7 @@
     "period": 0.00575745,
     "dump_stage": "Convolution",
     "deripple": true,
-    "temporal_taper": "tukey",
-    "spectral_taper": "hann"
+    "temporal_taper": "tukey"
   },
   "mid": {
     "comment":"test of the SKA Mid analysis filterbank",

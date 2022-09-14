@@ -49,6 +49,9 @@ addOptional(p, 'comb', '', @ischar);
 % test the fidelity of 'complex_sinusoid' or 'temporal_impulse'
 addOptional(p, 'test',  false,             @islogical);
 
+% name of the spectral taper function
+addOptional(p, 'f_taper', '', @ischar);
+
 parse(p, varargin{:});
 
 signal = p.Results.signal;
@@ -94,6 +97,14 @@ if ( invert )
      error ('Cannot invert without analysis filterbank cfg');
   end
   file.filename = file.filename + "_inverted";
+end
+
+f_taper = p.Results.f_taper;
+if ( f_taper ~= "" )
+  if ( ~invert )
+     error ('Cannot apply spectral taper without analysis filterbank inversion');
+  end
+  file.filename = file.filename + "_" + f_taper;
 end
 
 combine = p.Results.combine;
@@ -157,6 +168,11 @@ if (cfg ~= "")
             inverse = InverseFilterBank (config);
         end
         
+        if ( f_taper ~= "" )
+            fprintf ('sgcht: spectral taper = %s\n', f_taper)
+            inverse = inverse.frequency_taper (f_taper);
+        end
+
         level = level - 1;
     end
     
@@ -204,8 +220,8 @@ elseif (signal == "frequency_comb")
     nharmonic = 32;
     amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
 
-    % add 1/4 spacing because exactly -0.5 gets rounded down to -1 
-    % when computing channel and harmonic offsets
+    % add 1/4 harmonic spacing to fmin because -0.5 is rounded 
+    % down to -1 when computing channel and harmonic offsets
 
     fmin = -0.5 + 1.0 / (nharmonic * 4);  % cycles per sample
     fmax = fmin + (nharmonic - 1.0) / nharmonic;
@@ -219,6 +235,11 @@ elseif (signal == "frequency_comb")
         fmin = fmin / n_chan^2;
         fmax = fmax / n_chan^2;
     elseif (n_chan > 1)
+
+        % the following logic pulls sparse harmonics out of the DC bins of 
+        % coarse or fine channels, so that scaled offsets due to things
+        % like the oversampling ratio can be tested
+
         nch = n_chan;
         if (two_stage)
             nch = n_chan^2;

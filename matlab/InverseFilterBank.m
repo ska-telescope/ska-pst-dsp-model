@@ -16,6 +16,7 @@ classdef InverseFilterBank < DeChannelizer
         combine = 1         % number of coarse channels to combine
         input_buffer        % input_buffer
         buffered_samples=0  % number of time samples in the input buffer
+        window_factory      % factory for creating window functions
     end
    
     methods
@@ -34,21 +35,28 @@ classdef InverseFilterBank < DeChannelizer
             obj.overlap = config.input_overlap;
             obj.deripple = config.deripple;
             
-            win = PFBWindow();
-            factory = win.lookup(config.temporal_taper);
-            obj.temporal_taper = factory(config.input_fft_length, config.input_overlap);
-
-            if (obj.combine > 1)
-                factory = win.lookup(config.spectral_taper);
-                obj.spectral_taper = factory(config.input_fft_length, config.input_overlap);
-            end
-
-            % fprintf ('InverseFilterBank::configure window function=%s nfft=%d overlap=%d\n',...
-            %         config.fft_window,config.input_fft_length,config.input_overlap);
-                 
+            obj.window_factory = PFBWindow();
+            factory = obj.window_factory.lookup(config.temporal_taper);
+            obj.temporal_taper = factory(obj.n_fft, obj.overlap);
+    
             end
             
         end % of InverseFilterBank constructor
+
+        function obj = frequency_taper (obj, name)
+            % returns:
+            %   obj = new TwoStageInverseFilterBank object
+                 
+            arguments
+                obj     (1,1) InverseFilterBank
+                name    % name of taper function
+            end
+            
+            % fprintf ('InverseFilterBank::frequency_taper %s \n', name)
+            factory = obj.window_factory.lookup(name);
+            obj.spectral_taper = factory(obj.n_fft, obj.overlap);
+
+        end
 
         function [obj, output] = execute (obj, input)
             % returns:
