@@ -2,7 +2,6 @@
   "low_psi_alt": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": 1,
     "kludge_offset": 193,
     "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
@@ -14,17 +13,16 @@
     "blocks": 3,
     "n_pol": 2,
     "deripple": true,
-    "fft_window": "tukey",
+    "temporal_taper": "tukey",
     "header_file_path": "default_header.json"
   },
   "low_psi": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": 1,
     "kludge_offset": 193,
     "fir_filter_coeff_file_path": "Prototype_FIR.new.4-3.256.3072.mat",
-    "fir_filter_taps": 3072,
+    "fir_filter_taps": 3073,
     "os_factor": "4/3",
     "channels": 256,
     "input_fft_length": 256,
@@ -32,13 +30,12 @@
     "blocks": 3,
     "n_pol": 2,
     "deripple": true,
-    "fft_window": "tukey",
+    "temporal_taper": "tukey",
     "header_file_path": "default_header.json"
   },
   "low_alt": {
     "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
@@ -59,13 +56,11 @@
     "period": 0.00575745,
     "dump_stage": "Convolution",
     "deripple": true,
-    "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "temporal_taper": "tukey"
   },
   "low": {
     "comment":"test of SKA Low analysis filterbank",
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "Prototype_FIR.new.4-3.256.3072.mat",
@@ -86,13 +81,11 @@
     "period": 0.00575745,
     "dump_stage": "Convolution",
     "deripple": true,
-    "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "temporal_taper": "tukey"
   },
   "mid": {
     "comment":"test of the SKA Mid analysis filterbank",
     "analysis_function":"polyphase_analysis_padded",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": 0,
     "kludge_offset": 0,
     "fir_filter_coeff_file_path": "Prototype_FIR.2_stage.8-7.4096.100352.mat",
@@ -113,12 +106,10 @@
     "period": 0.00575745,
     "dump_stage": "Convolution",
     "deripple": true,
-    "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "temporal_taper": "tukey"
   },
   "low_external": {
     "analysis_function":"polyphase_analysis",
-    "conjugate_synthesis_result": 0,
     "fir_offset_direction": -1,
     "kludge_offset": 1,
     "fir_filter_coeff_file_path": "PST_2561_LowFilterCoefficients.mat",
@@ -139,8 +130,7 @@
     "period": 0.00575745,
     "dump_stage": "Convolution",
     "deripple": true,
-    "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "temporal_taper": "tukey"
   },
   "mid_external": {
     "analysis_function":"polyphase_analysis_padded",
@@ -162,7 +152,6 @@
     "period": 0.00575745,
     "dump_stage": "Detection",
     "deripple": true,
-    "fft_window": "tukey",
-    "dspsr_bin": "/fred/oz002/users/dshaff/software/install/dspsr_master/bin/dspsr"
+    "temporal_taper": "tukey"
   }
 }

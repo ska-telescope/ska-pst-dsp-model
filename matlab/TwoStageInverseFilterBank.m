@@ -6,6 +6,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
         stage2  (:,1) InverseFilterBank
         nch1 = 0    % number of channels output by stage 1 filter bank
         single = 0  % output only a single coarse channel
+        combine = 1 % number of coarse channels combined on inversion
     end
    
     methods
@@ -32,6 +33,21 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                         
         end % of TwoStageInverseFilterBank constructor
 
+        function obj = frequency_taper (obj, name)
+            % returns:
+            %   obj = new TwoStageInverseFilterBank object
+                 
+            arguments
+                obj     (1,1) TwoStageInverseFilterBank
+                name    % name of taper function
+            end
+            
+            for ichan = 1:obj.nch1
+                obj.stage2(ichan) = obj.stage2(ichan).frequency_taper(name);
+            end
+                        
+        end % of TwoStageInverseFilterBank::f_taper
+
         function [obj, out] = execute (obj, input)
             % returns:
             %   obj      = the modified object
@@ -47,32 +63,41 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             sz = size(input);
             nchan = sz(2);
 
-            nch1 = obj.nch1;
-            if (obj.single)
-                nch1 = 1;
-            end
+            nch_1 = obj.nch1;
             
-            nch2 = nchan / nch1;
+            nch2 = nchan / nch_1;
                         
-            fprintf ('invrt 2 nch1=%d nchan=%d nch2=%d\n',nch1,nchan,nch2);
+            fprintf ('TwoStageInverseFilterBank::execute invrt 2 nch1=%d nchan=%d nch2=%d\n',...
+                nch_1,nchan,nch2);
 
             critical = false;
             
-            if (nch2 == (obj.nch1 * os.de) / os.nu)
+            if (nch2 == (nch_1 * os.de) / os.nu)
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
                 critical = true;
-            elseif (obj.single)
-                fprintf ('TwoStageInverseFilterBank::execute single channel\n');
-            elseif (nch2 ~= obj.nch1)
+            elseif (nch2 == nch_1)
+                fprintf ('TwoStageInverseFilterBank::execute oversampled\n');
+                if (obj.combine > 1)
+                    error ('TwoStageInverseFilterBank::execute cannot combine oversampled coarse channels');
+                end
+            else
                 error ('TwoStageInverseFilterBank::execute invalid nchan');
             end
             
-            for ich = 1:nch1
+            nch2 = nch2 * obj.combine;
+            nch_1 = nch_1 / obj.combine;
+
+            if (obj.single)
+                nch_1 = 1;
+            end
+
+            for ich = 1:nch_1
                 
                 intmp = input(1,(1:nch2)+(ich-1)*nch2,:);
                 
                 obj.stage2(ich).critical = critical;
-                
+                obj.stage2(ich).combine = obj.combine;
+
                 [obj.stage2(ich), tmp] = obj.stage2(ich).execute (intmp);
                 
                 if (ich == 1)  
@@ -87,8 +112,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                     
                    sz = size(tmp);
                    ndat = sz(3);
-                   out = complex(zeros(1,nch1,ndat)); 
-                   
+                   out = complex(zeros(1,nch_1,ndat));
                    
                 end
                  

@@ -24,8 +24,12 @@ classdef Impulse < Generator
             x = complex(zeros(1,1,nsample,'single'));
             
             if (off >= 0 && off < nsample)
-                fprintf ('offset=%d current=%d off=%d\n', obj.offset, obj.current, off);
+                fprintf ('Impulse: at off=%d offset=%d current=%d\n', ...
+                    off, obj.offset, obj.current);
                 x(1,1,1+off) = obj.amplitude;
+            else
+                fprintf ('Impulse: no impulse\n')
+                x(1,1,1) = 0.0;
             end
             
             obj.current = obj.current + nsample;

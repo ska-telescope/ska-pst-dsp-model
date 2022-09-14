@@ -67,14 +67,34 @@ classdef PFBWindow
 
     function handle = hann_factory(obj, input_fft_length, varargin)
       h = hann(input_fft_length);
-      h = transpose(h);
+      fftshift(h,2);
       function windowed = hann_window(in_dat, input_fft_length, input_discard)
+
         windowed = in_dat;
-        size_in_dat = size(windowed);
-        nchan = size_in_dat(1);
-        for ichan=1:nchan
-          windowed(ichan, :) = h.*windowed(ichan,:);
+        size_in_dat = size(in_dat);
+        ndat = size_in_dat(1);
+        size_h = size(h);
+        nwin = size_h(1);
+
+        if (ndat ~= nwin)
+            
+          % fprintf ('hann_window resizing window size=%d != data size=%d\n',nwin,ndat);
+          h = hann(ndat);
+
+          %figure;
+          %ax = subplot(2, 1, 1);
+          %plot (h);
+          h = circshift(h,ndat/2);
+
+          %ax = subplot(2, 1, 2);
+          %plot (h);
+          %fprintf ('Hit Enter to Continue\n');
+          %pause
+
         end
+
+        windowed = h.*windowed;
+        
       end
       handle = @hann_window;
     end

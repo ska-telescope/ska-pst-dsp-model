@@ -6,8 +6,9 @@ function out = polyphase_synthesis(...
   deripple_,...
   sample_offset_,...
   input_overlap_,...
-  window_handler_,...
-  conjugate_result_,...
+  temporal_taper_,...
+  spectral_taper_,...
+  combine_,...
   verbose_...
 )
 
@@ -45,8 +46,6 @@ function out = polyphase_synthesis(...
   %       apply derippling correction or 'ripple equalization'.
   %   sample_offset_ (int): offset applied to channelized input prior to
   %     processing.
-  %   conjugate_result_ (int): boolean flag; if true, return the complex 
-  %     conjugate of out
   % Returns:
   %   [numeric]: Upsampled time domain output array. The
   %     dimensionaly will be (n_pol, 1, n_dat). Note that `n_dat` for the
@@ -79,10 +78,22 @@ function out = polyphase_synthesis(...
     input_overlap = input_fft_length / 8;
   end
 
-  if exist('window_handler_', 'var')
-    window_handler = window_handler_;
+  if exist('temporal_taper_', 'var')
+    temporal_taper = temporal_taper_;
   else
-    window_handler = @default_window;
+    temporal_taper = @default_window;
+  end
+
+  if exist('spectral_taper_', 'var')
+    spectral_taper = spectral_taper_;
+  else
+    spectral_taper = @default_window;
+  end
+
+  if exist('combine_', 'var')
+    combine = combine_;
+  else
+    combine = 1;
   end
 
   in = in(:, :, sample_offset:end);
@@ -95,6 +106,7 @@ function out = polyphase_synthesis(...
   if verbose
     fprintf('polyphase_synthesis: n_pol=%d, n_chan=%d, n_dat=%d\n', n_pol, n_chan, n_dat);
     fprintf('polyphase_synthesis: os_factor.nu=%d, os_factor.de=%d\n', os_factor.nu, os_factor.de);
+    fprintf('polyphase_synthesis: input spans DC=%d\n', input_fully_spans_Nyquist_zone);
   end
 
   input_keep = input_fft_length - 2*input_overlap;
@@ -104,8 +116,6 @@ function out = polyphase_synthesis(...
   output_fft_length = normalize(os_factor, input_fft_length) * n_chan;
   output_overlap = normalize(os_factor, input_overlap) * n_chan;
   output_keep = output_fft_length - 2*output_overlap;
-
-  fprintf('polyphase_synthesis: input spans DC=%d\n', input_fully_spans_Nyquist_zone);
   
   if verbose
     fprintf('polyphase_synthesis: input_fft_length=%d\n', input_fft_length);
@@ -145,6 +155,8 @@ function out = polyphase_synthesis(...
 
   chan0_psd = zeros(input_fft_length);
   
+  fine_chan_per_coarse_chan = n_chan / combine;
+
   % fig = figure;
   for n=1:n_blocks
     for i_pol=1:n_pol
@@ -162,28 +174,58 @@ function out = polyphase_synthesis(...
       % ax = subplot(2, 1, 2);
       % plot(imag(in_dat(:)));
       % pause;
-      in_dat = window_handler(in_dat, input_fft_length, input_overlap);
+      in_dat = temporal_taper(in_dat, input_fft_length, input_overlap);
       % in_dat(:, 1:input_overlap) = complex(0, 0);
       % in_dat(:, (input_fft_length - input_overlap)+1:end) = complex(0, 0);
-      % ax = subplot(2, 1, 2);
-      % plot(abs(in_dat(:)));
-      % pause
 
+      % fft operates on each of the columns
       spectra = transpose(in_dat);
-      spectra = fft(spectra, input_fft_length); % fft operates on each of the columns
-      spectra = fftshift(spectra, 1);           % WvS - this swaps the harmonics in each channel
-      spectra = fftshift(spectra, 2);           % WvS - this swaps the channel order
+      spectra = fft(spectra, input_fft_length);
+
+      % WvS - swap harmonics in each channel
+      spectra = fftshift(spectra, 1);
+
+      chan0_psd = chan0_psd + abs(spectra(:,1)).^2;
+
       FN = complex(zeros(FN_width, n_chan, dtype));
       for chan = 1:n_chan
         % fprintf('i_block=%d, i_pol=%d, chan=%d\n', n, i_pol, chan);
         % size(FN)
         % phase_shift_arr(chan);
-        
-        FN(1:FN_width, chan) = spectra((1:FN_width)+discard_2, chan);
-        
-        if (chan == 1)
-            chan0_psd = chan0_psd + abs(spectra(:,chan)).^2;
+
+        jchan = chan;
+
+        if (combine > 1)
+
+           % compute new index using C-style indexing
+           jchan = jchan - 1;
+
+           % fprintf ('fine chan per coarse chan = %d\n',fine_chan_per_coarse_chan);
+
+           % re-order input channels in DSB monotonically
+           coarse_channel = floor(jchan / fine_chan_per_coarse_chan);
+           fine_channel = mod(jchan,fine_chan_per_coarse_chan);
+
+           % fprintf ('chan=%d coarse=%d fine=%d \n', chan, coarse_channel, fine_channel);
+
+           output_channel = floor(coarse_channel / combine);
+           coarse_offset = mode(coarse_channel, combine);
+
+           % fprintf ('output=%d offset=%d \n', output_channel, coarse_offset);
+
+           % swap halves of the band within the output channel
+           coarse_offset = mod ((coarse_offset + combine/2), combine);
+           
+           % swap halves of the band within the coarse channel
+           fine_channel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_coarse_chan);
+
+           jchan = (output_channel * combine + coarse_offset) * fine_chan_per_coarse_chan + fine_channel;
+
+           % convert back to Matlab-style indexing
+           jchan = jchan + 1;
         end
+
+        FN(1:FN_width, chan) = spectra((1:FN_width)+discard_2, jchan);
         
         if deripple.apply_deripple
           % applied_response = zeros(passband_length*2, 1);
@@ -223,8 +265,12 @@ function out = polyphase_synthesis(...
           end
       end
       
+      % length(FFFF)
+
+      FFFF = spectral_taper(FFFF, length(FFFF), input_overlap);
+
       % back transform
-      iFFFF = ifft(fftshift(FFFF))./(os_factor.nu/os_factor.de);
+      iFFFF = ifft(FFFF)./(os_factor.nu/os_factor.de);
 
       % for chan = 1:n_chan
       %   ax = subplot(n_chan+1, 2, 2*chan-1);
@@ -255,10 +301,6 @@ function out = polyphase_synthesis(...
       % end
       % out(i_pol, 1, out_step_s:out_step_e) = ifft(FFFF)./(os_factor.nu/os_factor.de);  % re-scale by OS factor
     end
-  end
-  
-  if (conjugate_result_)
-      out = conj(out);
   end
   
   % plot (chan0_psd);

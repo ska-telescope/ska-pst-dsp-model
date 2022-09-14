@@ -40,7 +40,7 @@ classdef TwoStageFilterBank < Channelizer
                 input
             end
 
-            fprintf ('stage 1\n');
+            fprintf ('TwoStageFilterBank::execute stage 1\n');
             [obj.stage1, out1] = obj.stage1.execute (input);
             
             os = obj.stage1.os_factor;
@@ -53,13 +53,13 @@ classdef TwoStageFilterBank < Channelizer
                 nch2 = nch1;
             end
             
-            offset = (nch1 - nch2) / 2;
+            offset = (nch1 - nch2);
             
             if (obj.single == 1)
                 nch1 = 1;
             end
             
-            fprintf ('stage 2 nch1=%d nch2=%d offset=%d\n',nch1,nch2,offset);
+            fprintf ('TwoStageFilterBank::execute stage 2 nch1=%d nch2=%d offset=%d\n',nch1,nch2,offset);
             for ich = 1:nch1
                 
                  [obj.stage2(ich), tmp] = obj.stage2(ich).execute (out1(1,ich,:));
@@ -70,9 +70,13 @@ classdef TwoStageFilterBank < Channelizer
                      out = zeros(1,nch1*nch2,ndat,'single'); 
                  end
                  
-                 tmp = fftshift(tmp,2);
-                 
-                 out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,(1:nch2)+offset,:);
+                 % tmp[0] is DC and tmp[nch2/2] is Nyquist
+                 % so chomp out oversampled channels in middle of array
+                 if (offset)
+                     tmp(1,nch2/2+1:nch2,:)=tmp(1,(1:nch2/2)+offset+nch2/2,:);
+                 end
+
+                 out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,1:nch2,:);
                  
             end
               

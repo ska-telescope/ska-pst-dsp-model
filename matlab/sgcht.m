@@ -1,4 +1,4 @@
-function sgcht(varargin)
+function result = sgcht(varargin)
 
 % Signal Generator, Channelizer, and Tester (s g ch & t)  
 %
@@ -34,6 +34,9 @@ addOptional(p, 'two_stage', false,         @islogical);
 % invert the (second stage) analysis filterbank
 addOptional(p, 'invert',    false,         @islogical);
 
+% number of coarse channels to be combined when inverting second stage
+addOptional(p, 'combine',    1,            @isnumeric);
+
 % retain only the critically sampled fraction of (first stage)
 addOptional(p, 'critical',  false,         @islogical);
 
@@ -46,6 +49,9 @@ addOptional(p, 'comb', '', @ischar);
 % test the fidelity of 'complex_sinusoid' or 'temporal_impulse'
 addOptional(p, 'test',  false,             @islogical);
 
+% name of the spectral taper function
+addOptional(p, 'f_taper', '', @ischar);
+
 parse(p, varargin{:});
 
 signal = p.Results.signal;
@@ -54,7 +60,7 @@ cfg = p.Results.cfg;
 file = DADAFile;
 file.filename = "../products/" + signal;
 
-comb  = p.Results.comb;
+comb = p.Results.comb;
 if ( comb == "coarse" || comb == "fine")
   if ( cfg == "" )
      error ('Cannot have specify comb spacing without analysis filterbank cfg');
@@ -93,12 +99,36 @@ if ( invert )
   file.filename = file.filename + "_inverted";
 end
 
+f_taper = p.Results.f_taper;
+if ( f_taper ~= "" )
+  if ( ~invert )
+     error ('Cannot apply spectral taper without analysis filterbank inversion');
+  end
+  file.filename = file.filename + "_" + f_taper;
+end
+
+combine = p.Results.combine;
+if ( combine > 1 )
+  if ( ~two_stage )
+     error ('Cannot combine coarse channels without two-stage analysis');
+  end
+  if ( ~invert )
+     error ('Cannot combine coarse channels without inverting the second stage');
+  end
+  file.filename = file.filename + "_" + string(combine);
+end
+
 single_chan = p.Results.single;
 if ( single_chan )
   if (two_stage == 0)
      error ('Single-channel output implemented only for two-stage\n');
   end
   file.filename = file.filename + "_single";
+end
+
+testing = p.Results.test;
+if ( testing )
+  fprintf ('When testing, no file is output.\n')
 end
 
 file.filename = file.filename + ".dada";
@@ -133,10 +163,16 @@ if (cfg ~= "")
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
             inverse.single = single_chan;
+            inverse.combine = combine;
         else
             inverse = InverseFilterBank (config);
         end
         
+        if ( f_taper ~= "" )
+            fprintf ('sgcht: spectral taper = %s\n', f_taper)
+            inverse = inverse.frequency_taper (f_taper);
+        end
+
         level = level - 1;
     end
     
@@ -151,10 +187,10 @@ if (cfg ~= "")
             end
         end
     
+        new_tsamp = new_tsamp / combine;
+        
         header('TSAMP') = num2str(new_tsamp);
-
         header('HDR_SIZE') = '65536';
-        header('TSAMP') = num2str(new_tsamp);
         header('PFB_DC_CHAN') = '1';
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
@@ -175,24 +211,60 @@ if (signal == "square_wave")
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
     fprintf ('square_wave: period=%f samples\n', gen.period);
 
+    if (testing)
+        error ('Testing not implemented for square_wave')
+    end
+
 elseif (signal == "frequency_comb")
     
-    nfft = 1024;
     nharmonic = 32;
     amplitudes = transpose(linspace (1.0,sqrt(2.0),nharmonic));
-    fmin = -0.5;  % cycles per sample
+
+    % add 1/4 harmonic spacing to fmin because -0.5 is rounded 
+    % down to -1 when computing channel and harmonic offsets
+
+    fmin = -0.5 + 1.0 / (nharmonic * 4);  % cycles per sample
     fmax = fmin + (nharmonic - 1.0) / nharmonic;
 
     if (comb == "coarse")
+        fprintf ('frequency_comb: coarse channels\n');
         fmin = fmin / n_chan;
         fmax = fmax / n_chan;
     elseif (comb == "fine")
+        fprintf ('frequency_comb: fine channels\n');
         fmin = fmin / n_chan^2;
         fmax = fmax / n_chan^2;
+    elseif (n_chan > 1)
+
+        % the following logic pulls sparse harmonics out of the DC bins of 
+        % coarse or fine channels, so that scaled offsets due to things
+        % like the oversampling ratio can be tested
+
+        nch = n_chan;
+        if (two_stage)
+            nch = n_chan^2;
+        end
+        if (invert)
+            nch = nch / n_chan;
+        end
+        if (nch > 1)
+            fprintf ('frequency_comb: add quarter-channel offset (nch=%d)\n', nch)
+            fmin = fmin + 1.0/(nch*4);
+            fmax = fmax + 1.0/(nch*4);
+        end
     end
 
     frequencies = transpose(linspace (fmin, fmax, nharmonic));    
     gen = FrequencyComb (amplitudes, frequencies);
+
+    if (testing)
+      tester = TestFrequencyComb;
+      tester.frequencies = frequencies;
+      tester.invert = invert;
+      tester.os_factor = os_factor;
+      tester.two_stage = two_stage;
+      tester.critical = critical;
+    end
 
 elseif (signal == "complex_sinusoid")
     
@@ -204,12 +276,26 @@ elseif (signal == "complex_sinusoid")
     fprintf ('complex_sinusoid: sampling interval=%f microseconds\n', tsamp);
     fprintf ('complex_sinusoid: period=%d samples\n', 1./gen.frequency);
 
+    if (testing)
+      tester = TestPureTone;
+      tester.frequency = gen.frequency;
+    end
+
 elseif (signal == "temporal_impulse")
 
     gen = Impulse;
     gen.offset = 20000; % in samples
     fprintf ('temporal_impulse: offset=%d samples\n', gen.offset);
 
+    if (testing)
+      output_overlap = normalize(config.os_factor,config.input_overlap)*config.channels;
+      % calculate the offset between input and inverted data due to the FIR filter
+      fir_offset = config.fir_offset_direction * floor(length(filt_coeff) / 2);
+      filter_offset = output_overlap - 1 + config.kludge_offset;
+      fprintf ('TestImpulse offset=%d \n',filter_offset)
+      tester = TestImpulse;
+      tester.offset = gen.offset + fir_offset - filter_offset;
+    end
 else
     error ('Unrecognized signal: ' + signal);
 end
@@ -220,14 +306,17 @@ if ( two_stage )
     blocksz = 64 * 1024 * 1024; % 64 M-sample blocks in RAM
     blocks = 2;                 % blocks written to disk
 else
-    blocksz = 64 * 1024; % 64 M-sample blocks in RAM
-    blocks = 2 * 1024;
+    blocksz = 64 * 1024;        % 64 k-sample blocks in RAM
+    blocks = 2 * 1024;          % more blocks
 
     if (signal == "frequency_comb")
         blocks = 128;
     end
 end
 
+if ( cfg == "mid" )
+    blocksz = blocksz * 2;  % 'mid' needs more data
+end
 
 tstart = tic;
 
@@ -245,20 +334,29 @@ for i = 1:blocks
         
     if (invert)
         [inverse, x] = execute (inverse, x);
-
-        if (test)
-
-            % perhaps ask the signal generator to compare?
-            
-        end
-
     end
     
-    file = write (file, single(x));
+    if (testing)
+      [tester, result] = test (tester, x);
+
+      if (result ~= 0)
+          fprintf('sgcht test failed\n')
+          result = -1;
+          return;
+      end
+
+    else
+      file = write (file, single(x));
+    end
+
 end
 
 tdelta = toc(tstart);
 fprintf('sgcht took %f seconds\n', tdelta);
-    
-fprintf ('closing %s\n',file.filename)
-file = close (file);
+
+if (~testing)
+    fprintf ('closing %s\n',file.filename)
+    file = close (file);
+end
+
+result = 0;
