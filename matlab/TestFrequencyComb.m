@@ -4,7 +4,7 @@ classdef TestFrequencyComb < TestSignal
     
     properties
       frequencies
-      os_factor = struct('nu', 8, 'de', 7)
+      os_factor = struct('nu', 1, 'de', 1)
       two_stage = false
       invert = false
       critical = false
@@ -49,9 +49,11 @@ classdef TestFrequencyComb < TestSignal
 
                     fft_in = abs(fft(x)./(nfft*nchan));
 
+                    level = 0;
+                    
                     if (obj.two_stage)
                         level = 2;
-                    else
+                    elseif (nchan > 1)
                         level = 1;
                     end
     

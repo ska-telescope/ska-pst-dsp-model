@@ -260,12 +260,14 @@ elseif (signal == "frequency_comb")
     if (testing)
       tester = TestFrequencyComb;
       tester.frequencies = frequencies;
-      tester.invert = invert;
-      tester.os_factor = os_factor;
-      tester.two_stage = two_stage;
-      tester.critical = critical;
+      if (cfg ~= "")
+        tester.invert = invert;
+        tester.os_factor = os_factor;
+        tester.two_stage = two_stage;
+        tester.critical = critical;
+      end
     end
-
+    
 elseif (signal == "complex_sinusoid")
     
     gen = PureTone;
