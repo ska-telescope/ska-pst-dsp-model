@@ -78,7 +78,7 @@ classdef TestFrequencyComb < TestSignal
                     % pause
 
                     for i = 1:nharm
-                        jchan = round(obj.frequencies(i) * nchan);
+                        jchan = floor(obj.frequencies(i) * nchan);
                         jchan = mod(jchan+nchan, nchan);
                         jchan = jchan + 1;
 
@@ -90,7 +90,7 @@ classdef TestFrequencyComb < TestSignal
 % fprintf ('offset=%f = %f -- %f\n', ...
 %   obj.frequencies(i)-offset,(obj.frequencies(i)-offset)*nfft,1.0/nchan)
 
-                            iharm = round( (obj.frequencies(i)-offset)*hfac );
+                            iharm = floor( (obj.frequencies(i)-offset)*hfac );
                             iharm = mod (iharm+nfft, nfft);
                             iharm = iharm + 1;
 

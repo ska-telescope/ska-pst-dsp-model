@@ -155,7 +155,9 @@ function out = polyphase_synthesis(...
 
   chan0_psd = zeros(input_fft_length);
   
+  % The input n_chan fine channels span 'combine' coarse channels
   fine_chan_per_coarse_chan = n_chan / combine;
+  fine_chan_per_output_chan = n_chan;
 
   % fig = figure;
   for n=1:n_blocks
@@ -197,29 +199,39 @@ function out = polyphase_synthesis(...
 
         if (combine > 1)
 
-           % compute new index using C-style indexing
+           % compute new index using sensible index notation
            jchan = jchan - 1;
+
+           output_channel = floor(jchan / fine_chan_per_output_chan);
+
+           % output_channel should always be zero in this function
+           % however, the calculations relevant to the dspsr implementation
+           % are retained here
+
+           if (output_channel ~= 0)
+             error ('unexpected output channel=%d', output_channel);
+           end
+
+           jchan = jchan - output_channel * fine_chan_per_output_chan;
+
+           % shift by half a coarse channel width within output channel
+           jchan = mod ((jchan + fine_chan_per_coarse_chan/2), fine_chan_per_output_chan);
 
            % fprintf ('fine chan per coarse chan = %d\n',fine_chan_per_coarse_chan);
 
            % re-order input channels in DSB monotonically
            coarse_channel = floor(jchan / fine_chan_per_coarse_chan);
-           fine_channel = mod(jchan,fine_chan_per_coarse_chan);
+           fine_channel = jchan - coarse_channel*fine_chan_per_coarse_chan;
 
            % fprintf ('chan=%d coarse=%d fine=%d \n', chan, coarse_channel, fine_channel);
 
-           output_channel = floor(coarse_channel / combine);
-           coarse_offset = mode(coarse_channel, combine);
-
-           % fprintf ('output=%d offset=%d \n', output_channel, coarse_offset);
-
            % swap halves of the band within the output channel
-           coarse_offset = mod ((coarse_offset + combine/2), combine);
-           
+           coarse_channel = mod ((coarse_channel + combine/2), combine);
+           coarse_channel = output_channel * combine + coarse_channel;
+
            % swap halves of the band within the coarse channel
            fine_channel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_coarse_chan);
-
-           jchan = (output_channel * combine + coarse_offset) * fine_chan_per_coarse_chan + fine_channel;
+           jchan = coarse_channel * fine_chan_per_coarse_chan + fine_channel;
 
            % convert back to Matlab-style indexing
            jchan = jchan + 1;

@@ -12,7 +12,7 @@ classdef InverseFilterBank < DeChannelizer
         temporal_taper
         spectral_taper = @identity_taper
         deripple = 0
-        critical = false    % input channels do not span DC
+        critical = false    % fine channels span critically-sampled coarse channels
         combine = 1         % number of coarse channels to combine
         input_buffer        % input_buffer
         buffered_samples=0  % number of time samples in the input buffer
@@ -83,8 +83,8 @@ classdef InverseFilterBank < DeChannelizer
             end
 
             verbose = 0;
-            % obj.critical = 1;  % test "not spanning DC" mode
-            spans_dc = true; % ~obj.critical;
+
+            spans_dc = true;
 
             output = polyphase_synthesis (input, spans_dc, ...
                 obj.n_fft, obj.os_factor,...

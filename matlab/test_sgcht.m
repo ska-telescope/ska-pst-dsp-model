@@ -51,7 +51,7 @@ if (res ~= 0)
 end
 
 if (fail == 0)
-    fprint ('%s: all tests passed', sig_)
+    fprintf ('%s: all tests passed', sig_)
 else
-    fprint ('%s: %d tests failed', sig_, fail)
+    fprintf ('%s: %d tests failed', sig_, fail)
 end
