@@ -28,6 +28,7 @@ function write_dada_header (file_id, data, header, verbose_)
 
   % ensure we're at the start of the file
   frewind(file_id);
+  % fprintf ('after frewind, file pointer at %d\n', ftell(file_id));
   write_header(file_id, header);
 
 end

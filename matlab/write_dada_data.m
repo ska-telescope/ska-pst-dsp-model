@@ -30,6 +30,15 @@ function write_dada_data (file_id, data, verbose_)
     data = temp;
   end
 
+  ptr1=ftell(file_id);
   fwrite(file_id, reshape(data, numel(data), 1), dtype);
+  ptr2=ftell(file_id);
+
+  bytes_per_float = 4;
+  if (ptr2 - ptr1) ~= numel(data) * bytes_per_float
+    fprintf ('unexpected fptr bytes=%d ptr1=%d ptr2=%d diff=%d\n', ...
+        numel(data)*4, ptr1, ptr2, ptr2-ptr1);
+    error ('Incorrect file pointer after writing data');
+  end
 
 end

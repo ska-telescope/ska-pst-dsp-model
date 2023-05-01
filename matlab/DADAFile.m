@@ -18,7 +18,7 @@ classdef DADAFile
                 fname    (1,1) string
             end
             
-            obj.fileID = fopen (fname, 'wt');
+            obj.fileID = fopen (fname, 'w');
             obj.filename = fname;
 
         end % of open function

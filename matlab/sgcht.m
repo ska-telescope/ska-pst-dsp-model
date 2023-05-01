@@ -357,7 +357,7 @@ tdelta = toc(tstart);
 fprintf('sgcht took %f seconds\n', tdelta);
 
 if (~testing)
-    fprintf ('closing %s\n',file.filename)
+    fprintf ('closing %s\n',file.filename);
     file = close (file);
 end
 

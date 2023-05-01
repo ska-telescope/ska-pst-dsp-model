@@ -37,7 +37,15 @@ function write_header(file_id, hdr_map)
   % if isstring(out_filename_or_id) || ischar(out_filename_or_id)
   %   file_id = fopen(out_filename_or_id, 'w');
   % end
+  % fprintf ('1: file pointer at %d\n', ftell(file_id));
   fwrite(file_id, hdr_char, 'char');
+  % fprintf ('2: file pointer at %d\n', ftell(file_id));
   fwrite(file_id, hdr_remaining, 'char');
+
+  if (ftell(file_id) ~= hdr_size)
+      fprintf('unexpected fptr ftell=%d',ftell(file_id))
+      error ('Incorrect file pointer after writing header');
+  end
+  % fprintf ('wrote %d bytes of data followed by %d zeros. file pointer at %d\n', length(hdr_char), length(hdr_remaining), ftell(file_id));
   % fclose(file_id);
 end
