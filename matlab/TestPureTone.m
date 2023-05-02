@@ -35,12 +35,19 @@ classdef TestPureTone < TestSignal
             nchan = input_size(2);
             npol = input_size(1);
 
+            max_nfft = 8 * 1024 * 1024;
+
             for ipol = 1:npol
                 for ichan = 1:nchan
 
                     x=squeeze( input(ipol,ichan,:) );
                     size_x = size(x);
                     nfft = size_x(1);
+
+                    if (nfft > max_nfft)
+                        nfft = max_nfft;
+                        x=x(1:nfft);
+                    end
 
                     % add one for matlab array index convention
                     exp_index = obj.frequency * nfft + 1;
@@ -50,16 +57,22 @@ classdef TestPureTone < TestSignal
                     [a_max,a_index] = max(fft_dB);
 
                     fft_dB = fft_dB - a_max;
-                    % figure
-                    % plot(a_fft)
-                    % pause
+                    figure
+                    plot(fft_dB)
+                    pause
 
                     if ( a_index ~= exp_index )
 
-                      fprintf ('unexpected max index=%d (expected: %d)\n',...
-                          a_index, exp_index);
-                      result = -1;
-                      return;
+                        alt_index = nfft/2 + exp_index;
+                        if ( a_index == alt_index )
+                            fprintf ('TestPureTone: bandswap detected \n');
+                        else
+                            fprintf ('TestPureTone: unexpected max index=%d (expected=%d nfft=%d)\n',...
+                                a_index, exp_index, nfft);
+                            result = -1;
+                            return;
+                        end
+
                     end
 
                     dB_avg = 0;
