@@ -5,6 +5,7 @@ classdef Impulse < Generator
         offset = 0         % sample offset of delta
         amplitude = 1.0    % amplitude of waved
         current = 0        % current sample
+        noise = 1e-6;
     end
    
     methods
@@ -22,6 +23,9 @@ classdef Impulse < Generator
             off = obj.offset - obj.current;
 
             x = complex(zeros(1,1,nsample,'single'));
+            if (noise ~= 0)
+                x(1,1,:)= noise*(randn([1 nsample], 'single') + 1i*randn([1 nsample], 'single'));
+            end
             
             if (off >= 0 && off < nsample)
                 fprintf ('Impulse: at off=%d offset=%d current=%d\n', ...
