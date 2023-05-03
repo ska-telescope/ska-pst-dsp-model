@@ -72,12 +72,12 @@ classdef TwoStageFilterBank < Channelizer
                  
                  % tmp[0] is DC and tmp[nch2/2] is Nyquist
                  % so chomp out oversampled channels in middle of array
-                 if (offset)
-                     tmp(1,nch2/2+1:nch2,:)=tmp(1,(1:nch2/2)+offset+nch2/2,:);
-                 end
+                 out(1,(1:nch2/2)+(ich-1)*nch2,:) = tmp(1,1:nch2/2,:);
+                 out(1,(nch2/2:nch2)+(ich-1)*nch2,:) = tmp(1,(nch2/2:nch2)+offset,:);
 
-                 out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,1:nch2,:);
-                 
+                 % if tmp[nchan/2] is DC, then keep middle of array
+                 %out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,(1:nch2)+offset/2,:);
+
             end
               
             % class(out)
