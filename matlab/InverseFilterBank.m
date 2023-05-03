@@ -85,6 +85,7 @@ classdef InverseFilterBank < DeChannelizer
             verbose = 0;
 
             spans_dc = true;
+            obj.deripple = ~ obj.critical;
 
             output = polyphase_synthesis (input, spans_dc, ...
                 obj.n_fft, obj.os_factor,...
