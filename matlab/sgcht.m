@@ -18,39 +18,45 @@ function result = sgcht(varargin)
 %                    'frequency_comb' - harmonics with amplitude slope
 %                    'complex_sinusoid' - pure tone
 %                    'temporal_impulse' - delta function
-%   
-    
+%
+ 
 p = inputParser;
 
 % name of the analysis filter bank configuration (default: none)
-addOptional(p, 'cfg',       '',            @ischar);
+addOptional(p, 'cfg', '', @ischar);
 
 % name of the signal generator (default: square wave)
-addOptional(p, 'signal',    'square_wave', @ischar);
+addOptional(p, 'signal', 'square_wave', @ischar);
 
 % peform two stages of analysis filterbank
-addOptional(p, 'two_stage', false,         @islogical);
+addOptional(p, 'two_stage', false, @islogical);
 
 % invert the (second stage) analysis filterbank
-addOptional(p, 'invert',    false,         @islogical);
+addOptional(p, 'invert', false, @islogical);
 
 % number of coarse channels to be combined when inverting second stage
-addOptional(p, 'combine',    1,            @isnumeric);
+addOptional(p, 'combine', 1, @isnumeric);
 
 % retain only the critically sampled fraction of (first stage)
-addOptional(p, 'critical',  false,         @islogical);
+addOptional(p, 'critical', false, @islogical);
 
 % output only the first coarse channel
-addOptional(p, 'single',  false,           @islogical);
+addOptional(p, 'single', false, @islogical);
 
 % produce a frequency comb that spans a single coarse or find channel
 addOptional(p, 'comb', '', @ischar);
 
 % test the fidelity of 'complex_sinusoid' or 'temporal_impulse'
-addOptional(p, 'test',  false,             @islogical);
+addOptional(p, 'test', false, @islogical);
 
 % name of the spectral taper function
 addOptional(p, 'f_taper', '', @ischar);
+
+% number of bits per sample in output data file
+addOptional(p, 'nbit', 32, @isnumeric);
+
+% scale factor applied before casting
+addOptional(p, 'scale', 1, @isnumeric);
 
 parse(p, varargin{:});
 
@@ -63,7 +69,7 @@ file.filename = "../products/" + signal;
 comb = p.Results.comb;
 if ( comb == "coarse" || comb == "fine")
   if ( cfg == "" )
-     error ('Cannot have specify comb spacing without analysis filterbank cfg');
+     error ('Cannot specify comb spacing without analysis filterbank cfg');
   end
   if ( signal ~= "frequency_comb" )
      error ('Cannot specify comb spacing when signal is not a frequency comb');
@@ -124,6 +130,14 @@ if ( single_chan )
      error ('Single-channel output implemented only for two-stage\n');
   end
   file.filename = file.filename + "_single";
+end
+
+nbit = p.Results.nbit;
+if ( nbit ~= 32 )
+  fprintf ('Quantizing output to %d bits\n', nbit)
+  file.filename = file.filename + "_" + string(nbit) + "bit";
+  scale = p.Results.scale;
+  fprintf ('Scale by %f before quantizing\n', scale)
 end
 
 testing = p.Results.test;
@@ -188,7 +202,8 @@ if (cfg ~= "")
         end
     
         new_tsamp = new_tsamp / combine;
-        
+
+        header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
         header('HDR_SIZE') = '65536';
         header('PFB_DC_CHAN') = '1';
@@ -350,7 +365,14 @@ for i = 1:blocks
       end
 
     else
-      file = write (file, single(x));
+
+      if (nbit == 32)
+        to_write = single(x);
+      elseif (nbit == 8)
+        to_write = cast(scale*x,"int8");
+      end
+
+      file = write (file, to_write);
     end
 
 end

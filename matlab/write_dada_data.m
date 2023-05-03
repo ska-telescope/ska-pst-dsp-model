@@ -14,8 +14,15 @@ function write_dada_data (file_id, data, verbose_)
   size_data = size(data);
   dtype = class(data);
 
+  bytes_per_element = 8;
+  if dtype == "single"
+    bytes_per_element = 4;
+  elseif dtype == "uint8" || dtype == "int8"
+    bytes_per_element = 1;
+  end
+
   if verbose
-    fprintf('write_dada_data: dtype=%s\n', class(data));
+    fprintf('write_dada_data: dtype=%s\n', dtype);
   end
 
   if ~isreal(data)
@@ -34,8 +41,7 @@ function write_dada_data (file_id, data, verbose_)
   fwrite(file_id, reshape(data, numel(data), 1), dtype);
   ptr2=ftell(file_id);
 
-  bytes_per_float = 4;
-  if (ptr2 - ptr1) ~= numel(data) * bytes_per_float
+  if (ptr2 - ptr1) ~= numel(data) * bytes_per_element
     fprintf ('unexpected fptr bytes=%d ptr1=%d ptr2=%d diff=%d\n', ...
         numel(data)*4, ptr1, ptr2, ptr2-ptr1);
     error ('Incorrect file pointer after writing data');

@@ -13,8 +13,10 @@ function write_dada_header (file_id, data, header, verbose_)
   end
 
   header('NBIT') = '64';
-  if class(data) == 'single'
+  if class(data) == "single"
     header('NBIT') = '32';
+  elseif class(data) == "uint8" || class(data) == "int8"
+    header('NBIT') = '8';
   end
 
   header('NDIM') = '2';
