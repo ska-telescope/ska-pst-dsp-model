@@ -203,13 +203,18 @@ if (cfg ~= "")
     
         new_tsamp = new_tsamp / combine;
 
+        pfb_nchan = n_chan;
+        if (critical && level == 2)
+            pfb_nchan = normalize(os_factor, n_chan);
+        end
+
         header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
         header('HDR_SIZE') = '65536';
         header('PFB_DC_CHAN') = '1';
-        % header('NSTAGE') = num2str(level);
-        % header('NCHAN_PFB_0') = num2str(n_chan);
-        header('PFB_NCHAN') = num2str(n_chan);
+        header('NSTAGE') = num2str(level);
+        header('NCHAN_PFB_0') = num2str(n_chan);
+        header('PFB_NCHAN') = num2str(pfb_nchan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
         header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
     
