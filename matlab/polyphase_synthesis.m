@@ -215,7 +215,7 @@ function out = polyphase_synthesis(...
            fine_channel = jchan - output_channel * fine_chan_per_output_chan;
 
            % shift by half a coarse channel width within output channel
-           fine_chanel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_output_chan);
+           fine_channel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_output_chan);
 
            % fprintf ('fine chan per coarse chan = %d\n',fine_chan_per_coarse_chan);
 
