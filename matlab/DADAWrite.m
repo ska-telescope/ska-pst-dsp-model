@@ -1,4 +1,4 @@
-classdef DADAFile
+classdef DADAWrite
     % writes data to a file with a DADA header
     
     properties
@@ -14,7 +14,7 @@ classdef DADAFile
             %   obj = the modified object
 
             arguments
-                obj      (1,1) DADAFile
+                obj      (1,1) DADAWrite
                 fname    (1,1) string
             end
             
@@ -28,7 +28,7 @@ classdef DADAFile
             %   obj = the modified object
 
             arguments
-                obj      (1,1)   DADAFile
+                obj      (1,1)   DADAWrite
                 data     (:,:,:)
             end
 
@@ -46,7 +46,7 @@ classdef DADAFile
             %   obj = the modified object
 
             arguments
-                obj      (1,1) DADAFile
+                obj      (1,1) DADAWrite
             end
 
             fclose (obj.fileID);

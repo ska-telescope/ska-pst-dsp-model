@@ -28,6 +28,9 @@ addOptional(p, 'cfg', '', @ischar);
 % name of the signal generator (default: square wave)
 addOptional(p, 'signal', 'square_wave', @ischar);
 
+% alternatively, load signal from file
+addOptional(p, 'input', '', @ischar);
+
 % peform two stages of analysis filterbank
 addOptional(p, 'two_stage', false, @islogical);
 
@@ -61,9 +64,15 @@ addOptional(p, 'scale', 1, @isnumeric);
 parse(p, varargin{:});
 
 signal = p.Results.signal;
+input_file = p.Results.input;
+
+if ( input_file ~= "" )
+  signal = "from_file";
+end
+
 cfg = p.Results.cfg;
 
-file = DADAFile;
+file = DADAWrite;
 file.filename = "../products/" + signal;
 
 comb = p.Results.comb;
@@ -147,9 +156,16 @@ end
 
 file.filename = file.filename + ".dada";
 
-header_template = "../config/" + signal + "_header.json";
-json_str = fileread(header_template);
-header = struct2map(jsondecode(json_str));
+if (signal == "from_file")
+  gen = DADARead;
+  gen = open(gen, input_file);
+  header = gen.header;
+else
+  header_template = "../config/" + signal + "_header.json";
+  json_str = fileread(header_template);
+  header = struct2map(jsondecode(json_str));
+end
+
 tsamp = str2num(header('TSAMP'));    % in microseconds
 
 n_chan = 1;
@@ -222,7 +238,11 @@ if (cfg ~= "")
 
 end
 
-if (signal == "square_wave")
+if (signal == "from_file")
+
+    fprintf ('signal loaded from %s \n',input_file);
+
+elseif (signal == "square_wave")
     
     gen = SquareWave;
     
