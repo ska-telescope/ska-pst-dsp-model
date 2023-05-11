@@ -59,7 +59,7 @@ classdef DADARead < Generator
                 data = cast(data,'double');
             end
 
-            x = reshape(data, obj.n_pol*obj.n_dim, obj.n_chan, nsample);
+            x = reshape(data, obj.n_pol*obj.n_dim, obj.n_chan, []);
             
         end % of generate function
     end % of methods section
