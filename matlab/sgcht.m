@@ -18,52 +18,67 @@ function result = sgcht(varargin)
 %                    'frequency_comb' - harmonics with amplitude slope
 %                    'complex_sinusoid' - pure tone
 %                    'temporal_impulse' - delta function
-%   
-    
+%
+ 
 p = inputParser;
 
 % name of the analysis filter bank configuration (default: none)
-addOptional(p, 'cfg',       '',            @ischar);
+addOptional(p, 'cfg', '', @ischar);
 
 % name of the signal generator (default: square wave)
-addOptional(p, 'signal',    'square_wave', @ischar);
+addOptional(p, 'signal', 'square_wave', @ischar);
+
+% alternatively, load signal from file
+addOptional(p, 'input', '', @ischar);
 
 % peform two stages of analysis filterbank
-addOptional(p, 'two_stage', false,         @islogical);
+addOptional(p, 'two_stage', false, @islogical);
 
 % invert the (second stage) analysis filterbank
-addOptional(p, 'invert',    false,         @islogical);
+addOptional(p, 'invert', false, @islogical);
 
 % number of coarse channels to be combined when inverting second stage
-addOptional(p, 'combine',    1,            @isnumeric);
+addOptional(p, 'combine', 1, @isnumeric);
 
 % retain only the critically sampled fraction of (first stage)
-addOptional(p, 'critical',  false,         @islogical);
+addOptional(p, 'critical', false, @islogical);
 
 % output only the first coarse channel
-addOptional(p, 'single',  false,           @islogical);
+addOptional(p, 'single', false, @islogical);
 
 % produce a frequency comb that spans a single coarse or find channel
 addOptional(p, 'comb', '', @ischar);
 
 % test the fidelity of 'complex_sinusoid' or 'temporal_impulse'
-addOptional(p, 'test',  false,             @islogical);
+addOptional(p, 'test', false, @islogical);
 
 % name of the spectral taper function
 addOptional(p, 'f_taper', '', @ischar);
 
+% number of bits per sample in output data file
+addOptional(p, 'nbit', 32, @isnumeric);
+
+% scale factor applied before casting
+addOptional(p, 'scale', 1, @isnumeric);
+
 parse(p, varargin{:});
 
 signal = p.Results.signal;
+input_file = p.Results.input;
+
+if ( input_file ~= "" )
+  signal = "from_file";
+end
+
 cfg = p.Results.cfg;
 
-file = DADAFile;
+file = DADAWrite;
 file.filename = "../products/" + signal;
 
 comb = p.Results.comb;
 if ( comb == "coarse" || comb == "fine")
   if ( cfg == "" )
-     error ('Cannot have specify comb spacing without analysis filterbank cfg');
+     error ('Cannot specify comb spacing without analysis filterbank cfg');
   end
   if ( signal ~= "frequency_comb" )
      error ('Cannot specify comb spacing when signal is not a frequency comb');
@@ -126,6 +141,14 @@ if ( single_chan )
   file.filename = file.filename + "_single";
 end
 
+nbit = p.Results.nbit;
+if ( nbit ~= 32 )
+  fprintf ('Quantizing output to %d bits\n', nbit)
+  file.filename = file.filename + "_" + string(nbit) + "bit";
+  scale = p.Results.scale;
+  fprintf ('Scale by %f before quantizing\n', scale)
+end
+
 testing = p.Results.test;
 if ( testing )
   fprintf ('When testing, no file is output.\n')
@@ -133,9 +156,16 @@ end
 
 file.filename = file.filename + ".dada";
 
-header_template = "../config/" + signal + "_header.json";
-json_str = fileread(header_template);
-header = struct2map(jsondecode(json_str));
+if (signal == "from_file")
+  gen = DADARead;
+  gen = open(gen, input_file);
+  header = gen.header;
+else
+  header_template = "../config/" + signal + "_header.json";
+  json_str = fileread(header_template);
+  header = struct2map(jsondecode(json_str));
+end
+
 tsamp = str2num(header('TSAMP'));    % in microseconds
 
 n_chan = 1;
@@ -188,11 +218,19 @@ if (cfg ~= "")
         end
     
         new_tsamp = new_tsamp / combine;
-        
+
+        pfb_nchan = n_chan;
+        if (critical && level == 2)
+            pfb_nchan = normalize(os_factor, n_chan);
+        end
+
+        header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
         header('HDR_SIZE') = '65536';
         header('PFB_DC_CHAN') = '1';
+        header('NSTAGE') = num2str(level);
         header('NCHAN_PFB_0') = num2str(n_chan);
+        header('PFB_NCHAN') = num2str(pfb_nchan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
         header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
     
@@ -200,7 +238,11 @@ if (cfg ~= "")
 
 end
 
-if (signal == "square_wave")
+if (signal == "from_file")
+
+    fprintf ('signal loaded from %s \n',input_file);
+
+elseif (signal == "square_wave")
     
     gen = SquareWave;
     
@@ -348,7 +390,14 @@ for i = 1:blocks
       end
 
     else
-      file = write (file, single(x));
+
+      if (nbit == 32)
+        to_write = single(x);
+      elseif (nbit == 8)
+        to_write = cast(scale*x,"int8");
+      end
+
+      file = write (file, to_write);
     end
 
 end
@@ -357,7 +406,7 @@ tdelta = toc(tstart);
 fprintf('sgcht took %f seconds\n', tdelta);
 
 if (~testing)
-    fprintf ('closing %s\n',file.filename)
+    fprintf ('closing %s\n',file.filename);
     file = close (file);
 end
 

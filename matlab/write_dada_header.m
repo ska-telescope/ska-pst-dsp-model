@@ -13,8 +13,10 @@ function write_dada_header (file_id, data, header, verbose_)
   end
 
   header('NBIT') = '64';
-  if class(data) == 'single'
+  if class(data) == "single"
     header('NBIT') = '32';
+  elseif class(data) == "uint8" || class(data) == "int8"
+    header('NBIT') = '8';
   end
 
   header('NDIM') = '2';
@@ -28,6 +30,7 @@ function write_dada_header (file_id, data, header, verbose_)
 
   % ensure we're at the start of the file
   frewind(file_id);
+  % fprintf ('after frewind, file pointer at %d\n', ftell(file_id));
   write_header(file_id, header);
 
 end

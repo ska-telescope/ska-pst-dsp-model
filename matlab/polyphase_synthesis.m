@@ -127,8 +127,8 @@ function out = polyphase_synthesis(...
     fprintf('polyphase_synthesis: sample_offset=%d\n', sample_offset);
     fprintf('polyphase_synthesis: n_blocks=%d\n', n_blocks);
   end
-  out = complex(zeros(n_pol, 1, n_blocks*output_keep, dtype));
 
+  out = complex(zeros(n_pol, 1, n_blocks*output_keep, dtype));
 
   FN_width = (input_fft_length*os_factor.de)/os_factor.nu;
   FN_width_2 = FN_width / 2;
@@ -212,16 +212,16 @@ function out = polyphase_synthesis(...
              error ('unexpected output channel=%d', output_channel);
            end
 
-           jchan = jchan - output_channel * fine_chan_per_output_chan;
+           fine_channel = jchan - output_channel * fine_chan_per_output_chan;
 
            % shift by half a coarse channel width within output channel
-           jchan = mod ((jchan + fine_chan_per_coarse_chan/2), fine_chan_per_output_chan);
+           fine_channel = mod ((fine_channel + fine_chan_per_coarse_chan/2), fine_chan_per_output_chan);
 
            % fprintf ('fine chan per coarse chan = %d\n',fine_chan_per_coarse_chan);
 
            % re-order input channels in DSB monotonically
-           coarse_channel = floor(jchan / fine_chan_per_coarse_chan);
-           fine_channel = jchan - coarse_channel*fine_chan_per_coarse_chan;
+           coarse_channel = floor(fine_channel / fine_chan_per_coarse_chan);
+           fine_channel = fine_channel - coarse_channel*fine_chan_per_coarse_chan;
 
            % fprintf ('chan=%d coarse=%d fine=%d \n', chan, coarse_channel, fine_channel);
 
@@ -268,7 +268,7 @@ function out = polyphase_synthesis(...
           FFFF(1:FN_width_2) = FN(FN_width_2+1:FN_width,1); 
           
           % and lower half of chan 1 is last part of FFFF
-          FFFF(n_chan*FN_width - FN_width_2 + 1:end) = FN(1:FN_width/2,1);
+          FFFF(n_chan*FN_width - FN_width_2 + 1:end) = FN(1:FN_width_2,1);
                     
           for chan = 1 : n_chan-1
               idx_start = (chan-1)*FN_width + FN_width_2;

@@ -1,4 +1,21 @@
 {
+  "sps": {
+    "comment":"fake SPS/LFAA",
+    "analysis_function":"polyphase_analysis",
+    "fir_offset_direction": -1,
+    "kludge_offset": 1,
+    "fir_filter_coeff_file_path": "Prototype_FIR.new.32-27.256.6144.mat",
+    "fir_filter_taps": 6144,
+    "os_factor": "32/27",
+    "channels": 256,
+    "input_fft_length": 256,
+    "input_overlap": 48,
+    "blocks": 3,
+    "n_pol": 2,
+    "deripple": true,
+    "temporal_taper": "tukey",
+    "header_file_path": "default_header.json"
+  },
   "low_psi_alt": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",

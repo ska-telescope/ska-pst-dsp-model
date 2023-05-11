@@ -7,7 +7,7 @@
   "HDR_VERSION": "1.0",
   "INSTRUMENT": "dspsr",
   "MODE": "CAL",
-  "CALFREQ": "15.2587890625",
+  "CALFREQ": "2712.67361111111111111111",
   "NBIT": "32",
   "NCHAN": "1",
   "NDIM": "2",
@@ -17,6 +17,6 @@
   "RA": "16:44:49.28",
   "SOURCE": "SquareWave",
   "TELESCOPE": "PKS",
-  "TSAMP": "1",
+  "TSAMP": ".005625",
   "UTC_START": "2019-02-05-01:15:49"
 }
