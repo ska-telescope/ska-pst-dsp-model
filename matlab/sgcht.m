@@ -25,6 +25,9 @@ p = inputParser;
 % name of the analysis filter bank configuration (default: none)
 addOptional(p, 'cfg', '', @ischar);
 
+% skip the analysis filter bank step (default: none)
+addOptional(p, 'skip', false, @islogical);
+
 % name of the signal generator (default: square wave)
 addOptional(p, 'signal', 'square_wave', @ischar);
 
@@ -71,6 +74,7 @@ if ( input_file ~= "" )
 end
 
 cfg = p.Results.cfg;
+skip_analysis = p.Results.skip;
 
 file = DADAWrite;
 file.filename = "../products/" + signal;
@@ -178,17 +182,20 @@ if (cfg ~= "")
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor = config.os_factor;
-        
-    if (two_stage)
-        filterbank = TwoStageFilterBank (config);
-        filterbank.critical = critical;
-        filterbank.single = single_chan;
-        level = 2;
-    else
-        filterbank = FilterBank (config);
-        level = 1;
+    level = 0;
+
+    if (~ skip_analysis)
+        if (two_stage)
+            filterbank = TwoStageFilterBank (config);
+            filterbank.critical = critical;
+            filterbank.single = single_chan;
+            level = 2;
+        else
+            filterbank = FilterBank (config);
+            level = 1;
+        end
     end
-    
+
     if (invert)
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
@@ -206,15 +213,21 @@ if (cfg ~= "")
         level = level - 1;
     end
     
-    if (level)
-        
+    if (level ~= 0)
+
         new_tsamp = tsamp;
-        for l = 1:level
+
+        if (level > 0)
             if (critical && level == 1)
                 new_tsamp = new_tsamp * n_chan;
             else
-                new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+                for l = 1:level
+                    new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+                end
             end
+        else
+            fprintf ('sgcht: only inverting\n')
+            new_tsamp = multiply(os_factor, new_tsamp) / n_chan;
         end
     
         new_tsamp = new_tsamp / combine;
@@ -226,7 +239,6 @@ if (cfg ~= "")
 
         header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
-        header('HDR_SIZE') = '65536';
         header('PFB_DC_CHAN') = '1';
         header('NSTAGE') = num2str(level);
         header('NCHAN_PFB_0') = num2str(n_chan);
@@ -240,7 +252,7 @@ end
 
 if (signal == "from_file")
 
-    fprintf ('signal loaded from %s \n',input_file);
+    fprintf ('loading signal from %s \n',input_file);
 
 elseif (signal == "square_wave")
     
@@ -372,7 +384,15 @@ for i = 1:blocks
     
     [gen, x] = generate(gen, blocksz);
         
-    if (n_chan > 1)
+    xdim = size(x);
+    ndat = xdim(end);
+    % fprintf ('ndat=%d\n', ndat);
+
+    if ndat == 0
+        break;
+    end
+
+    if (n_chan > 1 && ~skip_analysis)
         [filterbank, x] = execute (filterbank, x);
     end
         
