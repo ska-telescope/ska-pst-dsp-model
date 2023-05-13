@@ -33,20 +33,6 @@ function data_header = read_dada_file(file_id, verbose_)
   % before reading the actual data buffer.
   fread(file_id, hdr_size, 'uint8');
   data = fread(file_id, dtype);
-  data = reshape(data, 1, []);
-  if n_dim == 2
-    data = reshape(data, n_pol*n_dim, n_chan, []);
-    data_size = size(data);
-    n_dat = data_size(end);
-    dat_temp = complex(zeros(n_pol, n_chan, n_dat, dtype));
-
-    for i_pol=1:n_pol
-      idx = 2*i_pol - 1;
-      dat_temp(i_pol, :, :) = squeeze(complex(data(idx, :, :), data(idx+1, :, :)));
-    end
-    data = dat_temp;
-  else
-    data = reshape(data, n_pol, n_chan, []);
-  end
+  data = reshape_data_data(data, n_dim, n_pol, n_chan);
   data_header = {data, hdr_map};
 end

@@ -55,11 +55,10 @@ classdef DADARead < Generator
             
             ndat = nsample * obj.n_chan * obj.n_pol * obj.n_dim;
             data = fread(obj.fileID, ndat, obj.dtype);
-            if obj.dtype == 'int8'
+            if obj.n_bit ~= 32
                 data = cast(data,'double');
             end
-
-            x = reshape(data, obj.n_pol*obj.n_dim, obj.n_chan, []);
+            x = reshape_dada_data(data, obj.n_dim, obj.n_pol, obj.n_chan);
             
         end % of generate function
     end % of methods section
