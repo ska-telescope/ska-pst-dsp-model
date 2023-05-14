@@ -25,20 +25,19 @@ function write_dada_data (file_id, data, verbose_)
     fprintf('write_dada_data: dtype=%s\n', dtype);
   end
 
+  % size(data)
+  data = reshape(data, [], 1);
+
   if ~isreal(data)
-    n_pol = size_data(1);
-    n_chan = size_data(2);
-    n_dat = size_data(3);
-    temp = zeros(2*n_pol, n_chan, n_dat, dtype);
-    for i_pol=1:n_pol
-      temp(2*(i_pol-1) + 1, :, :) = real(data(i_pol, :, :));
-      temp(2*(i_pol-1) + 2, :, :) = imag(data(i_pol, :, :));
-    end
+    temp = zeros(2*numel(data), 1, dtype);
+    temp(1:2:end,1) = real(data);
+    temp(2:2:end,1) = imag(data);
     data = temp;
   end
 
+  % size(data)
   ptr1=ftell(file_id);
-  fwrite(file_id, reshape(data, numel(data), 1), dtype);
+  fwrite(file_id, data, dtype);
   ptr2=ftell(file_id);
 
   if (ptr2 - ptr1) ~= numel(data) * bytes_per_element

@@ -12,7 +12,11 @@ function reshaped = reshape_dada_data(data, n_dim, n_pol, n_chan, verbose_)
     verbose = verbose_;
   end
 
+  % fprintf ('reshape_dada_data nchan=%d npol=%d ndim=%d\n', n_chan, n_pol, n_dim);
+
+  % size(data)
   data = reshape(data, 1, []);
+  % size(data)
 
   if n_dim == 2
       % fprintf('reshape_dada_data converting to complex\n')
@@ -20,6 +24,6 @@ function reshaped = reshape_dada_data(data, n_dim, n_pol, n_chan, verbose_)
   end
 
   reshaped = reshape(data, n_pol, n_chan, []);
-
+  % size(reshaped)
 end
 
