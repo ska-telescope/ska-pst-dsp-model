@@ -227,7 +227,11 @@ if (cfg ~= "")
             end
         else
             fprintf ('sgcht: only inverting\n')
-            new_tsamp = multiply(os_factor, new_tsamp) / n_chan;
+            if (critical)
+                new_tsamp = new_tsamp / n_chan;
+            else
+                new_tsamp = multiply(os_factor, new_tsamp) / n_chan;
+            end
         end
     
         new_tsamp = new_tsamp / combine;
