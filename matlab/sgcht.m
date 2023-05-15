@@ -160,10 +160,15 @@ end
 
 file.filename = file.filename + ".dada";
 
+pfb_nchan_from_file = 0;
+nchan_from_file = 0;
+
 if (signal == "from_file")
   gen = DADARead;
   gen = open(gen, input_file);
   header = gen.header;
+  pfb_nchan_from_file = str2num(header('PFB_NCHAN'));
+  nchan_from_file = str2num(header('NCHAN'));
 else
   header_template = "../config/" + signal + "_header.json";
   json_str = fileread(header_template);
@@ -196,11 +201,25 @@ if (cfg ~= "")
         end
     end
 
+    if nchan_from_file ~= 0
+        n_chan = nchan_from_file;
+    end
+
+    if pfb_nchan_from_file ~= 0
+        pfb_nchan = pfb_nchan_from_file;
+    else
+        pfb_nchan = n_chan;
+        if (critical && level == 2)
+            pfb_nchan = normalize(os_factor, n_chan);
+        end
+    end
+
     if (invert)
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
             inverse.single = single_chan;
             inverse.combine = combine;
+            inverse.nch1 = n_chan / pfb_nchan;
         else
             inverse = InverseFilterBank (config);
         end
@@ -227,18 +246,10 @@ if (cfg ~= "")
             end
         else
             fprintf ('sgcht: only inverting\n')
-            new_tsamp = multiply(os_factor, new_tsamp) / n_chan;
-            if (critical)
-                new_tsamp = multiply(os_factor, new_tsamp);
-            end
+            new_tsamp = multiply(os_factor, new_tsamp) / pfb_nchan;
         end
     
         new_tsamp = new_tsamp / combine;
-
-        pfb_nchan = n_chan;
-        if (critical && level == 2)
-            pfb_nchan = normalize(os_factor, n_chan);
-        end
 
         header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
@@ -251,7 +262,7 @@ if (cfg ~= "")
     
     end
 
-end
+end % if a PFB configuration was specified
 
 if (signal == "from_file")
 
@@ -416,6 +427,8 @@ for i = 1:blocks
 
       if (nbit == 32)
         to_write = single(x);
+      elseif (nbit == 16)
+        to_write = cast(scale*x,"int16");
       elseif (nbit == 8)
         to_write = cast(scale*x,"int8");
       end

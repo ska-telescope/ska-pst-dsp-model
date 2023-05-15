@@ -7,6 +7,8 @@ classdef TwoStageInverseFilterBank < DeChannelizer
         nch1 = 0    % number of channels output by stage 1 filter bank
         single = 0  % output only a single coarse channel
         combine = 1 % number of coarse channels combined on inversion
+        built = false
+        config = containers.Map();
     end
    
     methods
@@ -16,22 +18,27 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             %   obj = new TwoStageInverseFilterBank object
                  
             obj = obj@DeChannelizer;
-            
-            if nargin > 0
-            
-              fprintf ('TwoStageInverseFilterBank::configure analysis function=%s\n',...
+
+            fprintf ('TwoStageInverseFilterBank::configure analysis function=%s\n',...
                      config.analysis_function);
-              obj.stage1 = InverseFilterBank (config);
-            
-              obj.nch1 = config.channels;
-              
-              for ichan = 1:obj.nch1
-                 obj.stage2(ichan) = InverseFilterBank (config);
-              end
-              
+            obj.config = config;
+            obj.stage1 = InverseFilterBank (config);
+            obj.nch1 = config.channels;
+            obj.built = false;
+
+        end % of TwoStageInverseFilterbank constructor
+        
+        function obj = build (obj)
+            arguments
+                obj     (1,1) TwoStageInverseFilterBank
             end
-                        
-        end % of TwoStageInverseFilterBank constructor
+            
+            for ichan = 1:obj.nch1
+                obj.stage2(ichan) = InverseFilterBank (obj.config);
+            end 
+            obj.built = true;
+
+        end % of TwoStageInverseFilterBank::build
 
         function obj = frequency_taper (obj, name)
             % returns:
@@ -42,6 +49,9 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                 name    % name of taper function
             end
             
+            if ~obj.built
+                obj = build(obj);
+            end
             for ichan = 1:obj.nch1
                 obj.stage2(ichan) = obj.stage2(ichan).frequency_taper(name);
             end
@@ -57,7 +67,11 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                 obj     (1,1) TwoStageInverseFilterBank
                 input
             end
-            
+
+            if ~obj.built
+                obj = build(obj);
+            end
+
             os = obj.stage1.os_factor;            
             
             sz = size(input);
@@ -72,10 +86,10 @@ classdef TwoStageInverseFilterBank < DeChannelizer
 
             critical = false;
             
-            if (nch2 == (nch_1 * os.de) / os.nu)
+            if (nch2 < obj.stage2(1).nchan)
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
                 critical = true;
-            elseif (nch2 == nch_1)
+            elseif (nch2 == obj.stage2(1).nchan)
                 fprintf ('TwoStageInverseFilterBank::execute oversampled\n');
                 if (obj.combine > 1)
                     error ('TwoStageInverseFilterBank::execute cannot combine oversampled coarse channels');
