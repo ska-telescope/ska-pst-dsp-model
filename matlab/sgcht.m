@@ -202,6 +202,11 @@ if (cfg ~= "")
     if (~ skip_analysis)
         if (two_stage)
             filterbank = TwoStageFilterBank (config);
+            if (cfg2 ~= "")
+                fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
+                config2 = default_config(cfg);
+                filterbank = set_stage2_config(filterbank, config2);
+            end            
             filterbank.critical = critical;
             filterbank.single = single_chan;
             level = 2;
