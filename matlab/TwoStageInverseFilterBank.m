@@ -4,11 +4,13 @@ classdef TwoStageInverseFilterBank < DeChannelizer
     properties
         stage1  (1,1) InverseFilterBank
         stage2  (:,1) InverseFilterBank
+        config1 = containers.Map();
+        config2 = containers.Map();
         nch1 = 0    % number of channels output by stage 1 filter bank
+        nch2 = 0    % number of channels output by stage 2 filter bank        
         single = 0  % output only a single coarse channel
         combine = 1 % number of coarse channels combined on inversion
         built = false
-        config = containers.Map();
     end
    
     methods
@@ -21,20 +23,32 @@ classdef TwoStageInverseFilterBank < DeChannelizer
 
             fprintf ('TwoStageInverseFilterBank::configure analysis function=%s\n',...
                      config.analysis_function);
-            obj.config = config;
+            obj.config1 = config;
+            obj.config2 = config;
             obj.stage1 = InverseFilterBank (config);
             obj.nch1 = config.channels;
+            obj.nch2 = config.channels;
             obj.built = false;
 
         end % of TwoStageInverseFilterbank constructor
         
+        function obj = set_stage2_config (obj, config)
+            arguments
+                obj     (1,1) TwoStageInverseFilterBank
+                config   % name of analysis filterbank configuration
+            end
+            obj.config2 = config;
+            obj.nch2 = config.channels;
+
+        end % of TwoStageInverseFilterBank::set_stage2_config
+
         function obj = build (obj)
             arguments
                 obj     (1,1) TwoStageInverseFilterBank
             end
             
             for ichan = 1:obj.nch1
-                obj.stage2(ichan) = InverseFilterBank (obj.config);
+                obj.stage2(ichan) = InverseFilterBank (obj.config2);
             end 
             obj.built = true;
 
@@ -77,19 +91,17 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             sz = size(input);
             nchan = sz(2);
 
-            nch_1 = obj.nch1;
-            
-            nch2 = nchan / nch_1;
-                        
-            fprintf ('TwoStageInverseFilterBank::execute invrt 2 nch1=%d nchan=%d nch2=%d\n',...
-                nch_1,nchan,nch2);
+            nch_out = nchan / obj.nch2;
+                                    
+            fprintf ('TwoStageInverseFilterBank::execute invrt 2 nch_in=%d nch_out=%d nch2=%d\n',...
+                nchan,nch_out,obj.nch2);
 
             critical = false;
             
-            if (nch2 < obj.stage2(1).nchan)
+            if obj.nch2 == normalize(os, obj.stage2(1).nchan)
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
                 critical = true;
-            elseif (nch2 == obj.stage2(1).nchan)
+            elseif obj.nch2 == obj.stage2(1).nchan
                 fprintf ('TwoStageInverseFilterBank::execute oversampled\n');
                 if (obj.combine > 1)
                     error ('TwoStageInverseFilterBank::execute cannot combine oversampled coarse channels');
@@ -98,16 +110,16 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                 error ('TwoStageInverseFilterBank::execute invalid nchan');
             end
             
-            nch2 = nch2 * obj.combine;
-            nch_1 = nch_1 / obj.combine;
+            nch_in = obj.nch2 * obj.combine;
+            nch_out = nch_out / obj.combine;
 
             if (obj.single)
-                nch_1 = 1;
+                nch_out = 1;
             end
 
-            for ich = 1:nch_1
+            for ich = 1:nch_out
                 
-                intmp = input(1,(1:nch2)+(ich-1)*nch2,:);
+                intmp = input(1,(1:nch_in)+(ich-1)*nch_in,:);
                 
                 obj.stage2(ich).critical = critical;
                 obj.stage2(ich).combine = obj.combine;
@@ -126,7 +138,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                     
                    sz = size(tmp);
                    ndat = sz(3);
-                   out = complex(zeros(1,nch_1,ndat));
+                   out = complex(zeros(1,nch_out,ndat));
                    
                 end
                  

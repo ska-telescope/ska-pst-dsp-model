@@ -25,6 +25,9 @@ p = inputParser;
 % name of the analysis filter bank configuration (default: none)
 addOptional(p, 'cfg', '', @ischar);
 
+% name of the second-stage analysis filter bank configuration (default: none)
+addOptional(p, 'cfg2', '', @ischar);
+
 % skip the analysis filter bank step (default: none)
 addOptional(p, 'skip', false, @islogical);
 
@@ -74,6 +77,7 @@ if ( input_file ~= "" )
 end
 
 cfg = p.Results.cfg;
+cfg2 = p.Results.cfg2;
 skip_analysis = p.Results.skip;
 
 file = DADAWrite;
@@ -94,7 +98,13 @@ if ( cfg ~= "" )
   file.filename = file.filename + "_" + cfg;
 end
 
-two_stage  = p.Results.two_stage;
+two_stage = p.Results.two_stage;
+
+if ( cfg2 ~= "" )
+  file.filename = file.filename + "_" + cfg2;
+  two_stage = true;
+end
+
 if ( two_stage )
   if ( cfg == "" )
      error ('Cannot have two stages without analysis filterbank cfg');
@@ -201,10 +211,6 @@ if (cfg ~= "")
         end
     end
 
-    if nchan_from_file ~= 0
-        n_chan = nchan_from_file;
-    end
-
     if pfb_nchan_from_file ~= 0
         pfb_nchan = pfb_nchan_from_file;
     else
@@ -219,7 +225,12 @@ if (cfg ~= "")
             inverse = TwoStageInverseFilterBank (config);
             inverse.single = single_chan;
             inverse.combine = combine;
-            inverse.nch1 = n_chan / pfb_nchan;
+            if (cfg2 ~= "")
+                fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
+                config2 = default_config(cfg);
+                inverse = set_stage2_config(inverse, config2);
+            end
+            inverse.nch2 = pfb_nchan;
         else
             inverse = InverseFilterBank (config);
         end
