@@ -289,7 +289,7 @@ elseif (signal == "square_wave")
     gen = SquareWave;
     
     calfreq = str2num(header('CALFREQ')); % in Hz
-    gen.period = 1e6 / (calfreq * tsamp); % in samples
+    gen.period = round(1e6 / (calfreq * tsamp)); % in samples
 
     fprintf ('square_wave: frequency=%f Hz\n', calfreq);
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
