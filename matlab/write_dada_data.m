@@ -16,7 +16,7 @@ function write_dada_data (file_id, data, verbose_)
   bytes_per_element = 8;
   if dtype == "single"
     bytes_per_element = 4;
-  elseif dtype == "uint8" || dtype == "int16"
+  elseif dtype == "uint16" || dtype == "int16"
     bytes_per_element = 2;
   elseif dtype == "uint8" || dtype == "int8"
     bytes_per_element = 1;

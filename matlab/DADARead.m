@@ -43,8 +43,8 @@ classdef DADARead < Generator
             obj.dtype = 'single';
             if obj.n_bit == 64
                 obj.dtype = 'double';
-	        elseif obj.n_bit == 16
-		        obj.dtype = 'int16';
+            elseif obj.n_bit == 16
+                obj.dtype = 'int16';
             elseif obj.n_bit == 8
                 obj.dtype = 'int8';
             end

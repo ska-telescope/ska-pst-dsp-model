@@ -89,6 +89,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
             os = obj.stage1.os_factor;            
             
             sz = size(input);
+            npol = sz(1);
             nchan = sz(2);
 
             nch_out = nchan / obj.nch2;
