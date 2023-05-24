@@ -11,7 +11,6 @@ function write_dada_data (file_id, data, verbose_)
     verbose = verbose_;
   end
 
-  size_data = size(data);
   dtype = class(data);
 
   bytes_per_element = 8;
@@ -27,7 +26,7 @@ function write_dada_data (file_id, data, verbose_)
     fprintf('write_dada_data: dtype=%s\n', dtype);
   end
 
-  % size(data)
+  % input data are in PFT order; this flattens them to TFP
   data = reshape(data, [], 1);
 
   if ~isreal(data)
@@ -37,7 +36,6 @@ function write_dada_data (file_id, data, verbose_)
     data = temp;
   end
 
-  % size(data)
   ptr1=ftell(file_id);
   fwrite(file_id, data, dtype);
   ptr2=ftell(file_id);

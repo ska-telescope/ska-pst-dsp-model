@@ -23,6 +23,7 @@ function reshaped = reshape_dada_data(data, n_dim, n_pol, n_chan, verbose_)
       data = data(1:2:end) + 1j*data(2:2:end);
   end
 
+  % input data are in TFP order; this reshapes them to PFT
   reshaped = reshape(data, n_pol, n_chan, []);
   % size(reshaped)
 end

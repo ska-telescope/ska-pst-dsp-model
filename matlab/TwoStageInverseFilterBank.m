@@ -98,7 +98,10 @@ classdef TwoStageInverseFilterBank < DeChannelizer
 
             critical = false;
             
-            if obj.nch2 == normalize(os, obj.stage2(1).nchan)
+            stage2_nchan = obj.stage2(1).nchan;
+            critical_stage2_nchan = normalize(os, obj.stage2(1).nchan);
+
+            if obj.nch2 == critical_stage2_nchan
                 fprintf ('TwoStageInverseFilterBank::execute critical\n');
                 critical = true;
             elseif obj.nch2 == obj.stage2(1).nchan
@@ -107,7 +110,7 @@ classdef TwoStageInverseFilterBank < DeChannelizer
                     error ('TwoStageInverseFilterBank::execute cannot combine oversampled coarse channels');
                 end
             else
-                error ('TwoStageInverseFilterBank::execute invalid nchan');
+                error ('TwoStageInverseFilterBank::execute invalid nchan. stage2_nchan=%d critical_stage2_nchan=%d nch2=%d', stage2_nchan, critical_stage2_nchan, obj.nch2);
             end
             
             nch_in = obj.nch2 * obj.combine;
