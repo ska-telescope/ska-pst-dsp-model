@@ -4,8 +4,13 @@ classdef TwoStageFilterBank < Channelizer
     properties
         stage1  (1,1) FilterBank
         stage2  (:,1) FilterBank
+        config1 = containers.Map();
+        config2 = containers.Map();
+        nch1 = 0    % number of channels output by stage 1 filter bank
+        nch2 = 0    % number of channels output by stage 2 filter bank                
         critical = 0  % output critically sampled subset of channels
         single = 0    % output only channel 0
+        built = false
     end
    
     methods
@@ -16,19 +21,39 @@ classdef TwoStageFilterBank < Channelizer
                  
             obj = obj@Channelizer;
             
-            if nargin > 0
-            
+            if nargin > 0            
               fprintf ('TwoStageFilterBank::configure analysis function=%s\n',...
                      config.analysis_function);
               obj.stage1 = FilterBank (config);
-            
-              for ichan = 1:obj.stage1.n_chan
-                 obj.stage2(ichan) = FilterBank (config);
-              end
-              
+              obj.config1 = config;
+              obj.config2 = config;              
+              obj.nch1 = config.channels;
+              obj.nch2 = config.channels;
             end
                         
         end % of TwoStageFilterBank constructor
+
+        function obj = set_stage2_config (obj, config)
+            arguments
+                obj     (1,1) TwoStageFilterBank
+                config   % name of analysis filterbank configuration
+            end
+            obj.config2 = config;
+            obj.nch2 = config.channels;
+
+        end % of TwoStageFilterBank::set_stage2_config
+
+        function obj = build (obj)
+            arguments
+                obj     (1,1) TwoStageFilterBank
+            end
+            
+            for ichan = 1:obj.stage1.n_chan
+                obj.stage2(ichan) = FilterBank (obj.config2);
+            end 
+            obj.built = true;
+
+        end % of TwoStageFilterBank::build
 
         function [obj, out] = execute (obj, input)
             % returns:
@@ -42,18 +67,22 @@ classdef TwoStageFilterBank < Channelizer
 
             fprintf ('TwoStageFilterBank::execute stage 1\n');
             [obj.stage1, out1] = obj.stage1.execute (input);
-            
+
+            if ~obj.built
+                obj = build(obj);
+            end
+
             os = obj.stage1.os_factor;
             
             nch1 = obj.stage1.n_chan;
-            
+            nch2_orig = obj.stage2(1).n_chan;
+            nch2 = nch2_orig;
+
             if (obj.critical)
-                nch2 = (nch1 * os.de) / os.nu;
-            else
-                nch2 = nch1;
+                nch2 = (nch2_orig * os.de) / os.nu;
             end
             
-            offset = (nch1 - nch2);
+            offset = (nch2_orig - nch2);
             
             if (obj.single == 1)
                 nch1 = 1;

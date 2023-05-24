@@ -6,6 +6,7 @@ classdef InverseFilterBank < DeChannelizer
         os_factor = struct('nu', 1, 'de', 1)
 
         filt_coeff          % filter coefficients
+        nchan               % number of channels output
         n_fft               % input fft length
         overlap             % input overlap
         sample_offset = 0
@@ -31,6 +32,7 @@ classdef InverseFilterBank < DeChannelizer
             
             obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
             obj.n_fft = config.input_fft_length;
+            obj.nchan = config.channels;
             obj.os_factor = config.os_factor;
             obj.overlap = config.input_overlap;
             obj.deripple = config.deripple;

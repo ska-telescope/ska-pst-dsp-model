@@ -25,6 +25,12 @@ p = inputParser;
 % name of the analysis filter bank configuration (default: none)
 addOptional(p, 'cfg', '', @ischar);
 
+% name of the second-stage analysis filter bank configuration (default: none)
+addOptional(p, 'cfg2', '', @ischar);
+
+% skip the analysis filter bank step (default: none)
+addOptional(p, 'skip', false, @islogical);
+
 % name of the signal generator (default: square wave)
 addOptional(p, 'signal', 'square_wave', @ischar);
 
@@ -71,6 +77,8 @@ if ( input_file ~= "" )
 end
 
 cfg = p.Results.cfg;
+cfg2 = p.Results.cfg2;
+skip_analysis = p.Results.skip;
 
 file = DADAWrite;
 file.filename = "../products/" + signal;
@@ -90,7 +98,13 @@ if ( cfg ~= "" )
   file.filename = file.filename + "_" + cfg;
 end
 
-two_stage  = p.Results.two_stage;
+two_stage = p.Results.two_stage;
+
+if ( cfg2 ~= "" )
+  file.filename = file.filename + "_" + cfg2;
+  two_stage = true;
+end
+
 if ( two_stage )
   if ( cfg == "" )
      error ('Cannot have two stages without analysis filterbank cfg');
@@ -156,10 +170,15 @@ end
 
 file.filename = file.filename + ".dada";
 
+pfb_nchan_from_file = 0;
+nchan_from_file = 0;
+
 if (signal == "from_file")
   gen = DADARead;
   gen = open(gen, input_file);
   header = gen.header;
+  pfb_nchan_from_file = str2num(header('PFB_NCHAN'));
+  nchan_from_file = str2num(header('NCHAN'));
 else
   header_template = "../config/" + signal + "_header.json";
   json_str = fileread(header_template);
@@ -178,22 +197,47 @@ if (cfg ~= "")
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor = config.os_factor;
-        
-    if (two_stage)
-        filterbank = TwoStageFilterBank (config);
-        filterbank.critical = critical;
-        filterbank.single = single_chan;
-        level = 2;
-    else
-        filterbank = FilterBank (config);
-        level = 1;
+    level = 0;
+
+    if (~ skip_analysis)
+        if (two_stage)
+            filterbank = TwoStageFilterBank (config);
+            if (cfg2 ~= "")
+                fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
+                config2 = default_config(cfg2);
+                filterbank = set_stage2_config(filterbank, config2);
+                os_factor = config2.os_factor;
+            end            
+            filterbank.critical = critical;
+            filterbank.single = single_chan;
+            level = 2;
+        else
+            filterbank = FilterBank (config);
+            level = 1;
+        end
     end
-    
+
+    if pfb_nchan_from_file ~= 0
+        pfb_nchan = pfb_nchan_from_file;
+    else
+        pfb_nchan = n_chan;
+        if (critical && level == 2)
+            pfb_nchan = normalize(os_factor, n_chan);
+        end
+    end
+
     if (invert)
         if (two_stage)
             inverse = TwoStageInverseFilterBank (config);
             inverse.single = single_chan;
             inverse.combine = combine;
+            if (cfg2 ~= "")
+                fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
+                config2 = default_config(cfg2);
+                inverse = set_stage2_config(inverse, config2);
+                os_factor = config2.os_factor;
+            end
+            inverse.nch2 = pfb_nchan;
         else
             inverse = InverseFilterBank (config);
         end
@@ -206,27 +250,27 @@ if (cfg ~= "")
         level = level - 1;
     end
     
-    if (level)
-        
+    if (level ~= 0)
+
         new_tsamp = tsamp;
-        for l = 1:level
+
+        if (level > 0)
             if (critical && level == 1)
                 new_tsamp = new_tsamp * n_chan;
             else
-                new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+                for l = 1:level
+                    new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+                end
             end
+        else
+            fprintf ('sgcht: only inverting\n')
+            new_tsamp = multiply(os_factor, new_tsamp) / pfb_nchan;
         end
     
         new_tsamp = new_tsamp / combine;
 
-        pfb_nchan = n_chan;
-        if (critical && level == 2)
-            pfb_nchan = normalize(os_factor, n_chan);
-        end
-
         header('NBIT') = num2str(nbit);
         header('TSAMP') = num2str(new_tsamp);
-        header('HDR_SIZE') = '65536';
         header('PFB_DC_CHAN') = '1';
         header('NSTAGE') = num2str(level);
         header('NCHAN_PFB_0') = num2str(n_chan);
@@ -236,18 +280,20 @@ if (cfg ~= "")
     
     end
 
-end
+end % if a PFB configuration was specified
 
 if (signal == "from_file")
 
-    fprintf ('signal loaded from %s \n',input_file);
+    % ensure that output data file is interpreted correctly downstream
+    header('INSTRUMENT') = 'dspsr';
+    fprintf ('loading signal from %s \n',input_file);
 
 elseif (signal == "square_wave")
     
     gen = SquareWave;
     
     calfreq = str2num(header('CALFREQ')); % in Hz
-    gen.period = 1e6 / (calfreq * tsamp); % in samples
+    gen.period = round(1e6 / (calfreq * tsamp)); % in samples
 
     fprintf ('square_wave: frequency=%f Hz\n', calfreq);
     fprintf ('square_wave: sampling interval=%f microseconds\n', tsamp);
@@ -372,7 +418,15 @@ for i = 1:blocks
     
     [gen, x] = generate(gen, blocksz);
         
-    if (n_chan > 1)
+    xdim = size(x);
+    ndat = xdim(end);
+    % fprintf ('ndat=%d\n', ndat);
+
+    if ndat == 0
+        break;
+    end
+
+    if (n_chan > 1 && ~skip_analysis)
         [filterbank, x] = execute (filterbank, x);
     end
         
@@ -393,6 +447,8 @@ for i = 1:blocks
 
       if (nbit == 32)
         to_write = single(x);
+      elseif (nbit == 16)
+        to_write = cast(scale*x,"int16");
       elseif (nbit == 8)
         to_write = cast(scale*x,"int8");
       end

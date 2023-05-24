@@ -1,13 +1,13 @@
 {
-  "BW": "40",
+  "BW": "200",
   "DEC": "-45:59:09.5",
   "DSB": "1",
-  "FREQ": "1405.000000",
+  "FREQ": "300",
   "HDR_SIZE": "65536",
   "HDR_VERSION": "1.0",
   "INSTRUMENT": "dspsr",
   "MODE": "CAL",
-  "CALFREQ": "2712.67361111111111111111",
+  "CALFREQ": "50.23469650205761316872",
   "NBIT": "32",
   "NCHAN": "1",
   "NDIM": "2",
@@ -17,6 +17,6 @@
   "RA": "16:44:49.28",
   "SOURCE": "SquareWave",
   "TELESCOPE": "PKS",
-  "TSAMP": ".005625",
+  "TSAMP": ".005",
   "UTC_START": "2019-02-05-01:15:49"
 }
