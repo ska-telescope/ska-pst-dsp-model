@@ -204,8 +204,9 @@ if (cfg ~= "")
             filterbank = TwoStageFilterBank (config);
             if (cfg2 ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
-                config2 = default_config(cfg);
+                config2 = default_config(cfg2);
                 filterbank = set_stage2_config(filterbank, config2);
+                os_factor = config2.os_factor;
             end            
             filterbank.critical = critical;
             filterbank.single = single_chan;
@@ -232,8 +233,9 @@ if (cfg ~= "")
             inverse.combine = combine;
             if (cfg2 ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
-                config2 = default_config(cfg);
+                config2 = default_config(cfg2);
                 inverse = set_stage2_config(inverse, config2);
+                os_factor = config2.os_factor
             end
             inverse.nch2 = pfb_nchan;
         else
