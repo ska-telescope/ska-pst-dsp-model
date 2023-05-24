@@ -274,7 +274,6 @@ if (cfg ~= "")
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('PFB_NCHAN') = num2str(pfb_nchan);
         header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
-        header('INSTRUMENT') = 'dspsr';
         header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
     
     end
@@ -283,6 +282,8 @@ end % if a PFB configuration was specified
 
 if (signal == "from_file")
 
+    % ensure that output data file is interpreted correctly downstream
+    header('INSTRUMENT') = 'dspsr';
     fprintf ('loading signal from %s \n',input_file);
 
 elseif (signal == "square_wave")
