@@ -235,7 +235,7 @@ if (cfg ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
                 config2 = default_config(cfg2);
                 inverse = set_stage2_config(inverse, config2);
-                os_factor = config2.os_factor
+                os_factor = config2.os_factor;
             end
             inverse.nch2 = pfb_nchan;
         else
