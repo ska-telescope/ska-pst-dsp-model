@@ -196,7 +196,8 @@ if (cfg ~= "")
     
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
-    os_factor = config.os_factor;
+    os_factor1 = config.os_factor;
+    os_factor2 = config.os_factor;
     level = 0;
 
     if (~ skip_analysis)
@@ -206,7 +207,7 @@ if (cfg ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
                 config2 = default_config(cfg2);
                 filterbank = set_stage2_config(filterbank, config2);
-                os_factor = config2.os_factor;
+                os_factor2 = config2.os_factor;
             end            
             filterbank.critical = critical;
             filterbank.single = single_chan;
@@ -222,7 +223,7 @@ if (cfg ~= "")
     else
         pfb_nchan = n_chan;
         if (critical && level == 2)
-            pfb_nchan = normalize(os_factor, n_chan);
+            pfb_nchan = normalize(os_factor1, n_chan);
         end
     end
 
@@ -235,7 +236,7 @@ if (cfg ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
                 config2 = default_config(cfg2);
                 inverse = set_stage2_config(inverse, config2);
-                os_factor = config2.os_factor;
+                os_factor2 = config2.os_factor;
             end
             inverse.nch2 = pfb_nchan;
         else
@@ -254,17 +255,23 @@ if (cfg ~= "")
 
         new_tsamp = tsamp;
 
+        last_os_factor = os_factor1;
+        if level == 2
+            last_os_factor = os_factor2;
+        end
+
         if (level > 0)
             if (critical && level == 1)
                 new_tsamp = new_tsamp * n_chan;
             else
-                for l = 1:level
-                    new_tsamp = normalize(os_factor, new_tsamp) * n_chan;
+                new_tsamp = normalize(os_factor1, new_tsamp) * n_chan;
+                if level == 2
+                    new_tsamp = normalize(os_factor2, new_tsamp) * n_chan;
                 end
             end
         else
             fprintf ('sgcht: only inverting\n')
-            new_tsamp = multiply(os_factor, new_tsamp) / pfb_nchan;
+            new_tsamp = multiply(last_os_factor, new_tsamp) / pfb_nchan;
         end
     
         new_tsamp = new_tsamp / combine;
@@ -275,8 +282,8 @@ if (cfg ~= "")
         header('NSTAGE') = num2str(level);
         header('NCHAN_PFB_0') = num2str(n_chan);
         header('PFB_NCHAN') = num2str(pfb_nchan);
-        header('OS_FACTOR') = sprintf('%d/%d', os_factor.nu, os_factor.de);
-        header = add_fir_filter_to_header (header, {filt_coeff}, {os_factor});
+        header('OS_FACTOR') = sprintf('%d/%d', last_os_factor.nu, last_os_factor.de);
+        header = add_fir_filter_to_header (header, {filt_coeff}, {last_os_factor});
     
     end
 
