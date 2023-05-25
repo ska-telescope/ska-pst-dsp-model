@@ -10,7 +10,7 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps_per_c
   % Args:
   %   n_chan (numeric): number of PFB output channels
   %   os_factor (struct): oversampling factor struct
-  %   n_taps (single): Number of filter taps
+  %   n_taps_per_chan (numeric): Number of filter taps per output channel
   %   display (bool): Optional. Whether or not to generate plots to Defaults to false.
   % Returns:
   %   string: Path to newly created ``.mat`` file contaning FIR filter coefficents.
@@ -22,21 +22,19 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps_per_c
 
   % Oversampling Factor
   OS = os_factor.nu/os_factor.de;
-
-  % normalized number of channel
-  n_chanNorm = (n_chan / os_factor.nu)*os_factor.de;
-  % Filter specs for the prototype filter
-  % Cut-off frequency
-
-  Fp = 1./n_chan;
-  % Fp = 1./n_chanNorm;
-  % Stop-band frequency
   if OS == 1
     OS = OS + 0.1;
   end
-  % Fs = 1.1*Fp;
+
+  % normalized number of channels
+  n_chanNorm = (n_chan*os_factor.de) / os_factor.nu;
+
+  % Filter specs for the prototype filter
+  % Cut-off frequency
+  Fp = 1./n_chan;
+
+  % Stop-band frequency
   Fs = 1.*(2*OS-1)/n_chan;
-  % Fs = (2*OS-1)/n_chan;
 
   fprintf('design_PFB: cut-off frequency: %f\n', Fp);
   fprintf('design_PFB: stop-band frequency: %f\n', Fs);
