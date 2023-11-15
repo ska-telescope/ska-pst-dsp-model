@@ -25,6 +25,10 @@ function write_dada_data (file_id, data, verbose_)
     fprintf('write_dada_data: dtype=%s bytes=%d\n', dtype, bytes_per_element);
   end
 
+  if isreal(data)
+     error ('write_dada_data: unexpected real-valued input data');
+  end
+
   % input data are in PFT order; this flattens them to TFP
   data = reshape(data, [], 1);
 
@@ -34,6 +38,8 @@ function write_dada_data (file_id, data, verbose_)
     temp(1:2:end,1) = real(data);
     temp(2:2:end,1) = imag(data);
     data = temp;
+  else
+      error ('write_dada_data: unexpected real-valued data after reshape');
   end
 
   ptr1=ftell(file_id);

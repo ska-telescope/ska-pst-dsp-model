@@ -456,10 +456,17 @@ for i = 1:blocks
 
     if (n_chan > 1 && ~skip_analysis)
         [filterbank, x] = execute (filterbank, x);
+        if isreal(x)
+          error('sgcht: filterbank output is unexpectedly real-valued')
+        end
     end
         
     if (invert)
         [inverse, x] = execute (inverse, x);
+
+        if isreal(x)
+          error('sgcht: inverse output is unexpectedly real-valued')
+        end
     end
     
     if (testing)
@@ -495,8 +502,8 @@ for i = 1:blocks
       end
 
       if (output_nchan > 0)
-        fprintf ('cut down to nchan=%d\n', output_nchan);
-        to_write = to_write(:,1:output_nchan,:);
+        % fprintf ('cut down to nchan=%d\n', output_nchan);
+        to_write = complex(to_write(:,1:output_nchan,:));
       end
 
       file = write (file, to_write);

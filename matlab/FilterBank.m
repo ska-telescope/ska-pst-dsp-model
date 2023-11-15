@@ -25,7 +25,7 @@ classdef FilterBank < Channelizer
                   
               obj = obj@Channelizer;
               
-            if  nargin > 0
+            if nargin > 0
               obj.pfb_analysis = str2func(sprintf('@%s', config.analysis_function));
               obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
               obj.n_chan = config.channels;
@@ -51,8 +51,7 @@ classdef FilterBank < Channelizer
             
             input_size = size(input);
             output = obj.pfb_analysis (input, obj.filt_coeff, obj.n_chan, obj.os_factor);
-            
-            
+
             remainder = 1;
             while (remainder ~= 0)
                 output_size = size(output);
@@ -64,6 +63,10 @@ classdef FilterBank < Channelizer
                     % fprintf ('FilterBank: reducing output from %d to %d\n', output_size(3),output_ndat);
                     output = output(:,:,1:output_ndat);
                 end
+            end
+            
+            if isreal(output)
+                output = complex(output);
             end
             
             input_idat = output_size(3) * obj.n_chan * obj.os_factor.de / obj.os_factor.nu;
