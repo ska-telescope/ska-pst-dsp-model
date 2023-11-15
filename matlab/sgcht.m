@@ -28,7 +28,7 @@ addOptional(p, 'cfg', '', @ischar);
 % name of the second-stage analysis filter bank configuration (default: none)
 addOptional(p, 'cfg2', '', @ischar);
 
-% skip the analysis filter bank step (default: none)
+% skip the analysis filter bank step (default: false)
 addOptional(p, 'skip', false, @islogical);
 
 % name of the signal generator (default: square wave)
@@ -66,6 +66,9 @@ addOptional(p, 'nbit', 32, @isnumeric);
 
 % scale factor applied before casting
 addOptional(p, 'scale', 1, @isnumeric);
+
+% number of frequency channels written to file
+addOptional(p, 'output_nchan', 0, @isnumeric);
 
 parse(p, varargin{:});
 
@@ -156,17 +159,23 @@ if ( single_chan )
 end
 
 nbit = p.Results.nbit;
+
 if ( nbit ~= 32 )
   fprintf ('Quantizing output to %d bits\n', nbit)
   file.filename = file.filename + "_" + string(nbit) + "bit";
-  scale = p.Results.scale;
-  fprintf ('Scale by %f before quantizing\n', scale)
+end
+
+scale = p.Results.scale;
+if (scale ~= 1)
+  fprintf ('Scale by %f before output (or re-quantizing)\n', scale)
 end
 
 testing = p.Results.test;
 if ( testing )
   fprintf ('When testing, no file is output.\n')
 end
+
+output_nchan = p.Results.output_nchan;
 
 file.filename = file.filename + ".dada";
 
@@ -404,7 +413,7 @@ if ( two_stage )
     blocks = 2;                 % blocks written to disk
 else
     blocksz = 64 * 1024;        % 64 k-sample blocks in RAM
-    blocks = 2 * 1024;          % more blocks
+    blocks = 4 * 1024;          % more blocks
 
     if (signal == "frequency_comb")
         blocks = 128;
@@ -452,12 +461,22 @@ for i = 1:blocks
 
     else
 
+      if (scale ~= 1)
+        fprintf('scale by %d\n',scale)
+        x = scale * x;
+      end
+
       if (nbit == 32)
         to_write = single(x);
       elseif (nbit == 16)
-        to_write = cast(scale*x,"int16");
+        to_write = cast(x,"int16");
       elseif (nbit == 8)
-        to_write = cast(scale*x,"int8");
+        to_write = cast(x,"int8");
+      end
+
+      if (output_nchan > 0)
+        fprintf ('cut down to nchan=%d\n', output_nchan);
+        to_write = to_write(:,1:output_nchan,:);
       end
 
       file = write (file, to_write);
