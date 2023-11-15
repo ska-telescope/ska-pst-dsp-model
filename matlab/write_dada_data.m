@@ -21,8 +21,8 @@ function write_dada_data (file_id, data, verbose_)
     bytes_per_element = 1;
   end
 
-  if verbose
-    fprintf('write_dada_data: dtype=%s\n', dtype);
+  if verbose || bytes_per_element ~= 4
+    fprintf('write_dada_data: dtype=%s bytes=%d\n', dtype, bytes_per_element);
   end
 
   % input data are in PFT order; this flattens them to TFP

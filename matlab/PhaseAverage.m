@@ -29,11 +29,12 @@ classdef PhaseAverage
 
             phase = ((1:nsample) + obj.current) * obj.frequency;
             ibin = mod (round(phase * obj.nbin), obj.nbin) + 1;
-
+            ibin = ibin';
+            
             for ipol = 1:dim(1)
                 for ichan = 1:dim(2)
                     x = squeeze(data(ipol,ichan,:));
-                    y = accumarray(ibin',x,[obj.nbin 1]);
+                    y = accumarray(ibin,x,[obj.nbin 1]);
                     y = reshape(y,[1 1 obj.nbin]);
                     obj.result(ipol,ichan,:) = obj.result(ipol,ichan,:) + y;
                 end

@@ -37,7 +37,7 @@ classdef SquareWave < Generator
                 else
                     % off-pulse
                     n = obj.period - iphase;
-                    a = obj.off_amp;
+                    a = sqrt(obj.off_amp * 0.5);
                 end
                 
                 if (nout + n >= nsample)
@@ -45,15 +45,22 @@ classdef SquareWave < Generator
                 end
                 
                 % add n more random values to the output x
-                x(1,1,nout+(1:n)) ...
-                    = a*(randn([1 n], 'single') + 1i*randn([1 n], 'single'));
-                           
+                if (a > 0)
+                    x(1,1,nout+(1:n)) ...
+                        = a*(randn([1 n],'single') + 1i*randn([1 n],'single'));
+                end
+
                 % fprintf ('SquareWave::generate ' ); size(x)
                 
                 nout = nout + n;
                 obj.current = obj.current + n;
                 
             end % of loop over remaining samples
+
+            if isreal(x)
+                error ('SquareWave::generate produced real-valued result');
+            end
+
         end % of generate function
     end % of methods section
 end % of SquareWave class definition

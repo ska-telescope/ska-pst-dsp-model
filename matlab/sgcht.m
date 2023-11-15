@@ -70,6 +70,9 @@ addOptional(p, 'scale', 1, @isnumeric);
 % number of frequency channels written to file
 addOptional(p, 'output_nchan', 0, @isnumeric);
 
+% output only the specified number of periods of the square wave
+addOptional(p, 'periods', 0, @isnumeric);
+
 parse(p, varargin{:});
 
 signal = p.Results.signal;
@@ -298,6 +301,8 @@ if (cfg ~= "")
 
 end % if a PFB configuration was specified
 
+periods = 0;
+
 if (signal == "from_file")
 
     % ensure that output data file is interpreted correctly downstream
@@ -308,6 +313,8 @@ elseif (signal == "square_wave")
     
     gen = SquareWave;
     
+    periods = p.Results.periods;
+
     calfreq = str2num(header('CALFREQ')); % in Hz
     gen.period = round(1e6 / (calfreq * tsamp)); % in samples
 
@@ -424,6 +431,11 @@ if ( cfg == "mid" )
     blocksz = blocksz * 2;  % 'mid' needs more data
 end
 
+if periods > 0
+    blocks = periods;
+    blocksz = gen.period;
+end
+
 tstart = tic;
 
 for i = 1:blocks
@@ -466,12 +478,20 @@ for i = 1:blocks
         x = scale * x;
       end
 
+      if isreal(x)
+          error('sgcht: x is unexpectedly real-valued')
+      end
+
       if (nbit == 32)
-        to_write = single(x);
+        to_write = complex(cast(x,"single"));
       elseif (nbit == 16)
         to_write = cast(x,"int16");
       elseif (nbit == 8)
         to_write = cast(x,"int8");
+      end
+
+      if isreal(to_write)
+          error('sgcht: to_write is unexpectedly real-valued')
       end
 
       if (output_nchan > 0)
