@@ -27,16 +27,20 @@ classdef PhaseAverage
               obj.result = zeros(dim);
             end
 
-            isamp = 1;
+            phase = ((1:nsample) + obj.current) * obj.frequency;
+            ibin = mod (round(phase * obj.nbin), obj.nbin) + 1;
 
-            while (isamp <= nsample)
-              phase = obj.current * obj.frequency;
-              ibin = mod (round(phase * obj.nbin), obj.nbin) + 1;
-              % fprintf("ibin=%d isamp=%d \n", ibin, isamp);
-              obj.result(:,:,ibin) = obj.result(:,:,ibin) + data(:,:,isamp);
-              isamp = isamp + 1;
-              obj.current = obj.current + 1;
-            end % of loop over remaining samples
+            for ipol = 1:dim(1)
+                for ichan = 1:dim(2)
+                    x = squeeze(data(ipol,ichan,:));
+                    y = accumarray(ibin',x,[obj.nbin 1]);
+                    y = reshape(y,[1 1 obj.nbin]);
+                    obj.result(ipol,ichan,:) = obj.result(ipol,ichan,:) + y;
+                end
+            end
+
+            obj.current = obj.current + nsample;
+
         end % of generate function
     end % of methods section
 end % of PhaseAverage class definition

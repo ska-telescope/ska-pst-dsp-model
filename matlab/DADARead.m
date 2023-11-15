@@ -34,7 +34,7 @@ classdef DADARead < Generator
 
             obj.low_cbf_input = strcmp(obj.header('INSTRUMENT'), 'LowCBF');
 
-            % fprintf('DADARead::open low_cbf_input=%d instrument=%s \n', obj.low_cbf_input, obj.header('INSTRUMENT'));
+            fprintf('DADARead::open low_cbf_input=%d instrument=%s \n', obj.low_cbf_input, obj.header('INSTRUMENT'));
 
             obj.n_dim = str2num(obj.header('NDIM'));
             obj.n_pol = str2num(obj.header('NPOL'));
