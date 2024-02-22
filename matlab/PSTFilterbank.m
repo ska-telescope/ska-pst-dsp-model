@@ -10,49 +10,74 @@ outputSamples = floor(totalSamples/192);
 dinp = zeros(totalSamples+2880,1);
 dinp(2881:end) = din;
 
+if isreal(dinp)
+    error ('PSTFilterbank real-valued dinp');
+end
+
 %% initialise
 dout = zeros(256,outputSamples);
 fftIn = zeros(256,1);
 
 %% 
+doRounding = 1;
+doScale = 0;
+
+scale_before_rounding = 1.0;
+if doScale
+    % see https://docs.google.com/spreadsheets/d/1F01T1KAoSTZOaW33wYVq6EZJk_xuwu3xuV2oohFhBrA/edit?usp=sharing
+    optimal_8bit_rms = 33.8;
+    fudge_factor = 5.0;
+
+    % Q: why estimate the stddev?  why not simply compute it from fftIn?
+    % A: each fftIn block is too short, and may span only zeroes in off-pulse of
+    % square wave.
+    estimated_stddev = sqrt(var(dinp,0,"all") * var(FIRtaps,0,"all")) * fudge_factor;
+    fprintf ("estimated rms=%e \n", estimated_stddev);
+    scale_before_rounding = optimal_8bit_rms / estimated_stddev;
+end
 
 for outputSample = 1:outputSamples
     % FIR filter, with scaling
     
     for n1 = 1:256
         fftIn(n1) = sum(FIRtaps(n1:256:3072) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
-        
-     %   if (outputSample == 10)
-     %       disp(FIRtaps(n1:256:end));
-     %       disp(dinp((outputSample-1)*192 + (n1:256:(n1+256*11))));
-     %       keyboard
-     %   end
-        
+
         if (doRounding)
-            fftIn(n1) = round(fftIn(n1));
+            fftIn(n1) = round(scale_before_rounding * fftIn(n1));
         end
     end
 
-   % if (outputSample == 10)
-   %     keyboard
-   % end
-    
+    fftIn = complex(fftIn);
+
+    % fprintf ("fftIn rms=%e \n", sqrt(var(fftIn,0,"all")));
+
     % FFT
-    dout1 = fftshift(fft(fftIn))/2048;
-    
+    % firmware scaling for a scaling parameter of 0x14 (as configured in the 1st corner turn).
+    % firmware scaling is 256 in the FFT, then (for 0x14) 16 after the phase correction.
+    dout1 = fftshift(fft(fftIn))/4096;
+
     % Derotate the output (rotation occurs due to oversampling)
     % Rotation is by pi/2, advancing with each frequency bin and time sample.
     % note : DC is at 129; no rotation; Output sample 0 has no rotation.
     % rotation defined here is in units of pi/2
     rotation = mod((outputSample-1) * (-128:127),4);
-    dout2 = dout1 .* shiftdim(exp(1i*2*pi*rotation/4));
-    
-    %keyboard
-    
-   % if (outputSample == 16)
-   %     keyboard
-   % end    
+    dout2 = dout1 .* shiftdim(exp(1i*2*pi*rotation/4)); 
     
     dout(:,outputSample) = fftshift(dout2);
 end
+
+if (doRounding)
+    if (doScale)
+        stddev = sqrt(var(dout,0,"all"));
+        scale_before_rounding = optimal_8bit_rms / stddev;
+    end
+    dout = complex(round(scale_before_rounding * dout));
+end
+
+% fprintf ("dout rms=%f \n", sqrt(var(dout,0,"all")));
+
+if isreal(dout)
+    error ('PSTFilterbank real-valued dout');
+end
+
 
