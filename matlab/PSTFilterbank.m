@@ -20,20 +20,19 @@ fftIn = zeros(256,1);
 
 %% 
 doRounding = 1;
-doScale = 0;
+doScale = 1;
 
 scale_before_rounding = 1.0;
-if doScale
-    % see https://docs.google.com/spreadsheets/d/1F01T1KAoSTZOaW33wYVq6EZJk_xuwu3xuV2oohFhBrA/edit?usp=sharing
-    optimal_8bit_rms = 33.8;
-    fudge_factor = 5.0;
+% see https://docs.google.com/spreadsheets/d/1F01T1KAoSTZOaW33wYVq6EZJk_xuwu3xuV2oohFhBrA/edit?usp=sharing
+optimal_8bit_rms = 33.8;
 
-    % Q: why estimate the stddev?  why not simply compute it from fftIn?
-    % A: each fftIn block is too short, and may span only zeroes in off-pulse of
-    % square wave.
-    estimated_stddev = sqrt(var(dinp,0,"all") * var(FIRtaps,0,"all")) * fudge_factor;
-    fprintf ("estimated rms=%e \n", estimated_stddev);
-    scale_before_rounding = optimal_8bit_rms / estimated_stddev;
+if doRounding
+    if doScale
+        stddev = sqrt(var(din,0,"all"));
+        % fprintf ("din rms=%e \n", stddev);
+        scale_before_rounding = optimal_8bit_rms / stddev;
+    end
+    dinp = complex(round(scale_before_rounding * dinp));
 end
 
 for outputSample = 1:outputSamples
@@ -42,9 +41,9 @@ for outputSample = 1:outputSamples
     for n1 = 1:256
         fftIn(n1) = sum(FIRtaps(n1:256:3072) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
 
-        if (doRounding)
-            fftIn(n1) = round(scale_before_rounding * fftIn(n1));
-        end
+%        if (doRounding)
+%            fftIn(n1) = round(scale_before_rounding * fftIn(n1));
+%        end
     end
 
     fftIn = complex(fftIn);
