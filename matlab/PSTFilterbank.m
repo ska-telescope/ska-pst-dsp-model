@@ -1,4 +1,4 @@
-function [dout] = PSTFilterbank(din, FIRtaps, doRounding)
+function [dout] = PSTFilterbank(din, FIRtaps, roundInput)
 % Filterbank, FFT 256 points, 12 taps.
 
 % WvS AT3-150: filter now generated in design_PFB_FIR_filter_lowcbf.m
@@ -19,20 +19,23 @@ dout = zeros(256,outputSamples);
 fftIn = zeros(256,1);
 
 %% 
-doRounding = 1;
-doScale = 1;
+roundInput = 1;
+rescaleInput = 1;
 
-scale_before_rounding = 1.0;
+roundOutput = 0;
+rescaleOutput = 0;
+
 % see https://docs.google.com/spreadsheets/d/1F01T1KAoSTZOaW33wYVq6EZJk_xuwu3xuV2oohFhBrA/edit?usp=sharing
 optimal_8bit_rms = 33.8;
 
-if doRounding
-    if doScale
+if roundInput
+    scale = 1.0;
+    if rescaleInput
         stddev = sqrt(var(din,0,"all"));
         % fprintf ("din rms=%e \n", stddev);
-        scale_before_rounding = optimal_8bit_rms / stddev;
+        scale = optimal_8bit_rms / stddev;
     end
-    dinp = complex(round(scale_before_rounding * dinp));
+    dinp = complex(round(scale * dinp));
 end
 
 for outputSample = 1:outputSamples
@@ -41,7 +44,7 @@ for outputSample = 1:outputSamples
     for n1 = 1:256
         fftIn(n1) = sum(FIRtaps(n1:256:3072) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
 
-%        if (doRounding)
+%        if (roundInput)
 %            fftIn(n1) = round(scale_before_rounding * fftIn(n1));
 %        end
     end
@@ -65,12 +68,13 @@ for outputSample = 1:outputSamples
     dout(:,outputSample) = fftshift(dout2);
 end
 
-if (doRounding)
-    if (doScale)
+if (roundOutput)
+    scale = 1.0;
+    if (rescaleOutput)
         stddev = sqrt(var(dout,0,"all"));
-        scale_before_rounding = optimal_8bit_rms / stddev;
+        scale = optimal_8bit_rms / stddev;
     end
-    dout = complex(round(scale_before_rounding * dout));
+    dout = complex(round(scale * dout));
 end
 
 % fprintf ("dout rms=%f \n", sqrt(var(dout,0,"all")));
