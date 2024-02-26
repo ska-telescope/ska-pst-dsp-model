@@ -16,6 +16,7 @@ function result = sgcht(varargin)
 %   signal (string): signal generated (default: 'square_wave')
 %                    'square_wave' - amplitude-modulated noise
 %                    'frequency_comb' - harmonics with amplitude slope
+%                    'frequency_wedge' - broadband noise with amplitude slope
 %                    'complex_sinusoid' - pure tone
 %                    'temporal_impulse' - delta function
 %
@@ -371,6 +372,15 @@ elseif (signal == "square_wave")
 
     if (testing)
         error ('Testing not implemented for square_wave')
+    end
+
+elseif (signal == "frequency_wedge")
+    
+    fprintf ('frequency_wedge\n');
+    gen = FrequencyWedge;
+
+    if (testing)
+        error ('Testing not implemented for frequency_wedge')
     end
 
 elseif (signal == "frequency_comb")
