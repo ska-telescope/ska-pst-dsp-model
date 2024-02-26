@@ -12,6 +12,13 @@ classdef FilterBank < Channelizer
         n_chan              % number of channels in ouput
         input_buffer        % input_buffer
         buffered_samples=0  % number of time samples in the input buffer
+
+        rndInput = false;   % round input to integer
+        rmsInput = 0.0;     % scale input to have rms before rounding
+        
+        rndOutput = false;  % round output to integer
+        rmsOutput = 0.0;    % scale output to have rms before rounding
+
     end
    
     methods
@@ -30,6 +37,11 @@ classdef FilterBank < Channelizer
               obj.filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
               obj.n_chan = config.channels;
               obj.os_factor = config.os_factor;
+
+              obj.rndInput = config.rndInput;
+              obj.rmsInput = config.rmsInput;
+              obj.rndOutput = config.rndOutput;
+              obj.rmsOutput = config.rmsOutput;
             end
             
         end % of FilterBank constructor
@@ -43,7 +55,17 @@ classdef FilterBank < Channelizer
                 obj     (1,1) FilterBank
                 input
             end
-            
+
+            if obj.rndInput
+                scale = 1.0;
+                if obj.rmsInput > 0
+                    stddev = sqrt(var(input,0,"all"));
+                    % fprintf ("din rms=%e \n", stddev);
+                    scale = obj.rmsInput / stddev;
+                end
+                input = complex(round(scale * input));
+            end
+
             if (obj.buffered_samples > 0)
                 input = cat(3,obj.input_buffer,input);
                 obj.buffered_samples = 0;
@@ -65,6 +87,15 @@ classdef FilterBank < Channelizer
                 end
             end
             
+            if (obj.rndOutput)
+                scale = 1.0;
+                if (obj.rmsOutput)
+                    stddev = sqrt(var(output,0,"all"));
+                    scale = obj.rmsOutput / stddev;
+                end
+                output = complex(round(scale * output));
+            end
+
             if isreal(output)
                 output = complex(output);
             end

@@ -1,4 +1,4 @@
-function [dout] = PSTFilterbank(din, FIRtaps, roundInput)
+function [dout] = PSTFilterbank(din, FIRtaps)
 % Filterbank, FFT 256 points, 12 taps.
 
 % WvS AT3-150: filter now generated in design_PFB_FIR_filter_lowcbf.m
@@ -18,40 +18,14 @@ end
 dout = zeros(256,outputSamples);
 fftIn = zeros(256,1);
 
-%% 
-roundInput = 1;
-rescaleInput = 1;
-
-roundOutput = 0;
-rescaleOutput = 0;
-
-% see https://docs.google.com/spreadsheets/d/1F01T1KAoSTZOaW33wYVq6EZJk_xuwu3xuV2oohFhBrA/edit?usp=sharing
-optimal_8bit_rms = 33.8;
-
-if roundInput
-    scale = 1.0;
-    if rescaleInput
-        stddev = sqrt(var(din,0,"all"));
-        % fprintf ("din rms=%e \n", stddev);
-        scale = optimal_8bit_rms / stddev;
-    end
-    dinp = complex(round(scale * dinp));
-end
-
 for outputSample = 1:outputSamples
     % FIR filter, with scaling
     
     for n1 = 1:256
         fftIn(n1) = sum(FIRtaps(n1:256:3072) .* dinp((outputSample-1)*192 + (n1:256:(n1+256*11))))/2^9;
-
-%        if (roundInput)
-%            fftIn(n1) = round(scale_before_rounding * fftIn(n1));
-%        end
     end
 
     fftIn = complex(fftIn);
-
-    % fprintf ("fftIn rms=%e \n", sqrt(var(fftIn,0,"all")));
 
     % FFT
     % firmware scaling for a scaling parameter of 0x14 (as configured in the 1st corner turn).
@@ -67,17 +41,6 @@ for outputSample = 1:outputSamples
     
     dout(:,outputSample) = fftshift(dout2);
 end
-
-if (roundOutput)
-    scale = 1.0;
-    if (rescaleOutput)
-        stddev = sqrt(var(dout,0,"all"));
-        scale = optimal_8bit_rms / stddev;
-    end
-    dout = complex(round(scale * dout));
-end
-
-% fprintf ("dout rms=%f \n", sqrt(var(dout,0,"all")));
 
 if isreal(dout)
     error ('PSTFilterbank real-valued dout');

@@ -73,6 +73,19 @@ addOptional(p, 'output_nchan', 0, @isnumeric);
 % output only the specified number of periods of the square wave
 addOptional(p, 'periods', 0, @isnumeric);
 
+% round filterbank input to integer values
+addOptional(p, 'rndInput', false, @islogical);
+
+% scale filterbank input to have rms before rounding
+addOptional(p, 'rmsInput', 0.0, @isnumeric);
+
+% round filterbank output to integer values
+addOptional(p, 'rndOutput', false, @islogical);
+
+% scale filterbank output to have rms before rounding
+addOptional(p, 'rmsOutput', 0.0, @isnumeric);
+
+
 parse(p, varargin{:});
 
 signal = p.Results.signal;
@@ -178,6 +191,31 @@ if ( testing )
   fprintf ('When testing, no file is output.\n')
 end
 
+rmsInput = p.Results.rmsInput; % scale input to rms before rounding
+rndInput = p.Results.rndInput || rmsInput > 0.0;
+
+if ( rndInput )
+  fprintf ('Rounding filterbank input to integer\n')
+  file.filename = file.filename + "_rndIn";
+end
+
+if ( rmsInput > 0.0 )
+  fprintf ('Scaling filterbank input to have rms=%f before rounding\n', rmsInput)
+  file.filename = file.filename + "_rmsIn=" + string(rmsInput);
+end
+
+rmsOutput = p.Results.rmsOutput; % scale output to rms before rounding
+rndOutput = p.Results.rndOutput || rmsOutput > 0.0;
+if ( rndOutput )
+  fprintf ('Rounding filterbank output to integer\n')
+  file.filename = file.filename + "_rndOut";
+end
+
+if ( rmsOutput > 0.0 )
+  fprintf ('Scaling filterbank output to have rms=%f before rounding\n', rmsOutput)
+  file.filename = file.filename + "_rmsOut=" + string(rmsOutput);
+end
+
 output_nchan = p.Results.output_nchan;
 
 file.filename = file.filename + ".dada";
@@ -205,7 +243,11 @@ if (cfg ~= "")
   
     fprintf ('loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
-    
+    config.rndInput = rndInput;
+    config.rmsInput = rmsInput;
+    config.rndOutput = rndOutput;
+    config.rmsOutput = rmsOutput;
+
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor1 = config.os_factor;
@@ -217,7 +259,12 @@ if (cfg ~= "")
             filterbank = TwoStageFilterBank (config);
             if (cfg2 ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
-                config2 = default_config(cfg2);
+                config2 = default_config(cfg2);    
+                config2.rndInput = rndInput;
+                config2.rmsInput = rmsInput;
+                config2.rndOutput = rndOutput;
+                config2.rmsOutput = rmsOutput;
+
                 filterbank = set_stage2_config(filterbank, config2);
                 os_factor2 = config2.os_factor;
             end            
