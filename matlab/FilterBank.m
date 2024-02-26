@@ -42,6 +42,22 @@ classdef FilterBank < Channelizer
               obj.rmsInput = config.rmsInput;
               obj.rndOutput = config.rndOutput;
               obj.rmsOutput = config.rmsOutput;
+
+                if ( obj.rndInput )
+                  % fprintf ('FilterBank: Rounding input to integer\n')
+                end
+                
+                if ( obj.rmsInput > 0.0 )
+                  % fprintf ('FilterBank: Scaling input to have rms=%f before rounding\n', obj.rmsInput)
+                end
+                
+                if ( obj.rndOutput )
+                  % fprintf ('FilterBank: Rounding output to integer\n')
+                end
+                
+                if ( obj.rmsOutput > 0.0 )
+                  % fprintf ('FilterBank: Scaling output to have rms=%f before rounding\n', obj.rmsOutput)
+                end
             end
             
         end % of FilterBank constructor
@@ -60,7 +76,7 @@ classdef FilterBank < Channelizer
                 scale = 1.0;
                 if obj.rmsInput > 0
                     stddev = sqrt(var(input,0,"all"));
-                    % fprintf ("din rms=%e \n", stddev);
+                    % fprintf ("input rms=%e \n", stddev);
                     scale = obj.rmsInput / stddev;
                 end
                 input = complex(round(scale * input));
