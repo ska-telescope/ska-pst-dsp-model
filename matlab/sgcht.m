@@ -477,7 +477,7 @@ if ( two_stage )
     blocks = 2;                 % blocks written to disk
 else
     blocksz = 64 * 1024;        % 64 k-sample blocks in RAM
-    blocks = 4 * 1024;          % more blocks
+    blocks = 2 * 1024;          % more blocks
 
     if (signal == "frequency_comb")
         blocks = 128;

@@ -15,7 +15,7 @@ classdef FrequencyWedge < Generator
             %   obj = new FrequencyWedge object
 
             obj = obj@Generator;
-            obj.slope = sqrt(linspace(0,1,obj.resolution));
+            obj.slope = sqrt(fftshift(linspace(0,1,obj.resolution)));
 
         end % of FrequencyWedge constructor
 
