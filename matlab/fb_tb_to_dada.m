@@ -11,11 +11,15 @@ addOptional(p, 'header', '', @ischar);
 % write DADA to file
 addOptional(p, 'output', '', @ischar);
 
+% write DADA to file
+addOptional(p, 'chan', 1, @isnumeric);
+
 parse(p, varargin{:});
 
 input_file = p.Results.input;
 header_file = p.Results.header;
 output_file = p.Results.output;
+virtual_channel = p.Results.chan;
 
 if ( input_file == "" )
   error ('Missing input=name of filterbank output file saved by the VHDL testbench');
@@ -44,7 +48,7 @@ n_chan=fb_size(1);
 n_samp=fb_size(2);
 
 x = complex(zeros(n_pol, n_chan, n_samp));
-x(1,:,:) = fb_data(:,:,1,1);
+x(1,:,:) = fb_data(:,:,1,virtual_channel);
 
 stddev = sqrt(var(x,0,"all"));
 fprintf ("input rms=%e \n", stddev);

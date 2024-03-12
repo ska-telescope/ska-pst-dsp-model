@@ -28,7 +28,7 @@ input_file = p.Results.input;
 display = p.Results.display;
 
 if ( input_file ~= "" )
-   fprintf ('loading signal from %s \n',input_file);  
+  fprintf ('loading signal from %s \n',input_file);  
   gen = DADARead;
   gen = open(gen, input_file);
   header = gen.header;

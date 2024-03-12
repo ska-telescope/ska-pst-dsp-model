@@ -29,7 +29,7 @@ classdef PhaseAverage
 
             phase = ((1:nsample) + obj.current) * obj.frequency;
             ibin = mod (round(phase * obj.nbin), obj.nbin) + 1;
-            ibin = ibin';
+            ibin = ibin';  % transpose ibin vector
             
             for ipol = 1:dim(1)
                 for ichan = 1:dim(2)
@@ -42,6 +42,6 @@ classdef PhaseAverage
 
             obj.current = obj.current + nsample;
 
-        end % of generate function
+        end % of average function
     end % of methods section
 end % of PhaseAverage class definition
