@@ -8,8 +8,6 @@ function out=polyphase_analysis_lowcbf(...
   
 % dummy wrapper around PSTFilterbank.m from
 % https://gitlab.com/ska-telescope/ska-low-cbf-firmware/-/blob/main/libraries/signalProcessing/filterbanks/src/matlab/PSTFilterbank.m
-
-doRounding = 0;
   
 in_size = size(in);
 n_pol = in_size(1);
@@ -32,7 +30,7 @@ scale = 2^9 * 2048 * 256;
 
 for i_pol = 1:n_pol
   
-    dout = PSTFilterbank(in(i_pol,1,:), filt, doRounding);
+    dout = PSTFilterbank(in(i_pol,1,:), filt);
     out(i_pol,:,:)=dout*scale;
 
 end

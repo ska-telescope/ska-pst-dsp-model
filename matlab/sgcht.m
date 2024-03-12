@@ -16,6 +16,7 @@ function result = sgcht(varargin)
 %   signal (string): signal generated (default: 'square_wave')
 %                    'square_wave' - amplitude-modulated noise
 %                    'frequency_comb' - harmonics with amplitude slope
+%                    'frequency_wedge' - broadband noise with amplitude slope
 %                    'complex_sinusoid' - pure tone
 %                    'temporal_impulse' - delta function
 %
@@ -28,7 +29,7 @@ addOptional(p, 'cfg', '', @ischar);
 % name of the second-stage analysis filter bank configuration (default: none)
 addOptional(p, 'cfg2', '', @ischar);
 
-% skip the analysis filter bank step (default: none)
+% skip the analysis filter bank step (default: false)
 addOptional(p, 'skip', false, @islogical);
 
 % name of the signal generator (default: square wave)
@@ -66,6 +67,25 @@ addOptional(p, 'nbit', 32, @isnumeric);
 
 % scale factor applied before casting
 addOptional(p, 'scale', 1, @isnumeric);
+
+% number of frequency channels written to file
+addOptional(p, 'output_nchan', 0, @isnumeric);
+
+% output only the specified number of periods of the square wave
+addOptional(p, 'periods', 0, @isnumeric);
+
+% round filterbank input to integer values
+addOptional(p, 'rndInput', false, @islogical);
+
+% scale filterbank input to have rms before rounding
+addOptional(p, 'rmsInput', 0.0, @isnumeric);
+
+% round filterbank output to integer values
+addOptional(p, 'rndOutput', false, @islogical);
+
+% scale filterbank output to have rms before rounding
+addOptional(p, 'rmsOutput', 0.0, @isnumeric);
+
 
 parse(p, varargin{:});
 
@@ -156,17 +176,48 @@ if ( single_chan )
 end
 
 nbit = p.Results.nbit;
+
 if ( nbit ~= 32 )
   fprintf ('Quantizing output to %d bits\n', nbit)
   file.filename = file.filename + "_" + string(nbit) + "bit";
-  scale = p.Results.scale;
-  fprintf ('Scale by %f before quantizing\n', scale)
+end
+
+scale = p.Results.scale;
+if (scale ~= 1)
+  fprintf ('Scale by %f before output (or re-quantizing)\n', scale)
 end
 
 testing = p.Results.test;
 if ( testing )
   fprintf ('When testing, no file is output.\n')
 end
+
+rmsInput = p.Results.rmsInput; % scale input to rms before rounding
+rndInput = p.Results.rndInput || rmsInput > 0.0;
+
+if ( rndInput )
+  fprintf ('Rounding filterbank input to integer\n')
+  file.filename = file.filename + "_rndIn";
+end
+
+if ( rmsInput > 0.0 )
+  fprintf ('Scaling filterbank input to have rms=%f before rounding\n', rmsInput)
+  file.filename = file.filename + "_rmsIn=" + string(rmsInput);
+end
+
+rmsOutput = p.Results.rmsOutput; % scale output to rms before rounding
+rndOutput = p.Results.rndOutput || rmsOutput > 0.0;
+if ( rndOutput )
+  fprintf ('Rounding filterbank output to integer\n')
+  file.filename = file.filename + "_rndOut";
+end
+
+if ( rmsOutput > 0.0 )
+  fprintf ('Scaling filterbank output to have rms=%f before rounding\n', rmsOutput)
+  file.filename = file.filename + "_rmsOut=" + string(rmsOutput);
+end
+
+output_nchan = p.Results.output_nchan;
 
 file.filename = file.filename + ".dada";
 
@@ -193,7 +244,11 @@ if (cfg ~= "")
   
     fprintf ('loading "%s" analysis filter bank\n', cfg);
     config = default_config(cfg);
-    
+    config.rndInput = rndInput;
+    config.rmsInput = rmsInput;
+    config.rndOutput = rndOutput;
+    config.rmsOutput = rmsOutput;
+
     filt_coeff = read_fir_filter_coeff(config.fir_filter_path);
     n_chan = config.channels;
     os_factor1 = config.os_factor;
@@ -205,7 +260,12 @@ if (cfg ~= "")
             filterbank = TwoStageFilterBank (config);
             if (cfg2 ~= "")
                 fprintf ('loading "%s" second-stage analysis filter bank\n', cfg2);
-                config2 = default_config(cfg2);
+                config2 = default_config(cfg2);    
+                config2.rndInput = rndInput;
+                config2.rmsInput = rmsInput;
+                config2.rndOutput = rndOutput;
+                config2.rmsOutput = rmsOutput;
+
                 filterbank = set_stage2_config(filterbank, config2);
                 os_factor2 = config2.os_factor;
             end            
@@ -289,6 +349,8 @@ if (cfg ~= "")
 
 end % if a PFB configuration was specified
 
+periods = 0;
+
 if (signal == "from_file")
 
     % ensure that output data file is interpreted correctly downstream
@@ -299,6 +361,8 @@ elseif (signal == "square_wave")
     
     gen = SquareWave;
     
+    periods = p.Results.periods;
+
     calfreq = str2num(header('CALFREQ')); % in Hz
     gen.period = round(1e6 / (calfreq * tsamp)); % in samples
 
@@ -308,6 +372,15 @@ elseif (signal == "square_wave")
 
     if (testing)
         error ('Testing not implemented for square_wave')
+    end
+
+elseif (signal == "frequency_wedge")
+    
+    fprintf ('frequency_wedge\n');
+    gen = FrequencyWedge;
+
+    if (testing)
+        error ('Testing not implemented for frequency_wedge')
     end
 
 elseif (signal == "frequency_comb")
@@ -415,6 +488,11 @@ if ( cfg == "mid" )
     blocksz = blocksz * 2;  % 'mid' needs more data
 end
 
+if periods > 0
+    blocks = periods;
+    blocksz = gen.period;
+end
+
 tstart = tic;
 
 for i = 1:blocks
@@ -435,10 +513,17 @@ for i = 1:blocks
 
     if (n_chan > 1 && ~skip_analysis)
         [filterbank, x] = execute (filterbank, x);
+        if isreal(x)
+          error('sgcht: filterbank output is unexpectedly real-valued')
+        end
     end
         
     if (invert)
         [inverse, x] = execute (inverse, x);
+
+        if isreal(x)
+          error('sgcht: inverse output is unexpectedly real-valued')
+        end
     end
     
     if (testing)
@@ -452,12 +537,30 @@ for i = 1:blocks
 
     else
 
+      if (scale ~= 1)
+        fprintf('scale by %d\n',scale)
+        x = scale * x;
+      end
+
+      if isreal(x)
+          error('sgcht: x is unexpectedly real-valued')
+      end
+
       if (nbit == 32)
-        to_write = single(x);
+        to_write = complex(cast(x,"single"));
       elseif (nbit == 16)
-        to_write = cast(scale*x,"int16");
+        to_write = cast(x,"int16");
       elseif (nbit == 8)
-        to_write = cast(scale*x,"int8");
+        to_write = cast(x,"int8");
+      end
+
+      if isreal(to_write)
+          error('sgcht: to_write is unexpectedly real-valued')
+      end
+
+      if (output_nchan > 0)
+        % fprintf ('cut down to nchan=%d\n', output_nchan);
+        to_write = complex(to_write(:,1:output_nchan,:));
       end
 
       file = write (file, to_write);
