@@ -6,7 +6,7 @@
 %
 % https://confluence.skatelescope.org/display/SE/Polyphase+Filter+Bank+Inversion%3A+Requirements+Verification
 %
-function result = test_vector_temporal(varargin)
+function test_vector_temporal(varargin)
 
 p = inputParser;
 
@@ -23,7 +23,7 @@ addOptional(p, 'Nfft', 0, @isnumeric);
 addOptional(p, 'Tover', 0, @isnumeric);
 
 % load header from file
-addOptional(p, 'header', '../config/test_vector_header.json', @ischar);
+addOptional(p, 'header', '../config/test_vector_dada.hdr', @ischar);
 
 % write DADA to file
 addOptional(p, 'output', '../products/test_vector_temporal.dada', @ischar);
@@ -65,33 +65,48 @@ else
     error ('Unknown CBF %s', cbf);
 end
 
+Nkeep = Nfft * Rden / Rnum;
+Nifft = Nchan * Nkeep;
+Nstep = Nchan * Rden / Rnum;
+
+Nin = Nchan * Ntap;
+Tskip = Tover * Nstep;
+
 if ( p.Results.Nfft > 0 )
     Nfft = p.Results.Nfft;
-    fprintf('Setting Nfft to %i',Nfft)
+    fprintf('Setting Nfft to %i \n',Nfft)
 end
 
 fileID = fopen (header_file, 'r');
 header = read_header(fileID);
 fclose(fileID);
 
-fprintf('header parsed from JSON string');
+fprintf('DADA header parsed \n');
 
-ndat = Nfft - Tover;
-data = complex(cast(zeros(ndat),"single"));
+npol = 1;
+nchan = 1;
+ndat = Nifft - Tskip;
+data = complex(cast(zeros(npol, nchan, ndat),"single"));
 
 fileID = fopen (output_file, 'w');
 write_dada_header (fileID, data, header);
 
-fprintf('header written to DADA file')
+fprintf('header written to outut DADA file \n')
 
-fprintf('writing %i blocks of %i samples',Nstate, ndat)
+fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
 for istate = 1:Nstate
 
-    data = complex(cast(zeros(ndat),"single"));
+    data = complex(cast(zeros(npol, nchan, ndat),"single"));
+    Ki = 1 + Tskip + Nstep + (istate-1) * Nstep / Nstate;
+    data(1,1,Ki) = 0 + 1j;
     write_dada_data (fileID, data);
 
 end
 
-fclose(fileID);
+Ntrail = Tskip + Nin;
+fprintf('writing %i samples of trailing zeros \n', Ntrail)
+data = complex(cast(zeros(npol, nchan, Ntrail),"single"));
+write_dada_data (fileID, data);
 
-result = 0;
+fprintf('test vector written to %s \n',output_file);
+fclose(fileID);

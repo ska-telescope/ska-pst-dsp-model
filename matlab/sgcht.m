@@ -228,7 +228,9 @@ if (signal == "from_file")
   gen = DADARead;
   gen = open(gen, input_file);
   header = gen.header;
-  pfb_nchan_from_file = str2num(header('PFB_NCHAN'));
+  if isKey(header, 'PFB_NCHAN')
+    pfb_nchan_from_file = str2num(header('PFB_NCHAN'));
+  end
   nchan_from_file = str2num(header('NCHAN'));
 else
   header_template = "../config/" + signal + "_header.json";
