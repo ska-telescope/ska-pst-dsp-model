@@ -108,7 +108,8 @@ classdef TwoStageFilterBank < Channelizer
                  %out(1,(1:nch2)+(ich-1)*nch2,:) = tmp(1,(1:nch2)+offset/2,:);
 
             end
-              
+
+            out = complex(out);
             % class(out)
             % out(1,2,1)
             

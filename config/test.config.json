@@ -16,12 +16,12 @@
     "temporal_taper": "tukey",
     "header_file_path": "default_header.json"
   },
-  "low_psi_alt": {
+  "lowpsi": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",
     "fir_offset_direction": 1,
     "kludge_offset": 193,
-    "fir_filter_coeff_file_path": "Prototype_FIR.alt.4-3.256.3072.mat",
+    "fir_filter_coeff_file_path": "PST_filtertaps.txt",
     "fir_filter_taps": 3072,
     "os_factor": "4/3",
     "channels": 256,
@@ -33,30 +33,13 @@
     "temporal_taper": "tukey",
     "header_file_path": "default_header.json"
   },
-  "lowcbf": {
+  "lowpsi_old": {
     "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
     "analysis_function":"polyphase_analysis_lowcbf",
     "fir_offset_direction": 1,
     "kludge_offset": 193,
     "fir_filter_coeff_file_path": "Prototype_FIR.lowcbf.mat",
     "fir_filter_taps": 3072,
-    "os_factor": "4/3",
-    "channels": 256,
-    "input_fft_length": 256,
-    "input_overlap": 48,
-    "blocks": 3,
-    "n_pol": 2,
-    "deripple": true,
-    "temporal_taper": "tukey",
-    "header_file_path": "default_header.json"
-  },
-  "lowcbf_new": {
-    "comment":"wraps ska-telescope/ska-low-cbf-firmware PSTFilterbank.m",
-    "analysis_function":"polyphase_analysis_lowcbf",
-    "fir_offset_direction": 1,
-    "kludge_offset": 193,
-    "fir_filter_coeff_file_path": "Prototype_FIR.new.4-3.256.3072.mat",
-    "fir_filter_taps": 3073,
     "os_factor": "4/3",
     "channels": 256,
     "input_fft_length": 256,
