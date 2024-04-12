@@ -54,6 +54,9 @@ if ( cbf == "low" )
     Rden = 3;      % denominator of oversampling ratio
     Nfft = 1024;   % forward FFT length used during PFB inversion
     Tover= 128;    % samples by which forward FFTs overlap
+
+    % number of input samples lost by PFB 
+    Nlost = Nchan * Rden / Rnum;
 elseif ( cbf == "mid" )
     Nchan = 4096;  % channels output by PFB
     Ntap = 24.5;   % filter taps per channel
@@ -61,6 +64,9 @@ elseif ( cbf == "mid" )
     Rden = 7;      % denominator of oversampling ratio
     Nfft = 2048;   % forward FFT length used during PFB inversion
     Tover= 224;    % samples by which forward FFTs overlap
+
+    % number of input samples lost by PFB 
+    Nlost = 0;
 else
     error ('Unknown CBF %s', cbf);
 end
@@ -69,8 +75,21 @@ Nkeep = Nfft * Rden / Rnum;
 Nifft = Nchan * Nkeep;
 Nstep = Nchan * Rden / Rnum;
 
+fprintf('Nkeep=%d Nifft=%d Nstep=%d \n',Nkeep,Nifft,Nstep);
+
 Nin = Nchan * Ntap;
 Tskip = Tover * Nstep;
+
+% During PFB, the signal is delayed by half the prototype filter length
+% and the first Nlost samples are lost
+Tlost_pfb = -Nin/2 + Nlost;
+
+% During PFB inversion, the first half of Tskip points are lost
+Tlost_inv = Tskip;
+
+Tlost = Tlost_inv + Tlost_pfb;
+
+fprintf('Nin=%d Tskip=%d Tlost_inv=%d Tlost_pfb=%d \n',Nin,Tskip,Tlost_inv,Tlost_pfb);
 
 if ( p.Results.Nfft > 0 )
     Nfft = p.Results.Nfft;
@@ -83,22 +102,29 @@ fclose(fileID);
 
 fprintf('DADA header parsed \n');
 
+fileID = fopen (output_file, 'w');
+
 npol = 1;
 nchan = 1;
 ndat = Nifft - Tskip;
-data = complex(cast(zeros(npol, nchan, ndat),"single"));
-
-fileID = fopen (output_file, 'w');
-write_dada_header (fileID, data, header);
-
-fprintf('header written to outut DADA file \n')
 
 fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
+
 for istate = 1:Nstate
 
+    offset = Tskip + Nstep + (istate-1) * Nstep / Nstate;
+    file_offset = (istate-1) * ndat;
+
+    fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,file_offset+offset-Tlost);
+
     data = complex(cast(zeros(npol, nchan, ndat),"single"));
-    Ki = 1 + Tskip + Nstep + (istate-1) * Nstep / Nstate;
-    data(1,1,Ki) = 0 + 1j;
+    data(1,1,1+offset) = 0 + 1j;
+
+    if (istate == 1)
+        write_dada_header (fileID, data, header);
+        fprintf('header written to outut DADA file \n')
+    end
+
     write_dada_data (fileID, data);
 
 end

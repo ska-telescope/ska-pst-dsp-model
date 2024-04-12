@@ -26,7 +26,7 @@ function write_dada_data (file_id, data, verbose_)
   end
 
   if isreal(data)
-     error ('write_dada_data: unexpected real-valued input data');
+     error ('write_dada_data: unexpected real-valued data');
   end
 
   % input data are in PFT order; this flattens them to TFP
