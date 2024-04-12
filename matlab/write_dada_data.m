@@ -26,11 +26,15 @@ function write_dada_data (file_id, data, verbose_)
   end
 
   if isreal(data)
-     error ('write_dada_data: unexpected real-valued data');
+     error ('write_dada_data: unexpected real-valued input data');
   end
 
   % input data are in PFT order; this flattens them to TFP
   data = reshape(data, [], 1);
+
+  if isreal(data)
+     error ('write_dada_data: unexpected real-valued reshaped data');
+  end
 
   % convert complex-valued to real-valued (real,imag interleaved)
   if ~isreal(data)

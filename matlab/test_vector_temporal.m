@@ -28,6 +28,9 @@ addOptional(p, 'header', '../config/test_vector_dada.hdr', @ischar);
 % write DADA to file
 addOptional(p, 'output', '../products/test_vector_temporal.dada', @ischar);
 
+% number of bits per sample in output data file
+addOptional(p, 'nbit', 32, @isnumeric);
+
 parse(p, varargin{:});
 
 header_file = p.Results.header;
@@ -102,6 +105,13 @@ fclose(fileID);
 
 fprintf('DADA header parsed \n');
 
+nbit = p.Results.nbit;
+
+if ( nbit ~= 32 )
+  fprintf ('Quantizing output to %d bits\n', nbit)
+  header('NBIT') = num2str(nbit);
+end
+
 fileID = fopen (output_file, 'w');
 
 npol = 1;
@@ -120,19 +130,40 @@ for istate = 1:Nstate
     data = complex(cast(zeros(npol, nchan, ndat),"single"));
     data(1,1,1+offset) = 0 + 1j;
 
+    if (nbit == 32)
+        to_write = complex(cast(data,"single"));
+    elseif (nbit == 16)
+        to_write = complex(cast(2^14*data,"int16"));
+    elseif (nbit == 8)
+        to_write = complex(cast(2^6*data,"int8"));
+    end
+  
+    if isreal(to_write)
+        error('to_write is unexpectedly real-valued')
+    end
+
     if (istate == 1)
-        write_dada_header (fileID, data, header);
+        write_dada_header (fileID, to_write, header);
         fprintf('header written to outut DADA file \n')
     end
 
-    write_dada_data (fileID, data);
+    write_dada_data (fileID, to_write);
 
 end
 
 Ntrail = Tskip + Nin;
 fprintf('writing %i samples of trailing zeros \n', Ntrail)
 data = complex(cast(zeros(npol, nchan, Ntrail),"single"));
-write_dada_data (fileID, data);
+
+if (nbit == 32)
+    to_write = complex(cast(data,"single"));
+elseif (nbit == 16)
+    to_write = complex(cast(2^14*data,"int16"));
+elseif (nbit == 8)
+    to_write = complex(cast(2^6*data,"int8"));
+end
+
+write_dada_data (fileID, to_write);
 
 fprintf('test vector written to %s \n',output_file);
 fclose(fileID);
