@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "ska-pst-dsp-model"
+version = "0.11.0"
+description = "SKA Pulsar Timing Digital Signal Processing Model"
+authors = ["Willem van Straten <wvanstraten@fourierspace.com.au>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+
+[[tool.poetry.source]]
+name = 'ska-nexus'
+url = 'https://artefact.skao.int/repository/pypi-internal/simple'
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+
+[tool.poetry.group.docs.dependencies]
+sphinx-rtd-theme = "*"
+sphinxcontrib-plantuml = "*"
+sphinx-autodoc-typehints = "*"
+docutils = "<0.18"
+markupsafe = "<2.1.0"
+sphinx = "*"
+exhale = "*"
+breathe = "*"
+recommonmark = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
