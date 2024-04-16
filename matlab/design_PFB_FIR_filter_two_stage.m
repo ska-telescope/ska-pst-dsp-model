@@ -1,4 +1,4 @@
-function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os_taps_per_chan_, zero_stuff_factor_, display_)
+function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os_taps_per_chan_, display_, zero_stuff_factor_)
   % Design a FIR appropriate for oversampled polyphase filterbank using two stage design approach
   % Adapted from code originally developed by Thushara Gunaratne - RO/RCO - NSI-NRC CANADA
   %
@@ -82,6 +82,7 @@ function fir_filter_path = design_PFB_FIR_filter_two_stage(n_chan, os_factor, os
 
   fir_filter_path = sprintf('./../config/Prototype_FIR.2_stage.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
   save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs', 'Ap', 'As');
+  fprintf('filter coefficients saved in %s\n', fir_filter_path);
 
   if display
     figure;

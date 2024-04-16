@@ -24,11 +24,12 @@ function fig = plot_FIR_filter (n_chan, OS, h)
   plot (W, H0, 'LineWidth', 1.5);
   xlim ([0.5 2]);
   
+  FontSize = 12;
   xline([1.0],'--b', 'LineWidth', 1.5);
   xline([OS],'--', 'LineWidth', 1.5);
   xline([2*OS-1],'--r', 'LineWidth', 1.5);
   title(sprintf('Transfer Function of the Prototype Filter with %d taps', n_taps));
-  ylabel ('Magnitude','FontSize',14)
+  ylabel ('Magnitude','FontSize',FontSize)
   grid on; box on;
 
   %
@@ -42,7 +43,7 @@ function fig = plot_FIR_filter (n_chan, OS, h)
   
   xline([1.0],'--b', 'LineWidth', 1.5);
   title ('Passband')
-  ylabel ('Magnitude (dB)','FontSize',14)
+  ylabel ('Magnitude (dB)','FontSize',FontSize)
   grid on; box on;
     
   %
@@ -55,8 +56,8 @@ function fig = plot_FIR_filter (n_chan, OS, h)
   xline([OS],'--', 'LineWidth', 1.5);
   xline([2*OS-1],'--r', 'LineWidth', 1.5);
   title ('Stopband')
-  ylabel ('Magnitude (dB)','FontSize',14)
-  xlabel ('Output Channel','FontSize',14)
+  ylabel ('Magnitude (dB)','FontSize',FontSize)
+  xlabel ('Frequency / Nyq_{critical}','FontSize',FontSize)
 
   grid on; box on;
   
