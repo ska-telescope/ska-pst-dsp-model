@@ -40,6 +40,9 @@ classdef DADARead < Generator
             obj.n_pol = str2num(obj.header('NPOL'));
             obj.n_bit = str2num(obj.header('NBIT'));
             obj.n_chan = str2num(obj.header('NCHAN'));
+
+            fprintf('DADARead::open nbit=%d ndim=%d npol=%d nchan=%d\n', obj.n_bit, obj.n_dim, obj.n_pol, obj.n_chan);
+
             obj.dtype = 'single';
             if obj.n_bit == 64
                 obj.dtype = 'double';
@@ -75,6 +78,8 @@ classdef DADARead < Generator
                 x = reshape_dada_data(data, obj.n_dim, obj.n_pol, obj.n_chan);
             end
 
+            x = complex(x);
+            
         end % of generate function
     end % of methods section
 end % of DADARead class definition
