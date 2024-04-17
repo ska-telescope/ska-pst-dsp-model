@@ -10,10 +10,6 @@ outputSamples = floor(totalSamples/192);
 dinp = zeros(totalSamples+2880,1);
 dinp(2881:end) = din;
 
-if isreal(dinp)
-    error ('PSTFilterbank real-valued dinp');
-end
-
 %% initialise
 dout = zeros(256,outputSamples);
 fftIn = zeros(256,1);
@@ -42,8 +38,5 @@ for outputSample = 1:outputSamples
     dout(:,outputSample) = fftshift(dout2);
 end
 
-if isreal(dout)
-    error ('PSTFilterbank real-valued dout');
-end
 
 
