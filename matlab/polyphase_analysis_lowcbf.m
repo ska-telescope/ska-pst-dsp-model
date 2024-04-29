@@ -16,8 +16,8 @@ n_dat = in_size(3);
 
 outputSamples = floor(n_dat/192);
   
-%% initialise
-out = zeros(n_pol,256,outputSamples);
+%% 216 = 256 * 27/32 fine channels span critical part of coarse channel
+out = zeros(n_pol,216,outputSamples);
 
 %
 % In PSTFilterbank.m, data are divided by

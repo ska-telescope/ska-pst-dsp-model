@@ -11,7 +11,7 @@ addOptional(p, 'header', '', @ischar);
 % write DADA to file
 addOptional(p, 'output', '', @ischar);
 
-% write DADA to file
+% virtual channel
 addOptional(p, 'chan', 1, @isnumeric);
 
 parse(p, varargin{:});
@@ -37,7 +37,7 @@ fileID = fopen (header_file, 'r');
 header = read_header(fileID);
 fclose(fileID);
 
-[fb_data] = load_fb_tb_data(input_file, 4, 3);
+[fb_data] = load_fb_tb_data_16bit(input_file, 4, 3);
 
 fb_size = size(fb_data)
 % (20,:,1,1) = fine frequency 20, all time samples, first polarisation, 
