@@ -343,6 +343,10 @@ if (cfg ~= "")
         header('PFB_DC_CHAN') = '1';
         header('NSTAGE') = num2str(level);
         header('NCHAN_PFB_0') = num2str(n_chan);
+
+        if config.kept_channels ~= 0
+            pfb_nchan = config.kept_channels;
+        end
         header('PFB_NCHAN') = num2str(pfb_nchan);
         header('OS_FACTOR') = sprintf('%d/%d', last_os_factor.nu, last_os_factor.de);
         header = add_fir_filter_to_header (header, {filt_coeff}, {last_os_factor});

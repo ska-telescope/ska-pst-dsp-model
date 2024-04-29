@@ -128,7 +128,7 @@ fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
 
 for istate = 1:Nstate
 
-    offset = Tskip + Nstep + (istate-1) * Nstep / Nstate;
+    offset = Tskip + Nstep + (istate+1) * Nstep / Nstate;
     file_offset = (istate-1) * ndat;
 
     Ki = (file_offset+offset-Tlost) * Qden / Qnum;
