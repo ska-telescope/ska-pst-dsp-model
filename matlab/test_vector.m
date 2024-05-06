@@ -1,20 +1,24 @@
 %
 % This function generates a DADA file containing a single-channel, 
-% complex-valued test vector composed of a series of delta functions.
+% complex-valued test vector composed of a series of either
+% delta functions or pure tones.
 %
-% The design of the test vector is described at
+% The design of both temporal and spectral test vectors is described at
 %
 % https://confluence.skatelescope.org/display/SE/Polyphase+Filter+Bank+Inversion%3A+Requirements+Verification
 %
-function test_vector_temporal(varargin)
+function test_vector(varargin)
 
 p = inputParser;
 
 % the correlator beam former for which the test vector is designed
 addOptional(p, 'cbf', 'low', @ischar);
 
+% the dimension (temporal or spectral) tested
+addOptional(p, 'domain', 'temporal', @ischar);
+
 % number of test states
-addOptional(p, 'Nstate', 2, @isnumeric);
+addOptional(p, 'Nstate', 0, @isnumeric);
 
 % forward FFT length used during PFB inversion
 addOptional(p, 'Nfft', 0, @isnumeric);
@@ -26,7 +30,7 @@ addOptional(p, 'Tover', 0, @isnumeric);
 addOptional(p, 'header', '../config/test_vector_dada.hdr', @ischar);
 
 % write DADA to file
-addOptional(p, 'output', '../products/test_vector_temporal.dada', @ischar);
+addOptional(p, 'output', '', @ischar);
 
 % number of bits per sample in output data file
 addOptional(p, 'nbit', 32, @isnumeric);
@@ -38,16 +42,23 @@ if ( header_file == "" )
   error ('Missing header = name of JSON-formatted DADA header');
 end
 
+domain = p.Results.domain;
+
 output_file = p.Results.output;
 if ( output_file == "" )
-  error ('Missing output = name of DADA-format output file');
+    output_file = "../products/test_vector_" + domain + ".dada"
 end
 
 Nstate = p.Results.Nstate;
 
-if ( Nstate < 1 )
-  error ('Invalid Nstate=%i',Nstate)
+if (Nstate == 0)
+    if (domain == "temporal")
+        Nstate = 2
+    else
+        Nstate = 4
+    end
 end
+
 cbf = p.Results.cbf;
 
 dada_header = 4096;
@@ -83,6 +94,11 @@ end
 Ncritical = Nchan * Qden / Qnum;
 Nkeep = Nfft * Rden / Rnum;
 Nifft = Ncritical * Nkeep;
+
+% specific to spectral test vector
+Nvirtual = Nchan * Nkeep;
+delta_freq = (Nvirtual - Nifft) / 2;
+
 Nstep = Nchan * Rden / Rnum;
 
 fprintf('Ncritical=%d Nkeep=%d Nifft=%d Nstep=%d \n',Ncritical,Nkeep,Nifft,Nstep);
@@ -122,24 +138,34 @@ fileID = fopen (output_file, 'w');
 
 npol = 1;
 nchan = 1;
+
 ndat = Nifft - Tskip;
+if (domain == "spectral")
+    ndat = 2*ndat;
+end
 
 fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
 
 for istate = 1:Nstate
 
-    offset = Tskip + Nstep + (istate+1) * Nstep / Nstate;
     file_offset = (istate-1) * ndat;
 
-    Ki = (file_offset+offset-Tlost) * Qden / Qnum;
-
-    fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,Ki);
-
-    byte_offset = dada_header + ((file_offset + offset) * 2 + 1) * nbit/8;
-    fprintf('byte_offset=%d \n',byte_offset);
-
-    data = complex(cast(zeros(npol, nchan, ndat),"single"));
-    data(1,1,1+offset) = 0 + 1j;
+    if (domain == "temporal")
+        offset = Tskip + Nstep + (istate+1) * Nstep / Nstate;
+        Ki = (file_offset+offset-Tlost) * Qden / Qnum;
+        fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,Ki);
+        byte_offset = dada_header + ((file_offset + offset) * 2 + 1) * nbit/8;
+        fprintf('byte_offset=%d \n',byte_offset);
+        data = complex(cast(zeros(npol, nchan, ndat),"single"));
+        data(1,1,1+offset) = 0 + 1j;
+    else
+        freq = (istate - 1) * Nkeep
+        fprintf('state %d: tone freq=%d file offset=%d \n',istate,freq,file_offset);
+        virtual_freq = (freq+delta_freq)/Nvirtual;
+        data = complex(cast(zeros(npol, nchan, ndat),"single"));
+        t = 0:ndat-1;
+        data(1,1,:) = exp(j*(2*pi*virtual_freq*t));
+    end
 
     if (nbit == 32)
         to_write = complex(cast(data,"single"));
