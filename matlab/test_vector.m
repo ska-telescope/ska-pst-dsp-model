@@ -162,9 +162,10 @@ nchan = 1;
 ndat = Tifft - Tskip;
 if (domain == "spectral")
     ndat = 2*ndat;
-    delta_freq = (Tifft - tifft) / 2;
+    nyq = -tifft / 2;
+    Nyq = -Tifft / 2;
     tkeep = Tkeep * Qden / Qnum;
-    freq_step = round((tifft + tkeep) / (Nstate - 1));
+    freq_step = round(tifft / (Nstate - 1));
     fprintf('freq_step/D_first = %f\n', freq_step / Qden);
 end
 
@@ -183,12 +184,20 @@ for istate = 1:Nstate
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
         data(1,1,1+offset) = 0 + 1j;
     else
-        freq = (istate - 1) * freq_step;
-        Freq = (freq+delta_freq)/Tifft;
-        fprintf('state %d: tone freq=%d Freq=%d file offset=%d \n',istate,freq,freq+delta_freq,file_offset);
+        % critically-sampled inverted frequency index
+        dfreq = (istate - 1) * freq_step;
+        if istate == Nstate
+            dfreq = dfreq - tkeep;
+        end
+        freq = mod(nyq + dfreq + tifft, tifft);
+        % oversampled input frequency index
+        Freq = mod(nyq + dfreq + Tifft, Tifft);
+
+        f = Freq/Tifft;
+        fprintf('state %d: tone freq=%d Freq=%d f=%f file offset=%d \n',istate,freq,Freq,f,file_offset);
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
         t = 0:Tifft-1;
-        data(1,1,1:Tifft) = exp(j*(2*pi*Freq*t));
+        data(1,1,1:Tifft) = exp(j*(2*pi*f*t));
     end
 
     if (nbit == 32)

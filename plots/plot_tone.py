@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fft import fft
+from scipy.fft import fft, fftshift
 import math
 import sys
 
@@ -36,7 +36,7 @@ Nifft = 196608
 Nstep = 24576
 Nblock = 344064
 
-inverted = False
+inverted = True
 if inverted:
   Nifft = (Nifft * 27) // 32
   Nstep = (Nstep * 27) // 32
@@ -54,8 +54,14 @@ print(f'block xmin={xmin} xmax={xmax}')
 
 data = data[xmin:xmax]
 data = fft(data)
+
+if inverted:
+    data = fftshift(data)
+
 data = np.real(data * np.conj(data))
 maxval = np.max(data)
+# index = np.argmax(data)
+
 data /= maxval
 
 dB_min = -100
