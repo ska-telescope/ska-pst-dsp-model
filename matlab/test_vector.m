@@ -100,11 +100,14 @@ Tkeep = Nfft * Rden / Rnum;
 % Number of coarse-channel time samples for each backward FFT performed during PFB inversion
 Tifft = Nchan * Tkeep;
 
+% Size of backward FFT performed to synthesize fine channels during PFB inversion
+tifft = Ncritical * Tkeep;
+
 % Stride between blocks of coarse-channel time samples for 
 % each fine-channel time sample output by second-stage PFB
 Tstep = Nchan * Rden / Rnum;
 
-fprintf('Ncritical=%d Tkeep=%d Tifft=%d Tstep=%d \n',Ncritical,Tkeep,Tifft,Tstep);
+fprintf('Ncritical=%d Tkeep=%d Tifft=%f Tstep=%d \n',Ncritical,Tkeep,Tifft,Tstep);
 
 % Number of input coarse-channel time samples 
 % for each fine-channel time sample output by second-stage PFB
@@ -158,10 +161,11 @@ nchan = 1;
 
 ndat = Tifft - Tskip;
 if (domain == "spectral")
-    Nvirtual = Nchan * Tkeep;
-    delta_freq = (Nvirtual - Tifft) / 2;
+    delta_freq = (Tifft - tifft) / 2;
     ndat = 2*ndat;
-    Fstep = round((Tifft + Tkeep) / (Nstate - 1));
+    freq_step = round((tifft + Tkeep) / (Nstate - 1));
+
+    fprintf('freq_step/D_first = %f\n', freq_step / Qden);
 end
 
 fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
@@ -179,12 +183,12 @@ for istate = 1:Nstate
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
         data(1,1,1+offset) = 0 + 1j;
     else
-        freq = (istate - 1) * Fstep
+        freq = (istate - 1) * freq_step;
         fprintf('state %d: tone freq=%d file offset=%d \n',istate,freq,file_offset);
-        virtual_freq = (freq+delta_freq)/Nvirtual;
+        Freq = (freq+delta_freq)/Tifft;
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
-        t = 0:nifft-1;
-        data(1,1,0:nifft-1) = exp(j*(2*pi*virtual_freq*t));
+        t = 0:Tifft-1;
+        data(1,1,1:Tifft) = exp(j*(2*pi*Freq*t));
     end
 
     if (nbit == 32)
@@ -227,8 +231,11 @@ Tsecond = (Ttotal-Tin)/Tstep;
 fprintf('test vector of %d samples written to %s \n',Ttotal,output_file);
 fprintf('expect %d samples in output of second-stage PFB \n', Tsecond);
 
-% Size of backward FFT performed to synthesize fine channels during PFB inversion
-tifft = Ncritical * Tkeep;
+
 tskip = Ncritical * Tover;
-fprintf('expect %d samples after PFB inversion\n', Nstate*(tifft-tskip));
+
+Nblock = (Tsecond - Tover) / (Nfft - Tover);
+fprintf('Number of blocks during PFB inversion = %d \n',Nblock);
+
+fprintf('expect %d samples after PFB inversion\n', Nblock*(tifft-tskip));
 fclose(fileID);
