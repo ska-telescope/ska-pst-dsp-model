@@ -186,7 +186,7 @@ for istate = 1:Nstate
     else
         % critically-sampled inverted frequency index
         dfreq = (istate - 1) * freq_step;
-        if istate == Nstate
+        if istate > 1
             dfreq = dfreq - tkeep;
         end
         freq = mod(nyq + dfreq + tifft, tifft);
