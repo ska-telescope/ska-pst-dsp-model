@@ -161,10 +161,10 @@ nchan = 1;
 
 ndat = Tifft - Tskip;
 if (domain == "spectral")
-    delta_freq = (Tifft - tifft) / 2;
     ndat = 2*ndat;
-    freq_step = round((tifft + Tkeep) / (Nstate - 1));
-
+    delta_freq = (Tifft - tifft) / 2;
+    tkeep = Tkeep * Qden / Qnum;
+    freq_step = round((tifft + tkeep) / (Nstate - 1));
     fprintf('freq_step/D_first = %f\n', freq_step / Qden);
 end
 
@@ -184,8 +184,8 @@ for istate = 1:Nstate
         data(1,1,1+offset) = 0 + 1j;
     else
         freq = (istate - 1) * freq_step;
-        fprintf('state %d: tone freq=%d file offset=%d \n',istate,freq,file_offset);
         Freq = (freq+delta_freq)/Tifft;
+        fprintf('state %d: tone freq=%d Freq=%d file offset=%d \n',istate,freq,freq+delta_freq,file_offset);
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
         t = 0:Tifft-1;
         data(1,1,1:Tifft) = exp(j*(2*pi*Freq*t));
@@ -230,7 +230,6 @@ Ttotal = Nstate*ndat+Ntrail;
 Tsecond = (Ttotal-Tin)/Tstep;
 fprintf('test vector of %d samples written to %s \n',Ttotal,output_file);
 fprintf('expect %d samples in output of second-stage PFB \n', Tsecond);
-
 
 tskip = Ncritical * Tover;
 

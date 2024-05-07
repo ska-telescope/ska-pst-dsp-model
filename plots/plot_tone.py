@@ -21,7 +21,7 @@ filename = inputArgs[1]
 iblock = int(inputArgs[2])
 index = int(inputArgs[3])
 
-print(f"plotting pulse at {index} in {filename}")
+print(f"plotting pulse at bin={index} of block={iblock} in {filename}")
 
 with open(filename, 'rb') as f:
   data = np.fromfile(f, dtype=np.csingle)
@@ -32,18 +32,25 @@ data = data[512:]
 ndat = data.shape[0]
 print(f"ndat={ndat}")
 
-Nifft = 165888
-Nblock = 282624
+Nifft = 196608
+Nstep = 24576
+Nblock = 344064
+
+inverted = False
+if inverted:
+  Nifft = (Nifft * 27) // 32
+  Nstep = (Nstep * 27) // 32
+  Nblock = (Nblock * 27) // 32
 
 xmin = iblock * Nblock
 if xmin < 0:
     xmin = 0
 
-xmax = xmin + Nifft - 1
+xmax = xmin + Nifft
 if xmax > ndat:
     sys.exit(f"error: xmax={xmax} > ndat={ndat}")
     
-print(f'xmin={xmin} xmax={xmax}')
+print(f'block xmin={xmin} xmax={xmax}')
 
 data = data[xmin:xmax]
 data = fft(data)
@@ -55,10 +62,24 @@ dB_min = -100
 power_min = pow(10.0,dB_min/10.0)
 dB = np.log10(data+power_min)*10
 
-xval = np.arange(xmin,xmax)
-plt.plot(xval, dB)
-plt.ylabel("Power (dB)")
-plt.xlabel("Frequency Index")
+xval = np.arange(0,Nifft)
+
+fig, axs = plt.subplots(2)
+
+axs[0].plot(xval, dB)
+axs[0].set(ylabel="Power (dB)") #, xlabel="Frequency Index")
+
+xbuf = 20
+xmin = index - xbuf
+xmax = index + xbuf
+
+print(f'bin xmin={xmin} xmax={xmax}')
+
+zoom_dB = dB[xmin:xmax]
+zoom_xval = xval[xmin:xmax]
+
+axs[1].plot(zoom_xval, zoom_dB)
+axs[1].set(ylabel="Power (dB)", xlabel="Frequency Index")
 
 plot_file = f'tone_{index}.png'
 plt.savefig(plot_file)
