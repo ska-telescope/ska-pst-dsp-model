@@ -12,12 +12,8 @@ function out=polyphase_analysis_lowcbf(...
 in_size = size(in);
 n_pol = in_size(1);
 n_chan = in_size(2); % This should always be 1.
-n_dat = in_size(3);
-
-outputSamples = floor(n_dat/192);
   
 %% 216 = 256 * 27/32 fine channels span critical part of coarse channel
-out = zeros(n_pol,216,outputSamples);
 
 %
 % In PSTFilterbank.m, data are divided by
@@ -31,6 +27,12 @@ scale = 2^9 * 2048 * 256;
 for i_pol = 1:n_pol
   
     dout = PSTFilterbank(in(i_pol,1,:), filt);
+
+    if (i_pol == 1)
+        outsz = size(dout);
+        ndat = outsz(2);
+        out = zeros(n_pol,216,ndat);
+    end
     out(i_pol,:,:)=dout*scale;
 
 end
