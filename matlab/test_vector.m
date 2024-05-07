@@ -46,16 +46,16 @@ domain = p.Results.domain;
 
 output_file = p.Results.output;
 if ( output_file == "" )
-    output_file = "../products/test_vector_" + domain + ".dada"
+    output_file = "../products/test_vector_" + domain + ".dada";
 end
 
 Nstate = p.Results.Nstate;
 
 if (Nstate == 0)
     if (domain == "temporal")
-        Nstate = 2
+        Nstate = 2;
     else
-        Nstate = 4
+        Nstate = 3;
     end
 end
 
@@ -65,7 +65,7 @@ dada_header = 4096;
 
 if ( cbf == "low" )
     Nchan = 256;   % channels output by PFB
-    Ntap = 12;     % filter taps per channel
+    Ttap = 12;     % filter taps per channel
     Qnum = 32;     % numerator of oversampling ratio of 1st stage PFB
     Qden = 27;     % denominator of oversampling ratio of 1st stage PFB
     Rnum = 4;      % numerator of oversampling ratio of 2nd stage PFB
@@ -77,7 +77,7 @@ if ( cbf == "low" )
     Nlost = 0;
 elseif ( cbf == "mid" )
     Nchan = 4096;  % channels output by PFB
-    Ntap = 28;     % filter taps per channel
+    Ttap = 28;     % filter taps per channel
     Qnum = 4;      % numerator of oversampling ratio of 1st stage PFB
     Qden = 3;      % denominator of oversampling ratio of 1st stage PFB
     Rnum = 8;      % numerator of oversampling ratio of 2nd stage PFB
@@ -91,20 +91,37 @@ else
     error ('Unknown CBF %s', cbf);
 end
 
+% Number of fine channels that span critically-sampled part of coarse channel
 Ncritical = Nchan * Qden / Qnum;
-Nkeep = Nfft * Rden / Rnum;
-Nifft = Ncritical * Nkeep;
 
-% specific to spectral test vector
-Nvirtual = Nchan * Nkeep;
-delta_freq = (Nvirtual - Nifft) / 2;
+% Number of frequency bins kept from each FFT performed on each fine channel
+Tkeep = Nfft * Rden / Rnum;
 
-Nstep = Nchan * Rden / Rnum;
+% Number of coarse-channel time samples for each backward FFT performed during PFB inversion
+Tifft = Nchan * Tkeep;
 
-fprintf('Ncritical=%d Nkeep=%d Nifft=%d Nstep=%d \n',Ncritical,Nkeep,Nifft,Nstep);
+% Stride between blocks of coarse-channel time samples for 
+% each fine-channel time sample output by second-stage PFB
+Tstep = Nchan * Rden / Rnum;
 
-Nin = Nchan * Ntap;
-Tskip = Tover * Nstep;
+fprintf('Ncritical=%d Tkeep=%d Tifft=%d Tstep=%d \n',Ncritical,Tkeep,Tifft,Tstep);
+
+% Number of input coarse-channel time samples 
+% for each fine-channel time sample output by second-stage PFB
+Tin = Nchan * Ttap;
+
+% Stride between blocks of input coarse-channel time samples included in
+% each FFT performed on fine-channel time samples output by second-stage PFB
+Tskip = Tover * Tstep;
+
+% Number of input coarse-channel time samples included in
+% each FFT performed on fine-channel time samples output by second-stage PFB
+Tfft = Nfft * Tstep;
+
+if (Tfft ~= Tifft)
+    fprintf('forward Tfft = %d does not equal inverse Tifft = %d', Tfft, Tifft)
+    error("Aborting");
+end
 
 % During PFB, the first Nlost points are lost
 Tlost_pfb = Nlost;
@@ -114,7 +131,7 @@ Tlost_inv = Tskip;
 
 Tlost = Tlost_inv + Tlost_pfb;
 
-fprintf('Nin=%d Tskip=%d Tlost_inv=%d Tlost_pfb=%d \n',Nin,Tskip,Tlost_inv,Tlost_pfb);
+fprintf('Tin=%d Tskip=%d Tlost_inv=%d Tlost_pfb=%d \n',Tin,Tskip,Tlost_inv,Tlost_pfb);
 
 if ( p.Results.Nfft > 0 )
     Nfft = p.Results.Nfft;
@@ -139,9 +156,12 @@ fileID = fopen (output_file, 'w');
 npol = 1;
 nchan = 1;
 
-ndat = Nifft - Tskip;
+ndat = Tifft - Tskip;
 if (domain == "spectral")
+    Nvirtual = Nchan * Tkeep;
+    delta_freq = (Nvirtual - Tifft) / 2;
     ndat = 2*ndat;
+    Fstep = round((Tifft + Tkeep) / (Nstate - 1));
 end
 
 fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
@@ -151,7 +171,7 @@ for istate = 1:Nstate
     file_offset = (istate-1) * ndat;
 
     if (domain == "temporal")
-        offset = Tskip + Nstep + (istate+1) * Nstep / Nstate;
+        offset = Tskip + Tstep + (istate+1) * Tstep / Nstate;
         Ki = (file_offset+offset-Tlost) * Qden / Qnum;
         fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,Ki);
         byte_offset = dada_header + ((file_offset + offset) * 2 + 1) * nbit/8;
@@ -159,12 +179,12 @@ for istate = 1:Nstate
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
         data(1,1,1+offset) = 0 + 1j;
     else
-        freq = (istate - 1) * Nkeep
+        freq = (istate - 1) * Fstep
         fprintf('state %d: tone freq=%d file offset=%d \n',istate,freq,file_offset);
         virtual_freq = (freq+delta_freq)/Nvirtual;
         data = complex(cast(zeros(npol, nchan, ndat),"single"));
-        t = 0:ndat-1;
-        data(1,1,:) = exp(j*(2*pi*virtual_freq*t));
+        t = 0:nifft-1;
+        data(1,1,0:nifft-1) = exp(j*(2*pi*virtual_freq*t));
     end
 
     if (nbit == 32)
@@ -188,7 +208,7 @@ for istate = 1:Nstate
 
 end
 
-Ntrail = Tskip + Nin;
+Ntrail = Tskip + Tin;
 fprintf('writing %i samples of trailing zeros \n', Ntrail)
 data = complex(cast(zeros(npol, nchan, Ntrail),"single"));
 
@@ -202,5 +222,13 @@ end
 
 write_dada_data (fileID, to_write);
 
-fprintf('test vector written to %s \n',output_file);
+Ttotal = Nstate*ndat+Ntrail;
+Tsecond = (Ttotal-Tin)/Tstep;
+fprintf('test vector of %d samples written to %s \n',Ttotal,output_file);
+fprintf('expect %d samples in output of second-stage PFB \n', Tsecond);
+
+% Size of backward FFT performed to synthesize fine channels during PFB inversion
+tifft = Ncritical * Tkeep;
+tskip = Ncritical * Tover;
+fprintf('expect %d samples after PFB inversion\n', Nstate*(tifft-tskip));
 fclose(fileID);
