@@ -8,7 +8,6 @@ import pathlib
 from typing import Any
 
 def plot_impulse(filename: pathlib.Path, index: int, **kwargs: Any) -> None:
-    # ... all the setting up of the plotting stuff goes here
     print(f"plotting pulse at {index} in {filename}")
 
     SMALL_SIZE = 8
@@ -59,7 +58,6 @@ def plot_impulse(filename: pathlib.Path, index: int, **kwargs: Any) -> None:
     plt.savefig(plot_file)
 
 
-# This method is the main method to parse the args but should only do that and parse to a proper function
 def main() -> None:
     """Parse command line arguments and then call plot_impulse."""
     import argparse
@@ -76,6 +74,6 @@ def main() -> None:
     args = vars(p.parse_args())
     plot_impulse(**args)
 
-# this allows Python to be run from the command line but doesn't do any logic here
+
 if __name__ == "__main__":
   main()
