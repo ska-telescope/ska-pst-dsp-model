@@ -118,7 +118,9 @@ classdef FilterBank < Channelizer
             
             input_idat = output_size(3) * obj.n_chan * obj.os_factor.de / obj.os_factor.nu;
             obj.buffered_samples = input_size(3) - input_idat;
-            
+
+            % fprintf ('FilterBank: n_chan=%d idat=%d nbuf=%d\n',obj.n_chan,input_idat,obj.buffered_samples);
+
             if (obj.buffered_samples > 0)
                 obj.input_buffer = input (:,:,(input_idat+1):end);
             end

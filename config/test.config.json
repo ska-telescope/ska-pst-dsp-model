@@ -25,6 +25,7 @@
     "fir_filter_taps": 3072,
     "os_factor": "4/3",
     "channels": 256,
+    "kept_channels": 216,
     "input_fft_length": 256,
     "input_overlap": 48,
     "blocks": 3,

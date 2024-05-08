@@ -50,23 +50,29 @@ if ( Nstate < 1 )
 end
 cbf = p.Results.cbf;
 
+dada_header = 4096;
+
 if ( cbf == "low" )
     Nchan = 256;   % channels output by PFB
     Ntap = 12;     % filter taps per channel
-    Rnum = 4;      % numerator of oversampling ratio
-    Rden = 3;      % denominator of oversampling ratio
+    Qnum = 32;     % numerator of oversampling ratio of 1st stage PFB
+    Qden = 27;     % denominator of oversampling ratio of 1st stage PFB
+    Rnum = 4;      % numerator of oversampling ratio of 2nd stage PFB
+    Rden = 3;      % denominator of oversampling ratio of 2nd stage PFB
     Nfft = 1024;   % forward FFT length used during PFB inversion
     Tover= 128;    % samples by which forward FFTs overlap
 
     % number of input samples lost by PFB 
-    Nlost = Nchan * Rden / Rnum;
+    Nlost = 0;
 elseif ( cbf == "mid" )
     Nchan = 4096;  % channels output by PFB
-    Ntap = 24.5;   % filter taps per channel
-    Rnum = 8;      % numerator of oversampling ratio
-    Rden = 7;      % denominator of oversampling ratio
+    Ntap = 28;     % filter taps per channel
+    Qnum = 4;      % numerator of oversampling ratio of 1st stage PFB
+    Qden = 3;      % denominator of oversampling ratio of 1st stage PFB
+    Rnum = 8;      % numerator of oversampling ratio of 2nd stage PFB
+    Rden = 7;      % denominator of oversampling ratio of 2nd stage PFB
     Nfft = 2048;   % forward FFT length used during PFB inversion
-    Tover= 224;    % samples by which forward FFTs overlap
+    Tover= 252;    % samples by which forward FFTs overlap
 
     % number of input samples lost by PFB 
     Nlost = 0;
@@ -74,20 +80,20 @@ else
     error ('Unknown CBF %s', cbf);
 end
 
+Ncritical = Nchan * Qden / Qnum;
 Nkeep = Nfft * Rden / Rnum;
-Nifft = Nchan * Nkeep;
+Nifft = Ncritical * Nkeep;
 Nstep = Nchan * Rden / Rnum;
 
-fprintf('Nkeep=%d Nifft=%d Nstep=%d \n',Nkeep,Nifft,Nstep);
+fprintf('Ncritical=%d Nkeep=%d Nifft=%d Nstep=%d \n',Ncritical,Nkeep,Nifft,Nstep);
 
 Nin = Nchan * Ntap;
 Tskip = Tover * Nstep;
 
-% During PFB, the signal is delayed by half the prototype filter length
-% and the first Nlost samples are lost
-Tlost_pfb = -Nin/2 + Nlost;
+% During PFB, the first Nlost points are lost
+Tlost_pfb = Nlost;
 
-% During PFB inversion, the first half of Tskip points are lost
+% During PFB inversion, the first Tskip points are lost
 Tlost_inv = Tskip;
 
 Tlost = Tlost_inv + Tlost_pfb;
@@ -122,10 +128,15 @@ fprintf('writing %i blocks of %i samples \n', Nstate, ndat)
 
 for istate = 1:Nstate
 
-    offset = Tskip + Nstep + (istate-1) * Nstep / Nstate;
+    offset = Tskip + Nstep + (istate+1) * Nstep / Nstate;
     file_offset = (istate-1) * ndat;
 
-    fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,file_offset+offset-Tlost);
+    Ki = (file_offset+offset-Tlost) * Qden / Qnum;
+
+    fprintf('state %d: impulse offset=%d file offset=%d -> Ki=%d \n',istate,offset,file_offset,Ki);
+
+    byte_offset = dada_header + ((file_offset + offset) * 2 + 1) * nbit/8;
+    fprintf('byte_offset=%d \n',byte_offset);
 
     data = complex(cast(zeros(npol, nchan, ndat),"single"));
     data(1,1,1+offset) = 0 + 1j;

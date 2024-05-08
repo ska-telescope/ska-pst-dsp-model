@@ -51,6 +51,8 @@ function fir_filter_path = design_PFB_FIR_filter(n_chan, os_factor, n_taps_per_c
   fir_filter_path = sprintf('./../config/Prototype_FIR.new.%d-%d.%d.%d.mat', os_factor.nu, os_factor.de, n_chan, n_taps);
   save(fir_filter_path, 'h', 'n_chan', 'Fp', 'Fs');
 
+  fprintf('filter written to %s\n',fir_filter_path);
+  
   % Save a sampled version of the Transfer Function for later equalisation
   % - length should be n_chan times the half-channel width (where width is FFTlength/OS_factor)
   % e.g. 64 channels, ffft_len = 1024: 28,672 is 448*64, which gives 448 points per half-channel, 896 per channel
