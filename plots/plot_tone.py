@@ -2,13 +2,16 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.fft import fft, fftshift
 import math
 import sys
+
 import pathlib
 from typing import Any
 
-def plot_impulse(filename: pathlib.Path, index: int, **kwargs: Any) -> None:
-    print(f"plotting pulse at {index} in {filename}")
+def plot_tone(filename: pathlib.Path, iblock: int, index: int, **kwargs: Any) -> None:
+
+    print(f"plotting pulse at bin={index} of block={iblock} in {filename}")
 
     SMALL_SIZE = 8
     MEDIUM_SIZE = 12
@@ -31,35 +34,69 @@ def plot_impulse(filename: pathlib.Path, index: int, **kwargs: Any) -> None:
     ndat = data.shape[0]
     print(f"ndat={ndat}")
 
-    xbuf = 10000
-    xmin = index - xbuf
+    Nifft = 196608
+    Nstep = 24576
+    Nblock = 344064
+
+    inverted = True
+    # inverted Low.CBF data are downsampled by 27/32 wrt to input
+    if inverted:
+        Nifft = (Nifft * 27) // 32
+        Nstep = (Nstep * 27) // 32
+        Nblock = (Nblock * 27) // 32
+
+    xmin = iblock * Nblock
     if xmin < 0:
         xmin = 0
 
-    xmax = index + xbuf
+    xmax = xmin + Nifft
     if xmax > ndat:
-        xmax = ndat
+        sys.exit(f"error: xmax={xmax} > ndat={ndat}")
+        
+    print(f'block xmin={xmin} xmax={xmax}')
 
     data = data[xmin:xmax]
+    data = fft(data)
+
+    if inverted:
+        data = fftshift(data)
+
     data = np.real(data * np.conj(data))
     maxval = np.max(data)
+    # index = np.argmax(data)
+
     data /= maxval
 
     dB_min = -100
     power_min = pow(10.0,dB_min/10.0)
     dB = np.log10(data+power_min)*10
 
-    xval = np.arange(xmin,xmax)
-    plt.plot(xval, dB)
-    plt.ylabel("Power (dB)")
-    plt.xlabel("Sample Index")
+    xval = np.arange(0,Nifft)
 
-    plot_file = f'impulse_{index}.png'
+    fig, axs = plt.subplots(2)
+
+    axs[0].plot(xval, dB)
+    axs[0].set(ylabel="Power (dB)") #, xlabel="Frequency Index")
+
+    xbuf = 20
+    xmin = index - xbuf
+    xmax = index + xbuf
+
+    print(f'bin xmin={xmin} xmax={xmax}')
+
+    zoom_dB = dB[xmin:xmax]
+    zoom_xval = xval[xmin:xmax]
+
+    axs[1].plot(zoom_xval, zoom_dB)
+    axs[1].set(ylabel="Power (dB)", xlabel="Frequency Index")
+
+    plot_file = f'tone_{index}.png'
     plt.savefig(plot_file)
 
 
+
 def main() -> None:
-    """Parse command line arguments and then call plot_impulse."""
+    """Parse command line arguments and then call plot_tone."""
     import argparse
 
     # do arg parsing here
@@ -69,10 +106,11 @@ def main() -> None:
         type=pathlib.Path,
         help="the file to process",
     )
-    p.add_argument("index", type=int, help="Index of impulse to plot.")
+    p.add_argument("iblock", type=int, help="index of data block to analyse.")
+    p.add_argument("index", type=int, help="index of FFT bin of expected signal.")
 
     args = vars(p.parse_args())
-    plot_impulse(**args)
+    plot_tone(**args)
 
 
 if __name__ == "__main__":
