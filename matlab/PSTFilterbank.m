@@ -1,13 +1,14 @@
-function [dout] = PSTFilterbank(din, FIRtaps)
+function [dout] = PSTFilterbank(din, FIRtaps, do_padding)
 % Filterbank, FFT 256 points, 12 taps.
 
 %% pre-pad with 1536 zeros to match the first output in the simulation.
 % 1536 is half the total FIR length, so the timestamp for the first SPS sample becomes the timestamp for the first filterbank output sample.
 
 nfilt = 3072;
-persistent padding
-if isempty(padding)
+if (do_padding)
     padding = 1536;
+else
+    padding = 0;
 end
 
 totalSamples = length(din) + padding;
@@ -16,8 +17,6 @@ outputSamples = floor((totalSamples-nfilt)/192);
 dinp = zeros(totalSamples,1);
 % fprintf('pre-padding %d\n',padding)
 dinp((padding+1):(padding + length(din))) = din;
-
-padding = 0; % pad only on the first call to this function
 
 %% initialise
 dout = zeros(216,outputSamples);

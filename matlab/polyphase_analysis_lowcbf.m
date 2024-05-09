@@ -24,9 +24,18 @@ n_chan = in_size(2); % This should always be 1.
 %
 scale = 2^9 * 2048 * 256;
 
+persistent do_padding
+
+% zero pad only on the first call to this function
+if isempty(do_padding)
+    do_padding = 1;
+else
+    do_padding = 0;
+end
+
 for i_pol = 1:n_pol
   
-    dout = PSTFilterbank(in(i_pol,1,:), filt);
+    dout = PSTFilterbank(in(i_pol,1,:), filt, do_padding);
 
     if (i_pol == 1)
         outsz = size(dout);
